@@ -1,0 +1,40 @@
+# Python
+*.pyc
+__pycache__/
+pip-wheel-metadata/
+
+# Django
+*.log
+*.pot
+*.pyc
+*.pyo
+*.db
+*.sqlite3
+*.log
+local_settings.py
+db.sqlite3
+media
+staticfiles/
+
+# Environments
+.env
+.venv/
+
+# VSCode
+.vscode/
+
+# PyCharm
+.idea/
+
+# Jupyter Notebooks
+
+# Logs
+*.log
+
+
+
+# Django migrations
+migrations/
+
+# JetBrains IDEs
+.idea/
