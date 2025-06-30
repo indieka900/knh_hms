@@ -1,34 +1,57 @@
 from django.shortcuts import render, redirect
-from accounts.forms import UserRegistrationForm, UserLoginForm
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import login, authenticate
+from django.contrib import messages
+from django.contrib.auth.views import LoginView
+from .forms import RegisterForm, LoginForm
 
 
-def register(request):
-    if request.method == 'POST':
-        form = UserRegistrationForm(request.POST)
-        if form.is_valid():
-            user = form.save(commit=False)
-            user.set_password(form.cleaned_data['password'])
-            user.save()
-            return redirect('accounts:login')
-    else:
-        form = UserRegistrationForm()
+def auth_view(request):
+    """Combined login and register view"""
+    login_form = LoginForm()
+    register_form = RegisterForm()
     
-    return render(request, 'register.html', {'form': form})
-
-def login_view(request):
     if request.method == 'POST':
-        form = UserLoginForm(request.POST)
-        if form.is_valid():
-            email = form.cleaned_data['email']
-            password = form.cleaned_data['password']
-            user = authenticate(request, username=email, password=password)
-            if user is not None:
-                login(request, user)
-                return redirect('dashboard:home')
-            else:
-                form.add_error(None, "Invalid email or password.")
-    else:
-        form = UserLoginForm()
+        if 'login' in request.POST:
+            return handle_login(request)
+        elif 'register' in request.POST:
+            return handle_register(request)
     
-    return render(request, 'login.html', {'form': form})
+    return render(request, 'auth.html', {
+        'login_form': login_form,
+        'register_form': register_form
+    })
+
+
+def handle_login(request):
+    form = LoginForm(request, request.POST)
+    if form.is_valid():
+        user = form.get_user()
+        login(request, user)
+        messages.success(request, "Login successful. Welcome back!")
+        return redirect('dashboard')
+    else:
+        messages.error(request, "Invalid email or password.")
+    
+    return render(request, 'auth.html', {
+        'login_form': form,
+        'register_form': RegisterForm()
+    })
+
+
+
+def handle_register(request):
+    """Handle registration form submission"""
+    form = RegisterForm(request.POST)
+    
+    if form.is_valid():
+        user = form.save()
+        login(request, user)
+        messages.success(request, "Registration successful. You are now logged in.")
+        return redirect('dashboard')
+    else:
+        messages.error(request, "Please correct the errors below.")
+    
+    return render(request, 'auth.html', {
+        'login_form': LoginForm(),
+        'register_form': form
+    })

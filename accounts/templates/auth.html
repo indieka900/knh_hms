@@ -1,0 +1,11 @@
+{% extends 'auth_base.html' %}
+{% load static %}
+
+{% block title %}Authentication | KNH HMS{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    {% include "partials/welcome_panel.html" %}
+    {% include "partials/form_panel.html" %}
+</div>
+{% endblock %}

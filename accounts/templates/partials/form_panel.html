@@ -1,0 +1,163 @@
+<div class="form-panel">
+    <!-- Login Form -->
+    <div id="loginForm" class="form-toggle active">
+        <div class="form-header">
+            <h2 class="form-title">Welcome Back</h2>
+            <p class="form-subtitle">Please sign in to your account</p>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+        {% for message in messages %}
+        <div
+            class="{% if message.tags == 'error' %}error-message{% else %}success-message{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <form class="auth-form" method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label" for="loginEmail">Email Address</label>
+                <div class="input-with-icon">
+                    <i class="input-icon fas fa-envelope"></i>
+                    <input type="email" id="loginEmail" name="email"
+                        class="form-input"
+                        placeholder="Enter your email" required>
+                </div>
+            </div>
+            <input type="email" name="login" id hidden>
+
+            <div class="form-group">
+                <label class="form-label" for="loginPassword">Password</label>
+                <div class="input-with-icon">
+                    <i class="input-icon fas fa-lock"></i>
+                    <input type="password" id="loginPassword" name="password"
+                        class="form-input"
+                        placeholder="Enter your password" required>
+                </div>
+            </div>
+            <button type="submit" class="submit-btn" id="loginBtn" name="login">
+                Sign In
+            </button>
+
+            <div class="form-links">
+                <p>Don't have an account?
+                    <a href="#" class="form-link"
+                        onclick="toggleForms()">Register here</a>
+                </p>
+                <p style="margin-top: 10px;">
+                    <a href="#" class="form-link">Forgot Password?</a>
+                </p>
+            </div>
+        </form>
+    </div>
+
+    <!-- Registration Form -->
+    <div id="registerForm" class="form-toggle">
+        <div class="form-header">
+            <h2 class="form-title">Create Account</h2>
+            <p class="form-subtitle">Join KNH HMS today</p>
+        </div>
+
+        <form class="auth-form" method="post" action>
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label" for="firstName">First Name</label>
+                <div class="input-with-icon">
+                    <i class="input-icon fas fa-user"></i>
+                    <input type="text" id="firstName" name="first_name"
+                        class="form-input"
+                        placeholder="Enter your first name" required>
+                </div>
+            </div>
+            <input type="email" name="register" id hidden>
+
+            <div class="form-group">
+                <label class="form-label" for="lastName">Last Name</label>
+                <div class="input-with-icon">
+                    <i class="input-icon fas fa-user"></i>
+                    <input type="text" id="lastName" name="last_name"
+                        class="form-input"
+                        placeholder="Enter your last name" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="registerEmail">Email
+                    Address</label>
+                <div class="input-with-icon">
+                    <i class="input-icon fas fa-envelope"></i>
+                    <input type="email" id="registerEmail" name="email"
+                        class="form-input"
+                        placeholder="Enter your email" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="phoneNumber">Phone Number</label>
+                <div class="input-with-icon">
+                    <i class="input-icon fas fa-phone"></i>
+                    <input type="tel" id="phoneNumber" name="phone"
+                        class="form-input"
+                        placeholder="Enter your phone number" required>
+                </div>
+            </div>
+
+            <!-- <div class="form-group">
+                <label class="form-label" for="userRole">Role</label>
+                <select id="userRole" name="role" class="form-select" required>
+                    <option value>Select your role</option>
+                    <option value="patient">Patient</option>
+                    <option value="doctor">Doctor</option>
+                    <option value="nurse">Nurse</option>
+                    <option value="pharmacist">Pharmacist</option>
+                    <option value="billing">Billing Staff</option>
+                    <option value="admin">Administrator</option>
+                </select>
+            </div> -->
+
+            <div class="form-group">
+                <label class="form-label"
+                    for="registerPassword">Password</label>
+                <div class="input-with-icon">
+                    <i class="input-icon fas fa-lock"></i>
+                    <input type="password" id="registerPassword" name="password"
+                        class="form-input"
+                        placeholder="Create a password" required>
+                </div>
+                <div class="password-strength" id="passwordStrength">
+                    <div class="strength-bar">
+                        <div class="strength-fill"></div>
+                    </div>
+                    <div class="strength-text">Password strength: <span
+                            id="strengthLabel">Weak</span></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="confirmPassword">Confirm
+                    Password</label>
+                <div class="input-with-icon">
+                    <i class="input-icon fas fa-lock"></i>
+                    <input type="password" id="confirmPassword"
+                        name="confirm_password" class="form-input"
+                        placeholder="Confirm your password" required>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="registerBtn"
+                name="register">
+                Create Account
+            </button>
+
+            <div class="form-links">
+                <p>Already have an account?
+                    <a href="#" class="form-link" onclick="toggleForms()">Sign
+                        in here</a>
+                </p>
+            </div>
+        </form>
+    </div>
+</div>

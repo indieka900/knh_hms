@@ -1,35 +1,97 @@
 from django import forms
-from accounts.models import User
+from django.contrib.auth import authenticate
+from django.contrib.auth import get_user_model
+from django.core.validators import RegexValidator
+
+User = get_user_model()
 
 
-class UserRegistrationForm(forms.ModelForm):
-    password = forms.CharField(widget=forms.PasswordInput, label='Password')
-    confirm_password = forms.CharField(widget=forms.PasswordInput, label='Confirm Password')
+class LoginForm(forms.Form):
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Enter your email',
+            'id': 'loginEmail'
+        })
+    )
+    password = forms.CharField(
+        strip=False,
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-input',
+            'placeholder': 'Enter your password',
+            'id': 'loginPassword'
+        })
+    )
+
+    def __init__(self, request=None, *args, **kwargs):
+        self.request = request
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        email = self.cleaned_data.get('email')
+        password = self.cleaned_data.get('password')
+
+        if email and password:
+            self.user = authenticate(self.request, email=email, password=password)
+            if self.user is None:
+                raise forms.ValidationError("Invalid email or password")
+        return self.cleaned_data
+
+    def get_user(self):
+        return self.user
+
+
+class RegisterForm(forms.ModelForm):
+    password = forms.CharField(widget=forms.PasswordInput(attrs={
+        'class': 'form-input',
+        'placeholder': 'Create a password',
+        'id': 'registerPassword'
+    }))
+    confirm_password = forms.CharField(widget=forms.PasswordInput(attrs={
+        'class': 'form-input',
+        'placeholder': 'Confirm your password',
+        'id': 'confirmPassword'
+    }))
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'confirm_password']
+        fields = ['first_name', 'last_name', 'email', 'phone_number', 'password']
+
+        widgets = {
+            'first_name': forms.TextInput(attrs={
+                'class': 'form-input', 'placeholder': 'Enter your first name', 'id': 'firstName'
+            }),
+            'last_name': forms.TextInput(attrs={
+                'class': 'form-input', 'placeholder': 'Enter your last name', 'id': 'lastName'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-input', 'placeholder': 'Enter your email', 'id': 'registerEmail'
+            }),
+            'phone_number': forms.TextInput(attrs={
+                'class': 'form-input', 'placeholder': 'Enter your phone number', 'id': 'phoneNumber'
+            }),
+            # 'role': forms.Select(attrs={
+            #     'class': 'form-select', 'id': 'userRole'
+            # }),
+        }
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError("Email is already in use.")
+        return email
 
     def clean(self):
         cleaned_data = super().clean()
         password = cleaned_data.get("password")
-        confirm_password = cleaned_data.get("confirm_password")
-
-        if password != confirm_password:
-            raise forms.ValidationError("Passwords do not match.")
-        
+        confirm = cleaned_data.get("confirm_password")
+        if password and confirm and password != confirm:
+            self.add_error('confirm_password', "Passwords do not match.")
         return cleaned_data
-    
-class UserLoginForm(forms.Form):
-    email = forms.EmailField(max_length=150, label='email')
-    password = forms.CharField(widget=forms.PasswordInput, label='Password')
 
-    def clean(self):
-        cleaned_data = super().clean()
-        email = cleaned_data.get("email")
-        password = cleaned_data.get("password")
-
-        if not email or not password:
-            raise forms.ValidationError("Both fields are required.")
-        
-        return cleaned_data
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data['password'])
+        if commit:
+            user.save()
+        return user
