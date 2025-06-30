@@ -1,9 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.views import LogoutView
-from django.views.decorators.http import require_GET
-from django.utils.decorators import method_decorator
 from django.contrib import messages
 from .forms import RegisterForm, LoginForm
 
@@ -64,7 +61,7 @@ def handle_register(request):
     })
     
 
-
+@login_required
 def custom_logout_view(request):
     """Custom logout view to handle GET requests"""
     logout(request)
