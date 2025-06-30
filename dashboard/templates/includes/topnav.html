@@ -1,0 +1,25 @@
+<header class="top-nav">
+    <div class="nav-left">
+        <button class="menu-toggle" id="menuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <h1 class="page-title">
+            {% block page_title %}Dashboard{% endblock%}
+        </h1>
+    </div>
+    <div class="nav-right">
+        <div class="user-info">
+            <div class="user-avatar">
+                <span>
+                    {{ user.first_name.0|default:"U" }}
+                    {{user.last_name.0|default:"" }}
+                </span>
+
+            </div>
+            <div class="user-details">
+                <h4>{{ user.first_name }} {{ user.last_name }}</h4>
+                <p>{{ user.role|title }}</p>
+            </div>
+        </div>
+    </div>
+</header>

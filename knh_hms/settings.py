@@ -44,7 +44,7 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 # Login URLs
 LOGIN_URL = 'accounts:login'
-# LOGIN_REDIRECT_URL = 'dashboard:home'
+LOGIN_REDIRECT_URL = 'dashboard:dashboard'
 LOGOUT_REDIRECT_URL = 'accounts:login'
 
 MIDDLEWARE = [

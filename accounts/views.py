@@ -1,7 +1,10 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LogoutView
+from django.views.decorators.http import require_GET
+from django.utils.decorators import method_decorator
 from django.contrib import messages
-from django.contrib.auth.views import LoginView
 from .forms import RegisterForm, LoginForm
 
 
@@ -9,6 +12,10 @@ def auth_view(request):
     """Combined login and register view"""
     login_form = LoginForm()
     register_form = RegisterForm()
+    
+    if request.user.is_authenticated:
+        messages.info(request, "You are already logged in.")
+        return redirect('dashboard:dashboard')
     
     if request.method == 'POST':
         if 'login' in request.POST:
@@ -28,7 +35,7 @@ def handle_login(request):
         user = form.get_user()
         login(request, user)
         messages.success(request, "Login successful. Welcome back!")
-        return redirect('dashboard')
+        return redirect('dashboard:dashboard')
     else:
         messages.error(request, "Invalid email or password.")
     
@@ -47,7 +54,7 @@ def handle_register(request):
         user = form.save()
         login(request, user)
         messages.success(request, "Registration successful. You are now logged in.")
-        return redirect('dashboard')
+        return redirect('dashboard:dashboard')
     else:
         messages.error(request, "Please correct the errors below.")
     
@@ -55,3 +62,11 @@ def handle_register(request):
         'login_form': LoginForm(),
         'register_form': form
     })
+    
+
+
+def custom_logout_view(request):
+    """Custom logout view to handle GET requests"""
+    logout(request)
+    messages.success(request, "You have been logged out successfully.")
+    return redirect('accounts:login')

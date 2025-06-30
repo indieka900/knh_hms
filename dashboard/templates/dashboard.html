@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - KNH HMS{% endblock %}
+
+{% block page_title %}Dashboard Overview{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+    {% if user.role == 'admin' or user.role == 'doctor' %}
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <h3>Total Patients</h3>
+            <div class="stat-icon"
+                style="background: linear-gradient(135deg, #17a2b8, #138496);">
+                <i class="fas fa-user-injured"></i>
+            </div>
+        </div>
+        <div class="stat-number">1,247</div>
+        <div class="stat-change positive">
+            <i class="fas fa-arrow-up"></i>
+            <span>+12% from last month</span>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <h3>Today's Appointments</h3>
+            <div class="stat-icon"
+                style="background: linear-gradient(135deg, #28a745, #20c997);">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+        </div>
+        <div class="stat-number">{{ todays_appointments|default:"23" }}</div>
+        <div class="stat-change positive">
+            <i class="fas fa-arrow-up"></i>
+            <span>+5% from yesterday</span>
+        </div>
+    </div>
+
+    {% if user.role == 'pharmacist' or user.role == 'admin' %}
+    {% endif %}
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <h3>Low Stock Items</h3>
+            <div class="stat-icon"
+                style="background: linear-gradient(135deg, #ffc107, #fd7e14);">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+        </div>
+        <div class="stat-number">7</div>
+        <div class="stat-change negative">
+            <i class="fas fa-arrow-down"></i>
+            <span>Needs attention</span>
+        </div>
+    </div>
+
+    {% if user.role == 'billing' or user.role == 'admin' %}
+    {% endif %}
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <h3>Pending Payments</h3>
+            <div class="stat-icon"
+                style="background: linear-gradient(135deg, #dc3545, #c82333);">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+        </div>
+        <div class="stat-number">KSh 89,500</div>
+        <div class="stat-change negative">
+            <i class="fas fa-arrow-down"></i>
+            <span>-3% from last week</span>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="quick-actions">
+    <div class="section-header">
+        <h2 class="section-title">Quick Actions</h2>
+    </div>
+    <div class="actions-grid">
+        {% if user.role == 'doctor' or user.role == 'nurse' %}
+        {% endif %}
+        <a href="#" class="action-btn">
+            <i class="fas fa-user-plus"></i>
+            <span>Add Patient</span>
+        </a>
+
+        <a href="#" class="action-btn">
+            <i class="fas fa-calendar-plus"></i>
+            <span>Schedule Appointment</span>
+        </a>
+
+        {% if user.role == 'pharmacist' %}
+        <a href="#" class="action-btn">
+            <i class="fas fa-pills"></i>
+            <span>Update Inventory</span>
+        </a>
+        {% endif %}
+
+        {% if user.role == 'billing' %}
+        <a href="#" class="action-btn">
+            <i class="fas fa-file-invoice"></i>
+            <span>Generate Invoice</span>
+        </a>
+        {% endif %}
+
+        {% if user.role == 'admin' %}
+        <a href="#" class="action-btn">
+            <i class="fas fa-user-cog"></i>
+            <span>Manage Users</span>
+        </a>
+        {% endif %}
+
+        <a href="#" class="action-btn">
+            <i class="fas fa-chart-line"></i>
+            <span>View Reports</span>
+        </a>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="recent-activity">
+    <div class="section-header">
+        <h2 class="section-title">Recent Activity</h2>
+        <a href="#"
+            style="color: var(--secondary-dark); text-decoration: none; font-weight: 600;">View
+            All</a>
+    </div>
+    <table class="activity-table">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Activity</th>
+                <th>User</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>10:30 AM</td>
+                <td>New patient registration</td>
+                <td>Dr. Sarah Kimani</td>
+                <td><span
+                        class="status-badge status-completed">Completed</span></td>
+            </tr>
+            <tr>
+                <td>10:15 AM</td>
+                <td>Appointment scheduled</td>
+                <td>John Mutua</td>
+                <td><span class="status-badge status-active">Active</span></td>
+            </tr>
+            <tr>
+                <td>09:45 AM</td>
+                <td>Medication dispensed</td>
+                <td>Pharmacist Grace</td>
+                <td><span
+                        class="status-badge status-completed">Completed</span></td>
+            </tr>
+            <tr>
+                <td>09:30 AM</td>
+                <td>Payment processed</td>
+                <td>Billing Dept</td>
+                <td><span
+                        class="status-badge status-pending">Pending</span></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
