@@ -49,7 +49,7 @@ class Appointment(models.Model):
         ('cancelled', 'Cancelled'),
         ('no_show', 'No Show'),
     ]
-    
+    id = models.CharField(max_length=20, primary_key=True, editable=False)
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='appointments')
     doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name='appointments')
     appointment_date = models.DateField()

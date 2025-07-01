@@ -124,13 +124,12 @@
             
         </thead>
         <tbody>
+            {% for appointment in appointments %}
             <tr>
                 <td>
                     <div>
-                        <strong>{{ appointment.appointment_date|date:"M d, Y"
-                            }}</strong><br>
-                        <small class="text-muted">{{
-                            appointment.appointment_time|time:"g:i A" }}</small>
+                        <strong>{{ appointment.appointment_date|date:"M d, Y" }}</strong><br>
+                        <small class="text-muted">{{ appointment.appointment_time|time:"g:i A" }}</small>
                     </div>
                 </td>
                 <td>
@@ -148,32 +147,30 @@
                         <a href="" class="btn btn-sm btn-secondary">
                             <i class="fas fa-eye"></i>
                         </a>
-            
-                        <a href="" class="btn btn-sm btn-primary">
+                
+                        <a href="{% url 'appointments:appointment_edit' appointment.id  %}" class="btn btn-sm btn-primary">
                             <i class="fas fa-edit"></i>
                         </a>
-            
+                
                         {% if appointment.status == 'scheduled' %}
-                        <button onclick="updateStatus('{{ appointment.appointment_id }}', 'confirmed')"
-                            class="btn btn-sm btn-success">
+                        <button onclick="updateStatus('{{ appointment.appointment_id }}', 'confirmed')" class="btn btn-sm btn-success">
                             <i class="fas fa-check"></i>
                         </button>
                         {% endif %}
-            
+                
                         {% if appointment.status == 'confirmed' %}
                         <button onclick="updateStatus('{{ appointment.appointment_id }}', 'in_progress')"
                             class="btn btn-sm btn-warning">
                             <i class="fas fa-play"></i>
                         </button>
                         {% endif %}
-            
+                
                         {% if appointment.status == 'in_progress' %}
-                        <button onclick="updateStatus('{{ appointment.appointment_id }}', 'completed')"
-                            class="btn btn-sm btn-success">
+                        <button onclick="updateStatus('{{ appointment.appointment_id }}', 'completed')" class="btn btn-sm btn-success">
                             <i class="fas fa-check-circle"></i>
                         </button>
                         {% endif %}
-            
+                
                         {% if appointment.status not in 'completed,cancelled' %}
                         <button onclick="showCancelModal('{{ appointment.appointment_id }}')" class="btn btn-sm btn-danger">
                             <i class="fas fa-times"></i>
@@ -181,8 +178,8 @@
                         {% endif %}
                     </div>
                 </td>
-                </tr>
-        </tbody>
+            </tr>
+            {% endfor %}</tbody>
     </table>
 </div>
 

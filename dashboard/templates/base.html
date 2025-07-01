@@ -3,6 +3,11 @@
 <html lang="en">
     <head>
         {% include "includes/head.html" %}
+        
+        {% block extrahead %}
+            
+        {% endblock extrahead %}
+            
     </head>
     <body>
         {% include "includes/loading.html" %}
@@ -15,7 +20,11 @@
                 {% block content %}{% endblock %}
             </div>
         </main>
+        <script src="https://code.jquery.com/jquery-3.7.1.slim.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
         <script src="{% static 'js/scripts.js' %}"></script>
+
         {% block extra_js %}
             
         {% endblock %}
