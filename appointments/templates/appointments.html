@@ -91,7 +91,8 @@
                 <option value="no_show" {% if request.GET.status == 'no_show' %}selected{% endif %}>No Show</option>
             </select>
         </div>
-
+        
+        {% if request.user.role != 'doctor' %}
         <div class="filter-select">
             <select name="doctor" class="form-control">
                 <option value>All Doctors</option>
@@ -102,6 +103,9 @@
                 {% endfor %}
             </select>
         </div>
+        {% endif %}
+            
+        
 
         <div class="filter-select">
             <input type="date" name="date" class="form-control" value="{{ request.GET.date }}">
@@ -144,7 +148,7 @@
                 </td>
                 <td>
                     <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                        <a href="" class="btn btn-sm btn-secondary">
+                        <a href="{% url 'appointments:detail' appointment.id  %}" class="btn btn-sm btn-secondary">
                             <i class="fas fa-eye"></i>
                         </a>
                 

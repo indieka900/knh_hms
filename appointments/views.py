@@ -39,7 +39,7 @@ def appointment_detail_view(request, appointment_id):
     
     context = {
         'appointment': appointment,
-        'title': f'Appointment - {appointment.appointment_id}',
+        'title': f'Appointment - {appointment.id}',
         'user_is_doctor': user_is_doctor,
         'user_is_patient': user_is_patient,
     }
@@ -316,7 +316,7 @@ def edit_appointment_view(request, appointment_id):
             appointment.status = request.POST.get('status', appointment.status)
             updated_appointment.save()
             messages.success(request, 'Appointment updated successfully.')
-            return redirect('appointments:appointment_detail', appointment_id=appointment.id)
+            return redirect('appointments:detail', appointment_id=appointment.id)
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
