@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+{% block title %}
+{{title}} - HealthCare System
+{% endblock %}
+
+{% block page_title %}
+{{title}}
+{% endblock %}
+
+{% block content %}
+    <!-- Breadcrumb -->
+    <nav style="margin-bottom: 20px;">
+        <ol style="display: flex; list-style: none; padding: 0; margin: 0; gap: 10px; align-items: center;">
+            <li><a href="{% url 'appointments:appointments' %}"
+                    style="color: var(--primary-dark); text-decoration: none;">Appointments</a></li>
+            <li style="color: var(--gray-medium);">/</li>
+            <li style="color: var(--gray-medium);">
+                {{title}}
+            </li>
+        </ol>
+    </nav>
+
+    <div style="max-width: 800px;">
+        <!-- Form Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3>
+                    <i class="fas fa-{% if object %}edit{% else %}plus{% endif %}"></i>
+                    {% if object %}Edit Appointment - {{ object.appointment_id }}
+                    {% else %}
+                    Schedule New Appointment
+                    {% endif%}
+                </h3>
+            </div>
+            <div class="card-body">
+                <form method="post" id="appointmentForm">
+                    {% csrf_token %}
+
+                    <!-- Patient Selection -->
+                    <div class="form-group">
+                        <label class="form-label" for="id_patient">
+                            <i class="fas fa-user"></i> Patient *
+                        </label>
+                        <select name="patient" id="id_patient" class="form-control" required>
+                            <option value="">Select a patient...</option>
+                            {% for patient in patients %}
+                            <option value="{{ patient.patient_id }}" 
+                            {% if object and object.patient_id == patient.patient_id %}selected{% endif %} data-email="{{ patient.user.email }}"
+                                data-phone="{{ patient.phone_number }}">
+                                {{ patient.user.get_full_name }} - {{ patient.user.email }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted">
+                            Can't find the patient? <a href="#">Create a new patient</a>
+                        </small>
+                    </div>
+
+                    <!-- Doctor Selection -->
+                    <div class="form-group">
+                        <label class="form-label" for="id_doctor">
+                            <i class="fas fa-user-md"></i> Doctor *
+                        </label>
+                        <select name="doctor" id="id_doctor" class="form-control" required>
+                            <option value="">Select a doctor...</option>
+                            {% for doctor in doctors %}
+                            <option value="{{ doctor.doctor_id }}" 
+                            {% if object and object.doctor_id == doctor.doctor_id %}selected{% endif %} data-specialization="{{ doctor.specialization }}"
+                                data-fee="{{ doctor.consultation_fee }}">
+                                Dr. {{ doctor.user.get_full_name }} - {{ doctor.specialization }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Date and Time -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="id_appointment_date">
+                                <i class="fas fa-calendar"></i> Appointment Date *
+                            </label>
+                            <input type="date" name="appointment_date" id="id_appointment_date" class="form-control"
+                                required value="{% if object %}{{ object.appointment_date|date:'Y-m-d' }}{% endif %}"
+                                min="{{ today|date:'Y-m-d' }}">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="id_appointment_time">
+                                <i class="fas fa-clock"></i> Appointment Time *
+                            </label>
+                            <select name="appointment_time" id="id_appointment_time" class="form-control" required>
+                                <option value="">Select time...</option>
+                                <!-- Time slots will be populated via JavaScript -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Available Slots Display -->
+                    <div id="availableSlots" style="display: none; margin-bottom: 20px;">
+                        <div class="card"
+                            style="background: var(--primary-light); border: 1px solid var(--primary-medium);">
+                            <div class="card-body" style="padding: 15px;">
+                                <h5 style="margin-bottom: 10px; color: var(--primary-dark);">
+                                    <i class="fas fa-info-circle"></i> Available Time Slots
+                                </h5>
+                                <div id="slotsContainer" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                                    <!-- Time slots will be inserted here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reason for Visit -->
+                    <div class="form-group">
+                        <label class="form-label" for="id_reason">
+                            <i class="fas fa-comment"></i> Reason for Visit *
+                        </label>
+                        <textarea name="reason" id="id_reason" class="form-control" rows="4" required
+                            placeholder="Please describe the reason for this appointment...">{% if object %}{{ object.reason }}{% endif %}</textarea>
+                    </div>
+
+                    <!-- Status (for editing) -->
+                    {% if object %}
+                    <div class="form-group">
+                        <label class="form-label" for="id_status">
+                            <i class="fas fa-flag"></i> Status
+                        </label>
+                        <select name="status" id="id_status" class="form-control">
+                            {% for status_value, status_label in status_choices %}
+                            <option value="{{ status_value }}" {% if object.status == status_value %}selected{% endif %}>
+                                {{ status_label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+
+                    <!-- Notes (for editing) -->
+                    {% if object %}
+                    <div class="form-group">
+                        <label class="form-label" for="id_notes">
+                            <i class="fas fa-sticky-note"></i> Notes
+                        </label>
+                        <textarea name="notes" id="id_notes" class="form-control" rows="3"
+                            placeholder="Additional notes about this appointment...">{{ object.notes }}</textarea>
+                    </div>
+                    {% endif %}
+
+                    <!-- Doctor Info Panel -->
+                    <div id="doctorInfo" class="card"
+                        style="display: none; background: var(--gray-light); margin-bottom: 20px;">
+                        <div class="card-body" style="padding: 15px;">
+                            <h5 style="margin-bottom: 10px; color: var(--primary-dark);">
+                                <i class="fas fa-user-md"></i> Doctor Information
+                            </h5>
+                            <div
+                                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                                <div>
+                                    <strong>Specialization:</strong>
+                                    <span id="doctorSpecialization">-</span>
+                                </div>
+                                <div>
+                                    <strong>Consultation Fee:</strong>
+                                    <span id="doctorFee">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div
+                        style="display: flex; gap: 15px; justify-content: flex-end; margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--primary-light);">
+                        <a href="{% url 'appointments:appointments' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+
+                        {% if object %}
+                        <button type="button" onclick="checkConflicts()" class="btn btn-warning">
+                            <i class="fas fa-check"></i> Update Appointment
+                        </button>
+                        {% else %}
+                        <button type="button" onclick="checkConflicts()" class="btn btn-primary">
+                            <i class="fas fa-calendar-plus"></i> Schedule Appointment
+                        </button>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conflict Warning Modal -->
+    <div id="conflictModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-exclamation-triangle" style="color: var(--warning);"></i>
+                    Scheduling Conflict Detected
+                </h3>
+                <button type="button" class="close" onclick="hideModal('conflictModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="conflictMessage"></div>
+                <p style="margin-top: 15px; color: var(--gray-medium);">
+                    Do you want to proceed with scheduling this appointment anyway?
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="hideModal('conflictModal')">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="submitForm()">
+                    <i class="fas fa-check"></i> Proceed Anyway
+                </button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const timeSlots = [
+        '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+        '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+        '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'
+    ];
+
+    // Populate time slots
+    function populateTimeSlots() {
+        const timeSelect = document.getElementById('id_appointment_time');
+        const currentValue = timeSelect.value;
+
+        timeSelect.innerHTML = '<option value="">Select time...</option>';
+
+        timeSlots.forEach(time => {
+            const option = document.createElement('option');
+            option.value = time;
+            option.textContent = formatTime(time);
+            if (time === currentValue) {
+                option.selected = true;
+            }
+            timeSelect.appendChild(option);
+        });
+    }
+
+    // Format time for display
+    function formatTime(time) {
+        const [hours, minutes] = time.split(':');
+        const hour = parseInt(hours);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+        return `${displayHour}:${minutes} ${ampm}`;
+    }
+
+    // Update doctor information
+    function updateDoctorInfo() {
+        const doctorSelect = document.getElementById('id_doctor');
+        const doctorInfo = document.getElementById('doctorInfo');
+        const doctorSpecialization = document.getElementById('doctorSpecialization');
+        const doctorFee = document.getElementById('doctorFee');
+
+        if (doctorSelect.value) {
+            const selectedOption = doctorSelect.selectedOptions[0];
+            const specialization = selectedOption.getAttribute('data-specialization');
+            const fee = selectedOption.getAttribute('data-fee');
+
+            doctorSpecialization.textContent = specialization;
+            doctorFee.textContent = fee ? `$${fee}` : 'Not specified';
+            doctorInfo.style.display = 'block';
+
+            // Load available slots
+            loadAvailableSlots();
+        } else {
+            doctorInfo.style.display = 'none';
+            document.getElementById('availableSlots').style.display = 'none';
+        }
+    }
+
+    // Load available time slots for selected doctor and date
+    function loadAvailableSlots() {
+        const doctorId = document.getElementById('id_doctor').value;
+        const date = document.getElementById('id_appointment_date').value;
+
+        if (doctorId && date) {
+            fetch(`/appointments/available-slots/?doctor=${doctorId}&date=${date}`)
+                .then(response => response.json())
+                .then(data => {
+                    displayAvailableSlots(data.slots);
+                })
+                .catch(error => {
+                    console.error('Error loading available slots:', error);
+                });
+        }
+    }
+
+    // Display available slots
+    function displayAvailableSlots(slots) {
+        const slotsContainer = document.getElementById('slotsContainer');
+        const availableSlots = document.getElementById('availableSlots');
+
+        slotsContainer.innerHTML = '';
+
+        if (slots.length > 0) {
+            slots.forEach(slot => {
+                const slotButton = document.createElement('button');
+                slotButton.type = 'button';
+                slotButton.className = 'btn btn-sm btn-secondary';
+                slotButton.textContent = formatTime(slot);
+                slotButton.onclick = () => selectTimeSlot(slot);
+                slotsContainer.appendChild(slotButton);
+            });
+            availableSlots.style.display = 'block';
+        } else {
+            availableSlots.style.display = 'none';
+        }
+    }
+
+    // Select time slot
+    function selectTimeSlot(time) {
+        document.getElementById('id_appointment_time').value = time;
+
+        // Update button states
+        document.querySelectorAll('#slotsContainer button').forEach(btn => {
+            btn.className = 'btn btn-sm btn-secondary';
+        });
+
+        event.target.className = 'btn btn-sm btn-primary';
+    }
+
+    // Check for conflicts before submitting
+    function checkConflicts() {
+        const formData = new FormData(document.getElementById('appointmentForm'));
+
+        fetch('/appointments/check-conflicts/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.conflicts && data.conflicts.length > 0) {
+                    showConflictModal(data.conflicts);
+                } else {
+                    submitForm();
+                }
+            })
+            .catch(error => {
+                console.error('Error checking conflicts:', error);
+                submitForm(); // Proceed if conflict check fails
+            });
+    }
+
+    // Show conflict modal
+    function showConflictModal(conflicts) {
+        const conflictMessage = document.getElementById('conflictMessage');
+        let message = '<ul>';
+
+        conflicts.forEach(conflict => {
+            message += `<li style="margin-bottom: 5px;">${conflict}</li>`;
+        });
+
+        message += '</ul>';
+        conflictMessage.innerHTML = message;
+        showModal('conflictModal');
+    }
+
+    // Submit form
+    function submitForm() {
+        document.getElementById('appointmentForm').submit();
+    }
+
+    // Get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Event listeners
+    document.getElementById('id_doctor').addEventListener('change', updateDoctorInfo);
+    document.getElementById('id_appointment_date').addEventListener('change', loadAvailableSlots);
+
+    // Initialize
+    populateTimeSlots();
+    {% if object %}
+    updateDoctorInfo();
+    {% endif %}
+</script>
+{% endblock %}

@@ -4,8 +4,7 @@
                 <p>Hospital Management System</p>
         </div>
         <ul class="sidebar-menu">
-                <li><a href="#" class="active"><i
-                                        class="fas fa-tachometer-alt"></i>
+                <li><a href="{% url 'dashboard:dashboard' %}" class="active"><i class="fas fa-tachometer-alt"></i>
                                 Dashboard</a></li>
 
                 <!-- {% if user.role == 'doctor' or user.role == 'nurse' or user.role == 'admin' %}
@@ -16,7 +15,7 @@
                 {% endif %} -->
 
                 <li>
-                        <a href="#"><i class="fas fa-calendar-alt"></i>
+                        <a href="{% url 'appointments:appointments' %}"><i class="fas fa-calendar-alt"></i>
                                 Appointments</a>
                 </li>
 

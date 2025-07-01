@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}Appointments - HealthCare System{% endblock %}
+
+{% block page_title %}Appointments{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <h3>Today's Appointments</h3>
+            <div class="stat-icon" style="background: linear-gradient(135deg, #17a2b8, #138496);">
+                <i class="fas fa-calendar-day"></i>
+            </div>
+        </div>
+        <div class="stat-number">{{ today_appointments|default:0 }}</div>
+        <div class="stat-label">Scheduled for today</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <h3>Pending Confirmations</h3>
+            <div class="stat-icon" style="background: linear-gradient(135deg, #ffc107, #e0a800);">
+                <i class="fas fa-clock"></i>
+            </div>
+        </div>
+        <div class="stat-number">{{ pending_appointments|default:0 }}</div>
+        <div class="stat-label">Awaiting confirmation</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <h3>This Week</h3>
+            <div class="stat-icon" style="background: linear-gradient(135deg, #28a745, #218838);">
+                <i class="fas fa-calendar-week"></i>
+            </div>
+        </div>
+        <div class="stat-number">{{ week_appointments|default:0 }}</div>
+        <div class="stat-label">Total this week</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <h3>Completed</h3>
+            <div class="stat-icon" style="background: linear-gradient(135deg, #6f42c1, #5a2d91);">
+                <i class="fas fa-check-circle"></i>
+            </div>
+        </div>
+        <div class="stat-number">{{ completed_appointments|default:0 }}</div>
+        <div class="stat-label">This month</div>
+    </div>
+</div>
+
+<!-- Action Header -->
+<div class="appointment-header">
+    <div>
+        <h2 class="appointment-title">All Appointments</h2>
+        <small class="text-muted">Manage and track all patient
+            appointments</small>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <a href="{% url 'appointments:appointment_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Appointment
+        </a>
+        <a href="" class="btn btn-secondary">
+            <i class="fas fa-calendar"></i> Calendar View
+        </a>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-bar">
+    <form method="GET" style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center; width: 100%;">
+        <div class="search-input">
+            <input type="text" name="search" class="form-control"
+                placeholder="Search by patient name, doctor, or appointment ID..." value="{{ request.GET.search }}">
+        </div>
+
+        <div class="filter-select">
+            <select name="status" class="form-control">
+                <option value>All Status</option>
+                <option value="scheduled" {% if request.GET.status == 'scheduled' %}selected{% endif %}>
+                    Scheduled
+                </option>
+                <option value="confirmed" {% if request.GET.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                <option value="in_progress" {% if request.GET.status == 'in_progress' %}selected{% endif %}>In
+                    Progress
+                </option>
+                <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Completed</option>
+                <option value="cancelled" {% if request.GET.status  == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                <option value="no_show" {% if request.GET.status == 'no_show' %}selected{% endif %}>No Show</option>
+            </select>
+        </div>
+
+        <div class="filter-select">
+            <select name="doctor" class="form-control">
+                <option value>All Doctors</option>
+                {% for doctor in doctors %}
+                <option value="{{ doctor.doctor_id }}" {% if request.GET.doctor == doctor.doctor_id %}selected{% endif %}>
+                    Dr. {{ doctor.user.get_full_name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-select">
+            <input type="date" name="date" class="form-control" value="{{ request.GET.date }}">
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-search"></i> Filter
+        </button>
+
+        <a href="{% url 'appointments:appointments' %}" class="btn btn-secondary">
+            <i class="fas fa-times"></i> Clear
+        </a>
+    </form>
+</div>
+
+<!-- Appointments Table -->
+<div class="table-container">
+    <table class="table">
+        <thead>
+            
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <div>
+                        <strong>{{ appointment.appointment_date|date:"M d, Y"
+                            }}</strong><br>
+                        <small class="text-muted">{{
+                            appointment.appointment_time|time:"g:i A" }}</small>
+                    </div>
+                </td>
+                <td>
+                    <span class="status-badge status-{{ appointment.status }}">
+                        {{ appointment.get_status_display }}
+                    </span>
+                </td>
+                <td>
+                    <div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">
+                        {{ appointment.reason|truncatewords:8 }}
+                    </div>
+                </td>
+                <td>
+                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                        <a href="" class="btn btn-sm btn-secondary">
+                            <i class="fas fa-eye"></i>
+                        </a>
+            
+                        <a href="" class="btn btn-sm btn-primary">
+                            <i class="fas fa-edit"></i>
+                        </a>
+            
+                        {% if appointment.status == 'scheduled' %}
+                        <button onclick="updateStatus('{{ appointment.appointment_id }}', 'confirmed')"
+                            class="btn btn-sm btn-success">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        {% endif %}
+            
+                        {% if appointment.status == 'confirmed' %}
+                        <button onclick="updateStatus('{{ appointment.appointment_id }}', 'in_progress')"
+                            class="btn btn-sm btn-warning">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        {% endif %}
+            
+                        {% if appointment.status == 'in_progress' %}
+                        <button onclick="updateStatus('{{ appointment.appointment_id }}', 'completed')"
+                            class="btn btn-sm btn-success">
+                            <i class="fas fa-check-circle"></i>
+                        </button>
+                        {% endif %}
+            
+                        {% if appointment.status not in 'completed,cancelled' %}
+                        <button onclick="showCancelModal('{{ appointment.appointment_id }}')" class="btn btn-sm btn-danger">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </td>
+                </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<div style="display: flex; justify-content: center; margin-top: 30px;">
+    <div style="display: flex; gap: 10px; align-items: center;">
+        {% if page_obj.has_previous %}
+        <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.doctor %}&doctor={{ request.GET.doctor }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}"
+            class="btn btn-secondary btn-sm">
+            <i class="fas fa-angle-double-left"></i>
+        </a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.doctor %}&doctor={{ request.GET.doctor }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}"
+            class="btn btn-secondary btn-sm">
+            <i class="fas fa-angle-left"></i>
+        </a>
+        {% endif %}
+
+        <span style="padding: 8px 15px; background: var(--white); border-radius: 6px; font-weight: 600;">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.doctor %}&doctor={{ request.GET.doctor }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}"
+            class="btn btn-secondary btn-sm">
+            <i class="fas fa-angle-right"></i>
+        </a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.doctor %}&doctor={{ request.GET.doctor }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}"
+            class="btn btn-secondary btn-sm">
+            <i class="fas fa-angle-double-right"></i>
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Cancel Appointment Modal -->
+<div id="cancelModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Cancel Appointment</h3>
+            <button type="button" class="close" onclick="hideModal('cancelModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to cancel this appointment?</p>
+            <p class="text-muted">This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="hideModal('cancelModal')">Cancel</button>
+            <button type="button" class="btn btn-danger" onclick="confirmCancel()">
+                <i class="fas fa-times"></i> Cancel Appointment
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
