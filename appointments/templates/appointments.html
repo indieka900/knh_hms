@@ -155,18 +155,20 @@
                         <a href="{% url 'appointments:appointment_edit' appointment.id  %}" class="btn btn-sm btn-primary">
                             <i class="fas fa-edit"></i>
                         </a>
-                
-                        {% if appointment.status == 'scheduled' %}
-                        <button onclick="updateStatus('{{ appointment.id }}', 'confirmed')" class="btn btn-sm btn-success">
-                            <i class="fas fa-check"></i>
-                        </button>
-                        {% endif %}
-                
-                        {% if appointment.status == 'confirmed' %}
-                        <button onclick="updateStatus('{{ appointment.id }}', 'in_progress')"
-                            class="btn btn-sm btn-warning">
-                            <i class="fas fa-play"></i>
-                        </button>
+                        
+                        {% if request.user.role == 'doctor' %}
+                            {% if appointment.status == 'scheduled' %}
+                            <button onclick="updateStatus('{{ appointment.id }}', 'confirmed')" class="btn btn-sm btn-success">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            {% endif %}
+                        
+                            {% if appointment.status == 'confirmed' %}
+                            <button onclick="updateStatus('{{ appointment.id }}', 'in_progress')"
+                                class="btn btn-sm btn-warning">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            {% endif %}
                         {% endif %}
                 
                         {% if appointment.status == 'in_progress' %}

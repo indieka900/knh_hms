@@ -14,7 +14,7 @@ def create_patient(request):
     # Check if user has permission to create patients
     if not request.user.role in ['doctor', 'administrator', 'billing_staff']:
         messages.error(request, "You don't have permission to create patients.")
-        return redirect('dashboard')
+        return redirect('/')
     
     if request.method == 'POST':
         form = PatientCreationForm(request.POST)
