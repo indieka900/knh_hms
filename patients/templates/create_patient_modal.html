@@ -1,0 +1,169 @@
+<div class="modal fade" id="createPatientModal" tabindex="-1" aria-labelledby="createPatientModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="createPatientModalLabel">
+                    <i class="fas fa-user-plus me-2"></i>Create New Patient
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <form id="createPatientForm" method="post">
+                    {% csrf_token %}
+
+                    <!-- Personal Information -->
+                    <div class="section-header mb-3">
+                        <h6 class="text-primary border-bottom pb-2">
+                            <i class="fas fa-user me-2"></i>Personal Information
+                        </h6>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label required">First Name</label>
+                            {{ form.first_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required">Last Name</label>
+                            {{ form.last_name }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label required">Email</label>
+                            {{ form.email }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required">Phone</label>
+                            {{ form.phone_number }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label required">Date of Birth</label>
+                            {{ form.date_of_birth }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label required">Gender</label>
+                            {{ form.gender }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Blood Group</label>
+                            {{ form.blood_group }}
+                        </div>
+                    </div>
+
+                    <!-- Account Security -->
+                    <div class="section-header mb-3 mt-4">
+                        <h6 class="text-primary border-bottom pb-2">
+                            <i class="fas fa-lock me-2"></i>Account Security
+                        </h6>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label required">Password</label>
+                            {{ form.password1 }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required">Confirm Password</label>
+                            {{ form.password2 }}
+                        </div>
+                    </div>
+
+                    <!-- Emergency Contact -->
+                    <div class="section-header mb-3 mt-4">
+                        <h6 class="text-primary border-bottom pb-2">
+                            <i class="fas fa-phone-alt me-2"></i>Emergency Contact
+                        </h6>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label required">Contact Name</label>
+                            {{ form.emergency_contact_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required">Contact Phone</label>
+                            {{ form.emergency_contact_phone }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label required">Relationship</label>
+                        {{ form.emergency_contact_relationship }}
+                    </div>
+
+                    <!-- Collapsible Optional Sections -->
+                    <div class="accordion mt-4" id="optionalSections">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#insuranceSection">
+                                    <i class="fas fa-shield-alt me-2"></i>Insurance Information (Optional)
+                                </button>
+                            </h2>
+                            <div id="insuranceSection" class="accordion-collapse collapse"
+                                data-bs-parent="#optionalSections">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Insurance Provider</label>
+                                            {{ form.insurance_provider }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Insurance Number</label>
+                                            {{ form.insurance_number }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#medicalSection">
+                                    <i class="fas fa-notes-medical me-2"></i>Medical Information (Optional)
+                                </button>
+                            </h2>
+                            <div id="medicalSection" class="accordion-collapse collapse"
+                                data-bs-parent="#optionalSections">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Known Allergies</label>
+                                            {{ form.allergies }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Chronic Conditions</label>
+                                            {{ form.chronic_conditions }}
+                                        </div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <label class="form-label">Address</label>
+                                        {{ form.address }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-primary" onclick="submitPatientForm()">
+                    <i class="fas fa-user-plus me-1"></i>Create Patient
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

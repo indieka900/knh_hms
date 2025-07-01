@@ -81,7 +81,7 @@
     <div class="actions-grid">
         {% if user.role == 'doctor' or user.role == 'nurse' %}
         {% endif %}
-        <a href="#" class="action-btn">
+        <a href="{% url 'patients:create_patient' %}" class="action-btn">
             <i class="fas fa-user-plus"></i>
             <span>Add Patient</span>
         </a>

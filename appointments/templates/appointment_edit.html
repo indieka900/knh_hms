@@ -113,7 +113,7 @@
 
                     {% if user_is_doctor %}
                     <small class="form-text text-muted">
-                        Can't find the patient? <a href="#">Create a new patient</a>
+                        Can't find the patient? <a href="{% url 'patients:create_patient' %}">Create a new patient</a>
                     </small>
                     {% endif %}
                 </div>

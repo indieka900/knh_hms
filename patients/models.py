@@ -28,7 +28,7 @@ class Patient(models.Model):
     insurance_number = models.CharField(max_length=50, blank=True)
     allergies = models.TextField(blank=True)
     chronic_conditions = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     
