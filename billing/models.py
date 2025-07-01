@@ -7,7 +7,17 @@ from pharmacy.models import MedicineDispensing
 class BillingStaff(models.Model):
     staff_id = models.CharField(max_length=15, unique=True, primary_key=True)
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    department = models.CharField(max_length=100, default='Billing')
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    def save(self, *args, **kwargs):
+        if self.user.role != 'billing_staff':
+            raise ValueError("User role must be 'billing_staff' to create BillingStaff profile")
+        
+        if not self.staff_id:
+            self.staff_id = f"BS{self.user.id:06d}"
+        
+        super().save(*args, **kwargs)
     
     def __str__(self):
         return f"{self.user.get_full_name()} - Billing Staff"
@@ -81,3 +91,8 @@ class Payment(models.Model):
     
     def __str__(self):
         return f"Payment {self.payment_id} - KES {self.amount}"
+    
+model_admin = [
+    ServiceType, Bill,
+    BillItem, Payment
+]

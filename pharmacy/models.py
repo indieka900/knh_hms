@@ -52,3 +52,8 @@ class MedicineDispensing(models.Model):
     
     def __str__(self):
         return f"Dispensed: {self.inventory_item.medicine.name} - {self.quantity_dispensed} units"
+    
+
+admin_models = [
+    Pharmacist, Medicine, Inventory, MedicineDispensing
+]

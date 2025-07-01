@@ -6,7 +6,7 @@ from appointments.models import Doctor, Appointment
 class MedicalRecord(models.Model):
     record_id = models.CharField(max_length=20, unique=True, primary_key=True)
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='medical_records')
-    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE)
+    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name='medical_records')
     appointment = models.OneToOneField(Appointment, on_delete=models.CASCADE, null=True, blank=True)
     diagnosis = models.TextField()
     symptoms = models.TextField()
@@ -53,3 +53,6 @@ class LabTest(models.Model):
     
     def __str__(self):
         return f"{self.test_name} - {self.medical_record.patient.user.get_full_name()}"
+    
+    
+admin_model = [MedicalRecord, Prescription, LabTest]

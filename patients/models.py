@@ -1,5 +1,7 @@
 from django.db import models
 from django.conf import settings
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 class Patient(models.Model):
     GENDER_CHOICES = [
@@ -29,8 +31,29 @@ class Patient(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    
+    def save(self, *args, **kwargs):
+        if self.user.role != 'patient':
+            raise ValueError("User role must be 'patient' to create Patient profile")
+        
+        if not self.patient_id:
+            self.patient_id = f"PAT{self.user.id:06d}"
+        
+        super().save(*args, **kwargs)
+    
     def __str__(self):
         return f"{self.patient_id} - {self.user.get_full_name()}"
+
+
+    # Signal to automatically create Patient profile when User is created
+    @receiver(post_save, sender=settings.AUTH_USER_MODEL)
+    def create_patient_profile(sender, instance, created, **kwargs):
+        """Automatically create Patient profile for new users"""
+        if created and instance.role == 'patient':
+            Patient.objects.create(
+                user=instance,
+                patient_id=f"PAT{instance.id:06d}"
+            )
 
 class PatientVitals(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='vitals')
