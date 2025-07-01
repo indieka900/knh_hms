@@ -13,7 +13,7 @@ class User(AbstractUser):
         ('administrator', 'Administrator'),
     ]
     email = models.EmailField(unique=True)
-    username = models.CharField(max_length=15, blank=True, null=True)
+    username = None
     role = models.CharField(max_length=20, choices=USER_ROLES, default='patient')
     phone_regex = RegexValidator(regex=r'^\+?1?\d{9,15}$')
     phone_number = models.CharField(validators=[phone_regex], max_length=17, blank=True)

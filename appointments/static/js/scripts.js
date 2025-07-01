@@ -174,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (doctorId) {
             doctorSpecialization.textContent = specialization || 'Not specified';
-            doctorFee.textContent = fee ? `$${fee}` : 'Not specified';
+            doctorFee.textContent = fee ? `Ksh ${fee}` : 'Not specified';
             doctorInfo.style.display = 'block';
 
             loadAvailableSlots();
