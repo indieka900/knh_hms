@@ -5,6 +5,7 @@ from datetime import datetime
 from datetime import timedelta, timezone, date
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
 import uuid
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
@@ -424,4 +425,22 @@ def get_available_slots(request):
     
     return JsonResponse({'slots': available_slots})
 
+
+@login_required
+@csrf_exempt  # if you're using fetch, make sure to handle CSRF properly
+def update_appointment_status(request, appointment_id, new_status):
+    if request.method == 'POST':
+        try:
+            appointment = Appointment.objects.get(id=appointment_id)
+            valid_transitions = ['scheduled', 'confirmed', 'in_progress', 'completed', 'cancelled']
+
+            if new_status not in valid_transitions:
+                return JsonResponse({'success': False, 'message': 'Invalid status value'}, status=400)
+
+            appointment.status = new_status
+            appointment.save()
+            return JsonResponse({'success': True})
+        except Appointment.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Appointment not found'}, status=404)
+    return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
 # Create your views here.

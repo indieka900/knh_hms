@@ -153,26 +153,26 @@
                         </a>
                 
                         {% if appointment.status == 'scheduled' %}
-                        <button onclick="updateStatus('{{ appointment.appointment_id }}', 'confirmed')" class="btn btn-sm btn-success">
+                        <button onclick="updateStatus('{{ appointment.id }}', 'confirmed')" class="btn btn-sm btn-success">
                             <i class="fas fa-check"></i>
                         </button>
                         {% endif %}
                 
                         {% if appointment.status == 'confirmed' %}
-                        <button onclick="updateStatus('{{ appointment.appointment_id }}', 'in_progress')"
+                        <button onclick="updateStatus('{{ appointment.id }}', 'in_progress')"
                             class="btn btn-sm btn-warning">
                             <i class="fas fa-play"></i>
                         </button>
                         {% endif %}
                 
                         {% if appointment.status == 'in_progress' %}
-                        <button onclick="updateStatus('{{ appointment.appointment_id }}', 'completed')" class="btn btn-sm btn-success">
+                        <button onclick="updateStatus('{{ appointment.id }}', 'completed')" class="btn btn-sm btn-success">
                             <i class="fas fa-check-circle"></i>
                         </button>
                         {% endif %}
                 
                         {% if appointment.status not in 'completed,cancelled' %}
-                        <button onclick="showCancelModal('{{ appointment.appointment_id }}')" class="btn btn-sm btn-danger">
+                        <button onclick="showCancelModal('{{ appointment.id }}')" class="btn btn-sm btn-danger">
                             <i class="fas fa-times"></i>
                         </button>
                         {% endif %}

@@ -8,6 +8,7 @@ urlpatterns = [
     path('create/', views.create_appointment_view, name='appointment_create'),
     path('check-conflicts/', views.check_appointment_conflicts, name='check_conflicts'),
     path('available-slots/', views.get_available_slots, name='available_slots'),
+    path('update-status/<str:appointment_id>/<str:new_status>/', views.update_appointment_status, name='update_status'),
     path('edit/<str:appointment_id>/', views.edit_appointment_view, name='appointment_edit'),
     path('<str:appointment_id>/', views.appointment_detail_view, name='detail'),
     # path('<str:appointment_id>/edit/', views.edit_appointment_view, name='edit'),

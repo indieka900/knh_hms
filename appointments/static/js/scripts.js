@@ -52,6 +52,55 @@ function getCookie(name) {
     return cookieValue;
 }
 
+// Update appointment status
+function updateStatus(appointmentId, newStatus) {
+    fetch(`/appointments/update-status/${appointmentId}/${newStatus}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json'
+        },
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Failed to update status.');
+            }
+        })
+        .catch(error => {
+            console.error('Error updating status:', error);
+        });
+}
+
+// Show cancel confirmation modal
+let appointmentToCancel = null;
+
+// Modal helpers
+function showModal(modalId) {
+    document.getElementById(modalId).style.display = 'block';
+}
+
+function hideModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function showCancelModal(appointmentId) {
+    appointmentToCancel = appointmentId;
+    showModal('cancelModal');
+}
+
+function confirmCancel() {
+    if (appointmentToCancel) {
+        updateStatus(appointmentToCancel, 'cancelled');
+        hideModal('cancelModal');
+    }
+}
+
+
+
+
 
 document.addEventListener('DOMContentLoaded', function () {
     const timeSlots = [
@@ -199,14 +248,7 @@ document.addEventListener('DOMContentLoaded', function () {
         event.target.className = 'btn btn-sm btn-primary';
     }
 
-    // Modal helpers
-    function showModal(modalId) {
-        document.getElementById(modalId).style.display = 'block';
-    }
 
-    function hideModal(modalId) {
-        document.getElementById(modalId).style.display = 'none';
-    }
 
     // Event listeners
     const doctorSelect = document.getElementById('id_doctor');
