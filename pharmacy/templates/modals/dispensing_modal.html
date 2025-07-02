@@ -1,0 +1,27 @@
+<div id="dispensingModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('dispensingModal')">&times;</span>
+        <h2>Dispense Medicine</h2>
+        <form id="dispensingForm">
+            <div class="form-group">
+                <label for="prescriptionId">Prescription ID</label>
+                <input type="text" class="form-control" id="prescriptionId" required>
+            </div>
+            <div class="form-group">
+                <label for="medicineSelect">Select Medicine</label>
+                <select class="form-control" id="medicineSelect" required>
+                    <option value="">Select Medicine</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="dispenseQuantity">Quantity to Dispense</label>
+                <input type="number" class="form-control" id="dispenseQuantity" min="1" required>
+            </div>
+            <div class="form-group">
+                <label for="dispensingNotes">Notes</label>
+                <textarea class="form-control" id="dispensingNotes" rows="3"></textarea>
+            </div>
+            <button type="submit" class="btn btn-success">Dispense Medicine</button>
+        </form>
+    </div>
+</div>

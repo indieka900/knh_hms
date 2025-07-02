@@ -21,7 +21,7 @@
 
                 <!-- {% if user.role == 'pharmacist' or user.role == 'admin' %} -->
                 <!-- {% endif %} -->
-                <li><a href="#"><i class="fas fa-pills"></i> Pharmacy</a></li>
+                <li><a href="{% url 'pharmacy:pharmacy_dashboard' %}"><i class="fas fa-pills"></i> Pharmacy</a></li>
 
                 {% if user.role == 'billing' or user.role == 'admin' %}
                 <li><a href="#"><i class="fas fa-file-invoice-dollar"></i>

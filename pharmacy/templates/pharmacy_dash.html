@@ -1,0 +1,955 @@
+{% extends "base.html" %}
+
+{% block title %}Pharmacy Dashboard - KNH HMS{% endblock %}
+
+{% block page_title %}Pharmacy Dashboard{% endblock %}
+
+{% block extrahead %}
+<style>
+    .dashboard-header {
+        background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary-dark) 100%);
+        color: var(--white);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border-radius: 0 0 15px 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .dashboard-header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        font-weight: 300;
+    }
+
+    .dashboard-header p {
+        opacity: 0.9;
+        font-size: 1.1rem;
+    }
+
+    .dashboard-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        padding: 0 2rem;
+    }
+
+    .main-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        padding: 0 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .section {
+        background: var(--white);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    .section h2 {
+        color: var(--primary-dark);
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+        border-bottom: 2px solid var(--primary-light);
+        padding-bottom: 0.5rem;
+    }
+
+    .nav-tabs {
+        display: flex;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid var(--primary-light);
+    }
+
+    .nav-tab {
+        padding: 0.75rem 1.5rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--gray-medium);
+        font-weight: 500;
+        transition: all 0.3s ease;
+        border-bottom: 2px solid transparent;
+    }
+
+    .nav-tab.active {
+        color: var(--primary-dark);
+        border-bottom-color: var(--primary-medium);
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+    }
+
+    .btn-primary {
+        background: var(--primary-dark);
+        color: var(--white);
+    }
+
+    .btn-primary:hover {
+        background: var(--secondary-dark);
+        transform: translateY(-2px);
+    }
+
+    .btn-success {
+        background: var(--success);
+        color: var(--white);
+    }
+
+    .btn-success:hover {
+        background: #218838;
+    }
+
+    .btn-warning {
+        background: var(--warning);
+        color: var(--primary-dark);
+    }
+
+    .btn-danger {
+        background: var(--danger);
+        color: var(--white);
+    }
+
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 0.75rem;
+        text-align: left;
+    }
+
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .search-bar {
+        margin-bottom: 1rem;
+    }
+
+    .alert {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid;
+    }
+
+    .alert-success {
+        background: #d4edda;
+        border-color: var(--success);
+        color: #155724;
+    }
+
+    .alert-warning {
+        background: #fff3cd;
+        border-color: var(--warning);
+        color: #856404;
+    }
+
+    .alert-danger {
+        background: #f8d7da;
+        border-color: var(--danger);
+        color: #721c24;
+    }
+
+    .prescription-item {
+        background: var(--gray-light);
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        border-radius: 8px;
+        border-left: 4px solid var(--info);
+    }
+
+    .inventory-low {
+        border-left-color: var(--warning) !important;
+    }
+
+    .inventory-critical {
+        border-left-color: var(--danger) !important;
+    }
+
+    @media (max-width: 768px) {
+        .main-container {
+            grid-template-columns: 1fr;
+        }
+        
+        .dashboard-stats {
+            grid-template-columns: 1fr;
+        }
+        
+        .dashboard-header {
+            padding: 1rem;
+        }
+        
+        .dashboard-header h1 {
+            font-size: 2rem;
+        }
+    }
+</style>
+{% endblock extrahead %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <h3>Total Patients</h3>
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--info), #138496);">
+                <i class="fas fa-user-injured"></i>
+            </div>
+        </div>
+        <div class="stat-number" id="totalPatients">0</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <h3>Pending Prescriptions</h3>
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--warning), #ffc107);">
+                <i class="fas fa-file-prescription"></i>
+            </div>
+        </div>
+        <div class="stat-number" id="pendingPrescriptions">0</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <h3>Low Stock Items</h3>
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--danger), #c82333);">
+                <i class="fas fa-capsules"></i>
+            </div>
+        </div>
+        <div class="stat-number" id="lowStockItems">0</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <h3>Dispensed Today</h3>
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--success), #218838);">
+                <i class="fas fa-check-circle"></i>
+            </div>
+        </div>
+        <div class="stat-number" id="todayDispensed">0</div>
+    </div>
+</div>
+
+<!-- Main Section -->
+<div class="main-container">
+    <div class="section">
+        <h2 class="section-title">Patient Management</h2>
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('patients', this)">Patients</button>
+            <button class="nav-tab" onclick="switchTab('prescriptions', this)">Prescriptions</button>
+        </div>
+
+        <div id="patients" class="tab-content active">
+            <div class="search-bar">
+                <input type="text" class="form-control" id="patientSearch" placeholder="Search patients..."
+                    onkeyup="searchPatients()">
+            </div>
+            <button class="btn btn-primary" onclick="openModal('patientModal')">Add New Patient</button>
+            <table class="table" id="patientsTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Last Visit</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="patientsTableBody"></tbody>
+            </table>
+        </div>
+
+        <div id="prescriptions" class="tab-content">
+            <div class="search-bar">
+                <input type="text" class="form-control" id="prescriptionSearch" placeholder="Search prescriptions..."
+                    onkeyup="searchPrescriptions()">
+            </div>
+            <div id="prescriptionsList"></div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2 class="section-title">Inventory & Dispensing</h2>
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('inventory', this)">Inventory</button>
+            <button class="nav-tab" onclick="switchTab('dispensing', this)">Dispensing</button>
+        </div>
+
+        <div id="inventory" class="tab-content active">
+            <button class="btn btn-primary" onclick="openModal('medicineModal')">Add Medicine</button>
+            <div class="search-bar">
+                <input type="text" class="form-control" id="inventorySearch" placeholder="Search medicines..."
+                    onkeyup="searchInventory()">
+            </div>
+            <table class="table" id="inventoryTable">
+                <thead>
+                    <tr>
+                        <th>Medicine</th>
+                        <th>Stock</th>
+                        <th>Expiry</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryTableBody"></tbody>
+            </table>
+        </div>
+
+        <div id="dispensing" class="tab-content">
+            <button class="btn btn-success" onclick="openModal('dispensingModal')">Dispense Medicine</button>
+            <div id="dispensingHistory">
+                <h3>Recent Dispensing History</h3>
+                <div id="dispensingList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+{% include 'modals/medicine_modal.html' %}
+{% include 'modals/dispensing_modal.html' %}
+
+<script>
+    // Data Storage
+    let patients = [];
+    let prescriptions = [];
+    let medicines = [];
+    let inventory = [];
+    let dispensingHistory = [];
+    let stats = {
+        totalPatients: 0,
+        pendingPrescriptions: 0,
+        lowStockItems: 0,
+        todayDispensed: 0
+    };
+
+    // Initialize Dashboard
+    document.addEventListener('DOMContentLoaded', function () {
+        loadSampleData();
+        updateStats();
+        renderPatients();
+        renderPrescriptions();
+        renderInventory();
+        renderDispensingHistory();
+        populateMedicineSelect();
+    });
+
+    // Sample Data
+    function loadSampleData() {
+        patients = [
+            {
+                id: 'P001',
+                name: 'John Smith',
+                phone: '+254712345678',
+                email: 'john.smith@email.com',
+                age: 35,
+                address: '123 Nairobi Street',
+                lastVisit: '2025-07-01'
+            },
+            {
+                id: 'P002',
+                name: 'Mary Johnson',
+                phone: '+254723456789',
+                email: 'mary.johnson@email.com',
+                age: 28,
+                address: '456 Mombasa Road',
+                lastVisit: '2025-06-28'
+            }
+        ];
+
+        prescriptions = [
+            {
+                id: 'RX001',
+                patientId: 'P001',
+                patientName: 'John Smith',
+                medicines: ['Paracetamol 500mg', 'Amoxicillin 250mg'],
+                status: 'pending',
+                date: '2025-07-02',
+                doctor: 'Dr. Wilson'
+            },
+            {
+                id: 'RX002',
+                patientId: 'P002',
+                patientName: 'Mary Johnson',
+                medicines: ['Ibuprofen 400mg'],
+                status: 'dispensed',
+                date: '2025-07-01',
+                doctor: 'Dr. Brown'
+            }
+        ];
+
+        medicines = [
+            {
+                id: 'M001',
+                name: 'Paracetamol',
+                genericName: 'Acetaminophen',
+                manufacturer: 'Pharma Corp',
+                unit: 'tablets'
+            },
+            {
+                id: 'M002',
+                name: 'Amoxicillin',
+                genericName: 'Amoxicillin',
+                manufacturer: 'Med Labs',
+                unit: 'capsules'
+            },
+            {
+                id: 'M003',
+                name: 'Ibuprofen',
+                genericName: 'Ibuprofen',
+                manufacturer: 'Health Plus',
+                unit: 'tablets'
+            }
+        ];
+
+        inventory = [
+            {
+                id: 'I001',
+                medicineId: 'M001',
+                medicineName: 'Paracetamol 500mg',
+                batchNumber: 'B001',
+                quantity: 150,
+                unitPrice: 2.50,
+                expiryDate: '2026-12-31',
+                supplier: 'Medical Supplies Ltd',
+                minStockLevel: 50,
+                dateReceived: '2025-06-15'
+            },
+            {
+                id: 'I002',
+                medicineId: 'M002',
+                medicineName: 'Amoxicillin 250mg',
+                batchNumber: 'B002',
+                quantity: 25,
+                unitPrice: 5.00,
+                expiryDate: '2025-11-30',
+                supplier: 'Pharma Distributors',
+                minStockLevel: 30,
+                dateReceived: '2025-05-20'
+            },
+            {
+                id: 'I003',
+                medicineId: 'M003',
+                medicineName: 'Ibuprofen 400mg',
+                batchNumber: 'B003',
+                quantity: 5,
+                unitPrice: 3.75,
+                expiryDate: '2025-08-15',
+                supplier: 'Health Supplies',
+                minStockLevel: 20,
+                dateReceived: '2025-04-10'
+            }
+        ];
+
+        dispensingHistory = [
+            {
+                id: 'D001',
+                prescriptionId: 'RX002',
+                patientName: 'Mary Johnson',
+                medicineName: 'Ibuprofen 400mg',
+                quantity: 30,
+                dispensedAt: '2025-07-01 10:30',
+                pharmacist: 'Dr. Pharmacist',
+                notes: 'Take with food'
+            }
+        ];
+    }
+
+    // Tab Management
+    function switchTab(tabName, tabElement) {
+        // Hide all tab contents
+        const tabContents = document.querySelectorAll('.tab-content');
+        tabContents.forEach(content => content.classList.remove('active'));
+
+        // Remove active class from all tabs
+        const tabs = document.querySelectorAll('.nav-tab');
+        tabs.forEach(tab => tab.classList.remove('active'));
+
+        // Show selected tab content
+        document.getElementById(tabName).classList.add('active');
+        tabElement.classList.add('active');
+    }
+
+    // Modal Management
+    function openModal(modalId) {
+        document.getElementById(modalId).style.display = 'block';
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function (event) {
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    }
+
+    // Statistics Update
+    function updateStats() {
+        stats.totalPatients = patients.length;
+        stats.pendingPrescriptions = prescriptions.filter(p => p.status === 'pending').length;
+        stats.lowStockItems = inventory.filter(i => i.quantity <= i.minStockLevel).length;
+        stats.todayDispensed = dispensingHistory.filter(d =>
+            d.dispensedAt.startsWith('2025-07-02')
+        ).length;
+
+        document.getElementById('totalPatients').textContent = stats.totalPatients;
+        document.getElementById('pendingPrescriptions').textContent = stats.pendingPrescriptions;
+        document.getElementById('lowStockItems').textContent = stats.lowStockItems;
+        document.getElementById('todayDispensed').textContent = stats.todayDispensed;
+    }
+
+    // Patient Management
+    function renderPatients() {
+        const tbody = document.getElementById('patientsTableBody');
+        tbody.innerHTML = '';
+
+        patients.forEach(patient => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${patient.id}</td>
+                <td>${patient.name}</td>
+                <td>${patient.phone}</td>
+                <td>${patient.lastVisit}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="viewPatient('${patient.id}')">View</button>
+                    <button class="btn btn-sm btn-warning" onclick="editPatient('${patient.id}')">Edit</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function searchPatients() {
+        const searchTerm = document.getElementById('patientSearch').value.toLowerCase();
+        const filteredPatients = patients.filter(patient =>
+            patient.name.toLowerCase().includes(searchTerm) ||
+            patient.phone.includes(searchTerm) ||
+            patient.id.toLowerCase().includes(searchTerm)
+        );
+
+        const tbody = document.getElementById('patientsTableBody');
+        tbody.innerHTML = '';
+
+        filteredPatients.forEach(patient => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${patient.id}</td>
+                <td>${patient.name}</td>
+                <td>${patient.phone}</td>
+                <td>${patient.lastVisit}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="viewPatient('${patient.id}')">View</button>
+                    <button class="btn btn-sm btn-warning" onclick="editPatient('${patient.id}')">Edit</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    // Prescription Management
+    function renderPrescriptions() {
+        const container = document.getElementById('prescriptionsList');
+        container.innerHTML = '';
+
+        prescriptions.forEach(prescription => {
+            const statusBadge = prescription.status === 'pending' ? 'status-in-progress' : 'status-confirmed';
+            const prescriptionDiv = document.createElement('div');
+            prescriptionDiv.className = 'prescription-item';
+            prescriptionDiv.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <h4>${prescription.id} - ${prescription.patientName}</h4>
+                        <p><strong>Doctor:</strong> ${prescription.doctor}</p>
+                        <p><strong>Date:</strong> ${prescription.date}</p>
+                        <p><strong>Medicines:</strong> ${prescription.medicines.join(', ')}</p>
+                    </div>
+                    <div>
+                        <span class="status-badge ${statusBadge}">${prescription.status.toUpperCase()}</span>
+                        ${prescription.status === 'pending' ?
+                    `<button class="btn btn-sm btn-success" onclick="dispensePrescription('${prescription.id}')">Dispense</button>` :
+                    ''}
+                    </div>
+                </div>
+            `;
+            container.appendChild(prescriptionDiv);
+        });
+    }
+
+    // Inventory Management
+    function renderInventory() {
+        const tbody = document.getElementById('inventoryTableBody');
+        tbody.innerHTML = '';
+
+        inventory.forEach(item => {
+            const row = document.createElement('tr');
+            let statusClass = '';
+            let status = 'Normal';
+
+            if (item.quantity <= 5) {
+                statusClass = 'inventory-critical';
+                status = 'Critical';
+            } else if (item.quantity <= item.minStockLevel) {
+                statusClass = 'inventory-low';
+                status = 'Low Stock';
+            }
+
+            // Check expiry date
+            const expiryDate = new Date(item.expiryDate);
+            const today = new Date();
+            const monthsToExpiry = (expiryDate - today) / (1000 * 60 * 60 * 24 * 30);
+
+            if (monthsToExpiry < 3) {
+                status = 'Expiring Soon';
+                statusClass = 'inventory-critical';
+            }
+
+            const badgeClass = status === 'Normal' ? 'status-confirmed' :
+                status === 'Low Stock' ? 'status-in-progress' : 'status-cancelled';
+
+            row.className = statusClass;
+            row.innerHTML = `
+                <td>${item.medicineName}</td>
+                <td>${item.quantity}</td>
+                <td>${item.expiryDate}</td>
+                <td><span class="status-badge ${badgeClass}">${status}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="viewInventoryItem('${item.id}')">View</button>
+                    <button class="btn btn-sm btn-warning" onclick="updateStock('${item.id}')">Update</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function searchInventory() {
+        const searchTerm = document.getElementById('inventorySearch').value.toLowerCase();
+        const filteredInventory = inventory.filter(item =>
+            item.medicineName.toLowerCase().includes(searchTerm) ||
+            item.batchNumber.toLowerCase().includes(searchTerm) ||
+            item.supplier.toLowerCase().includes(searchTerm)
+        );
+
+        const tbody = document.getElementById('inventoryTableBody');
+        tbody.innerHTML = '';
+
+        filteredInventory.forEach(item => {
+            const row = document.createElement('tr');
+            let statusClass = '';
+            let status = 'Normal';
+
+            if (item.quantity <= 5) {
+                statusClass = 'inventory-critical';
+                status = 'Critical';
+            } else if (item.quantity <= item.minStockLevel) {
+                statusClass = 'inventory-low';
+                status = 'Low Stock';
+            }
+
+            const expiryDate = new Date(item.expiryDate);
+            const today = new Date();
+            const monthsToExpiry = (expiryDate - today) / (1000 * 60 * 60 * 24 * 30);
+
+            if (monthsToExpiry < 3) {
+                status = 'Expiring Soon';
+                statusClass = 'inventory-critical';
+            }
+
+            const badgeClass = status === 'Normal' ? 'status-confirmed' :
+                status === 'Low Stock' ? 'status-in-progress' : 'status-cancelled';
+
+            row.className = statusClass;
+            row.innerHTML = `
+                <td>${item.medicineName}</td>
+                <td>${item.quantity}</td>
+                <td>${item.expiryDate}</td>
+                <td><span class="status-badge ${badgeClass}">${status}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="viewInventoryItem('${item.id}')">View</button>
+                    <button class="btn btn-sm btn-warning" onclick="updateStock('${item.id}')">Update</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    // Dispensing Management
+    function renderDispensingHistory() {
+        const container = document.getElementById('dispensingList');
+        container.innerHTML = '';
+
+        if (dispensingHistory.length === 0) {
+            container.innerHTML = '<p>No dispensing history available.</p>';
+            return;
+        }
+
+        dispensingHistory.forEach(record => {
+            const recordDiv = document.createElement('div');
+            recordDiv.className = 'prescription-item';
+            recordDiv.innerHTML = `
+                <div>
+                    <h4>${record.medicineName} - ${record.quantity} units</h4>
+                    <p><strong>Patient:</strong> ${record.patientName}</p>
+                    <p><strong>Prescription:</strong> ${record.prescriptionId}</p>
+                    <p><strong>Dispensed:</strong> ${record.dispensedAt}</p>
+                    <p><strong>Pharmacist:</strong> ${record.pharmacist}</p>
+                    ${record.notes ? `<p><strong>Notes:</strong> ${record.notes}</p>` : ''}
+                </div>
+            `;
+            container.appendChild(recordDiv);
+        });
+    }
+
+    function populateMedicineSelect() {
+        const select = document.getElementById('medicineSelect');
+        select.innerHTML = '<option value="">Select Medicine</option>';
+
+        inventory.forEach(item => {
+            if (item.quantity > 0) {
+                const option = document.createElement('option');
+                option.value = item.id;
+                option.textContent = `${item.medicineName} (Stock: ${item.quantity})`;
+                select.appendChild(option);
+            }
+        });
+    }
+
+    // Form Handlers
+    document.getElementById('patientForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const newPatient = {
+            id: 'P' + String(patients.length + 1).padStart(3, '0'),
+            name: document.getElementById('patientName').value,
+            phone: document.getElementById('patientPhone').value,
+            email: document.getElementById('patientEmail').value,
+            age: parseInt(document.getElementById('patientAge').value),
+            address: document.getElementById('patientAddress').value,
+            lastVisit: new Date().toISOString().split('T')[0]
+        };
+
+        patients.push(newPatient);
+        renderPatients();
+        updateStats();
+        closeModal('patientModal');
+        showAlert('Patient added successfully!', 'success');
+        this.reset();
+    });
+
+    document.getElementById('medicineForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const medicineName = document.getElementById('medicineName').value;
+        const genericName = document.getElementById('genericName').value;
+        const manufacturer = document.getElementById('manufacturer').value;
+
+        // Check if medicine exists, if not create it
+        let medicine = medicines.find(m => m.name === medicineName);
+        if (!medicine) {
+            medicine = {
+                id: 'M' + String(medicines.length + 1).padStart(3, '0'),
+                name: medicineName,
+                genericName: genericName,
+                manufacturer: manufacturer,
+                unit: 'units'
+            };
+            medicines.push(medicine);
+        }
+
+        const newInventoryItem = {
+            id: 'I' + String(inventory.length + 1).padStart(3, '0'),
+            medicineId: medicine.id,
+            medicineName: medicineName,
+            batchNumber: document.getElementById('batchNumber').value,
+            quantity: parseInt(document.getElementById('quantity').value),
+            unitPrice: parseFloat(document.getElementById('unitPrice').value),
+            expiryDate: document.getElementById('expiryDate').value,
+            supplier: document.getElementById('supplier').value,
+            minStockLevel: parseInt(document.getElementById('minStockLevel').value),
+            dateReceived: new Date().toISOString().split('T')[0]
+        };
+
+        inventory.push(newInventoryItem);
+        renderInventory();
+        populateMedicineSelect();
+        updateStats();
+        closeModal('medicineModal');
+        showAlert('Medicine added to inventory successfully!', 'success');
+        this.reset();
+    });
+
+    document.getElementById('dispensingForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const prescriptionId = document.getElementById('prescriptionId').value;
+        const inventoryItemId = document.getElementById('medicineSelect').value;
+        const quantityToDispense = parseInt(document.getElementById('dispenseQuantity').value);
+        const notes = document.getElementById('dispensingNotes').value;
+
+        // Find inventory item
+        const inventoryItem = inventory.find(item => item.id === inventoryItemId);
+        if (!inventoryItem) {
+            showAlert('Please select a valid medicine', 'danger');
+            return;
+        }
+
+        // Check stock availability
+        if (inventoryItem.quantity < quantityToDispense) {
+            showAlert('Insufficient stock available', 'danger');
+            return;
+        }
+
+        // Find prescription
+        const prescription = prescriptions.find(p => p.id === prescriptionId);
+        if (!prescription) {
+            showAlert('Prescription not found', 'danger');
+            return;
+        }
+
+        // Create dispensing record
+        const dispensingRecord = {
+            id: 'D' + String(dispensingHistory.length + 1).padStart(3, '0'),
+            prescriptionId: prescriptionId,
+            patientName: prescription.patientName,
+            medicineName: inventoryItem.medicineName,
+            quantity: quantityToDispense,
+            dispensedAt: new Date().toLocaleString(),
+            pharmacist: 'Current Pharmacist',
+            notes: notes
+        };
+
+        // Update inventory
+        inventoryItem.quantity -= quantityToDispense;
+
+        // Update prescription status
+        prescription.status = 'dispensed';
+
+        // Add to dispensing history
+        dispensingHistory.unshift(dispensingRecord);
+
+        // Update displays
+        renderInventory();
+        renderPrescriptions();
+        renderDispensingHistory();
+        populateMedicineSelect();
+        updateStats();
+
+        closeModal('dispensingModal');
+        showAlert('Medicine dispensed successfully!', 'success');
+        this.reset();
+    });
+
+    // Helper Functions
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type}`;
+        alertDiv.textContent = message;
+
+        // Insert at top of dashboard
+        const dashboardContent = document.querySelector('.dashboard-stats');
+        dashboardContent.parentNode.insertBefore(alertDiv, dashboardContent);
+
+        // Remove after 5 seconds
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+
+    function viewPatient(patientId) {
+        const patient = patients.find(p => p.id === patientId);
+        if (patient) {
+            alert(`Patient Details:\n\nName: ${patient.name}\nPhone: ${patient.phone}\nEmail: ${patient.email}\nAge: ${patient.age}\nAddress: ${patient.address}\nLast Visit: ${patient.lastVisit}`);
+        }
+    }
+
+    function editPatient(patientId) {
+        const patient = patients.find(p => p.id === patientId);
+        if (patient) {
+            // Pre-fill form with patient data
+            document.getElementById('patientName').value = patient.name;
+            document.getElementById('patientPhone').value = patient.phone;
+            document.getElementById('patientEmail').value = patient.email;
+            document.getElementById('patientAge').value = patient.age;
+            document.getElementById('patientAddress').value = patient.address;
+
+            openModal('patientModal');
+
+            // Note: In a real application, you'd modify the form handler to update instead of create
+            showAlert('Edit functionality would be implemented here', 'info');
+        }
+    }
+
+    function viewInventoryItem(itemId) {
+        const item = inventory.find(i => i.id === itemId);
+        if (item) {
+            alert(`Inventory Details:\n\nMedicine: ${item.medicineName}\nBatch: ${item.batchNumber}\nQuantity: ${item.quantity}\nUnit Price: ${item.unitPrice}\nExpiry: ${item.expiryDate}\nSupplier: ${item.supplier}\nMin Stock: ${item.minStockLevel}`);
+        }
+    }
+
+    function updateStock(itemId) {
+        const item = inventory.find(i => i.id === itemId);
+        if (item) {
+            const newQuantity = prompt(`Current stock: ${item.quantity}\nEnter new quantity:`, item.quantity);
+            if (newQuantity !== null && !isNaN(newQuantity) && newQuantity >= 0) {
+                item.quantity = parseInt(newQuantity);
+                renderInventory();
+                updateStats();
+                showAlert('Stock updated successfully!', 'success');
+            }
+        }
+    }
+
+    function dispensePrescription(prescriptionId) {
+        document.getElementById('prescriptionId').value = prescriptionId;
+        openModal('dispensingModal');
+    }
+
+    // Auto-refresh stats every 30 seconds
+    setInterval(updateStats, 30000);
+
+    // Initialize tooltips and other interactive elements
+    document.addEventListener('DOMContentLoaded', function () {
+        // Add hover effects for better UX
+        const cards = document.querySelectorAll('.stat-card');
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', function () {
+                this.style.transform = 'translateY(-5px)';
+            });
+
+            card.addEventListener('mouseleave', function () {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    });
+</script>
+
+{% endblock %}
