@@ -1,14 +1,14 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
-from django.core.paginator import Paginator
-from django.db.models import Q, Sum, Count
-from django.utils import timezone
 from datetime import date, timedelta
-from django.db import models
 import json
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+from django.utils import timezone
+from django.views import View
+from django.db.models import Q, F
+from django.core.paginator import Paginator
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_http_methods
 
 from .models import Pharmacist, Medicine, Inventory, MedicineDispensing
 from .forms import PharmacistForm, MedicineForm, InventoryForm, DispensingForm, PatientSearchForm
@@ -17,101 +17,312 @@ from medical_records.models import Patient, Prescription
 
 @login_required
 def pharmacy_dashboard(request):
-    """Main pharmacy dashboard view"""
-    # Get dashboard statistics
-    total_patients = Patient.objects.count()
-    '''pending_prescriptions = Prescription.objects.filter(
-        status='pending'
-    ).count()'''
-    
-    # Get low stock items (quantity <= minimum_stock_level)
-    low_stock_items = Inventory.objects.filter(
-        quantity_in_stock__lte=models.F('minimum_stock_level')
-    ).count()
-    
-    # Get today's dispensing count
     today = timezone.now().date()
-    today_dispensed = MedicineDispensing.objects.filter(
-        dispensed_at__date=today
-    ).count()
-    
-    # Get recent patients
-    recent_patients = Patient.objects.order_by('-created_at')[:5]
-    
-    # Get pending prescriptions
-    '''pending_prescriptions_list = Prescription.objects.filter(
-        status='pending'
-    ).select_related('patient').order_by('-created_at')[:10]'''
-    
-    # Get inventory items with low stock or expiring soon
-    critical_inventory = Inventory.objects.filter(
-        Q(quantity_in_stock__lte=models.F('minimum_stock_level')) |
-        Q(expiry_date__lte=date.today() + timedelta(days=90))
-    ).select_related('medicine').order_by('quantity_in_stock')[:10]
-    
-    # Get recent dispensing history
-    recent_dispensing = MedicineDispensing.objects.select_related(
-        'prescription__patient', 'inventory_item__medicine', 'pharmacist'
-    ).order_by('-dispensed_at')[:10]
     
     context = {
         'stats': {
-            'total_patients': total_patients,
-            # 'pending_prescriptions': pending_prescriptions,
-            'low_stock_items': low_stock_items,
-            'today_dispensed': today_dispensed,
+            'total_patients': Patient.objects.count(),
+            'low_stock_items': Inventory.objects.filter(quantity_in_stock__lte=F('minimum_stock_level')).count(),
+            'today_dispensed': MedicineDispensing.objects.filter(dispensed_at__date=today).count(),
         },
-        'recent_patients': recent_patients,
-        # 'pending_prescriptions_list': pending_prescriptions_list,
-        'critical_inventory': critical_inventory,
-        'recent_dispensing': recent_dispensing,
+        'recent_patients': Patient.objects.order_by('-created_at')[:5],
+        'critical_inventory': Inventory.objects.filter(
+            Q(quantity_in_stock__lte=F('minimum_stock_level')) |
+            Q(expiry_date__lte=date.today() + timedelta(days=90))
+        ).select_related('medicine').order_by('quantity_in_stock')[:10],
+        'recent_dispensing': MedicineDispensing.objects.select_related(
+            'prescription__patient', 'inventory_item__medicine', 'pharmacist'
+        ).order_by('-dispensed_at')[:10],
     }
-    
     return render(request, 'pharmacy_dash.html', context)
 
 
 @login_required
-def patient_list_api(request):
-    """API endpoint for patient list with search"""
-    search_query = request.GET.get('search', '')
-    page = request.GET.get('page', 1)
+def pharmacy_dashboard_data(request):
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    today = timezone.now().date()
     
-    patients = Patient.objects.all()
-    
-    if search_query:
-        patients = patients.filter(
-            Q(first_name__icontains=search_query) |
-            Q(last_name__icontains=search_query) |
-            Q(phone_number__icontains=search_query) |
-            Q(patient_id__icontains=search_query)
-        )
-    
-    patients = patients.order_by('-created_at')
-    
-    # Pagination
-    paginator = Paginator(patients, 10)
-    patients_page = paginator.get_page(page)
-    
-    patients_data = []
-    for patient in patients_page:
-        patients_data.append({
-            'id': patient.patient_id,
-            'name': patient.get_full_name(),
-            'phone': patient.phone_number,
-            'email': patient.email,
-            'age': patient.age if hasattr(patient, 'age') else '',
-            'last_visit': patient.created_at.strftime('%Y-%m-%d'),
-        })
-    
-    return JsonResponse({
-        'patients': patients_data,
-        'has_next': patients_page.has_next(),
-        'has_previous': patients_page.has_previous(),
-        'total': paginator.count
-    })
+    critical_inventory = Inventory.objects.filter(
+            Q(quantity_in_stock__lte=F('minimum_stock_level')) |
+            Q(expiry_date__lte=date.today() + timedelta(days=90))
+        ).select_related('medicine').order_by('quantity_in_stock')[:10]
+    recent_dispensing = MedicineDispensing.objects.select_related(
+            'prescription__medical_record__patient', 'inventory_item__medicine', 'pharmacist'
+        ).order_by('-dispensed_at')[:10]
+
+    data = {
+        'stats': {
+            'total_patients': Patient.objects.count(),
+            'pending_prescriptions': Prescription.objects.filter(is_dispensed=False).count(),
+            'low_stock_items': Inventory.objects.filter(quantity_in_stock__lte=F('minimum_stock_level')).count(),
+            'today_dispensed': MedicineDispensing.objects.filter(dispensed_at__date=today).count(),
+        },
+        'recent_patients': [
+            {
+                'patient_id': p.patient_id,
+                'first_name': p.user.first_name,
+                'last_name': p.user.last_name,
+                'phone_number': p.user.phone_number,
+                'email': p.user.email,
+                'age': 0,
+                'address': "address",
+                'created_at': p.created_at.isoformat() if p.created_at else None,
+            }
+            for p in Patient.objects.order_by('-created_at')[:5]
+            
+        ],
+        'critical_inventory': [
+            {
+                'id': item.id,
+                'medicine': {
+                    'id': item.medicine.id,
+                    'name': item.medicine.name,
+                    'strength': getattr(item.medicine, 'strength', ''),
+                },
+                'batch_number': item.batch_number,
+                'quantity_in_stock': item.quantity_in_stock,
+                'unit_price': str(item.unit_price),
+                'expiry_date': item.expiry_date.isoformat(),
+                'supplier': item.supplier,
+                'minimum_stock_level': item.minimum_stock_level,
+                'date_received': item.date_received.isoformat() if item.date_received else None,
+            }
+            for item in critical_inventory
+        ],
+        'recent_dispensing': [
+            {
+                'id': record.id,
+                'prescription_id': record.prescription.id if record.prescription else None,
+                'prescription': {
+                    'patient': {
+                        'first_name': record.prescription.patient.first_name,
+                        'last_name': record.prescription.patient.last_name,
+                    }
+                } if record.prescription else None,
+                'inventory_item': {
+                    'medicine': {
+                        'name': record.inventory_item.medicine.name,
+                        'strength': getattr(record.inventory_item.medicine, 'strength', '')
+                    }
+                },
+                'quantity_dispensed': record.quantity_dispensed,
+                'dispensed_at': record.dispensed_at.isoformat(),
+                'pharmacist': {
+                    'first_name': record.pharmacist.first_name,
+                    'last_name': record.pharmacist.last_name,
+                } if record.pharmacist else None,
+                'notes': record.notes,
+            }
+            for record in recent_dispensing
+        ]
+    }
+
+    return JsonResponse(data)
+
 
 
 @login_required
+@require_http_methods(["GET", "POST"])
+def patients_api(request):
+    if request.method == 'GET':
+        search_query = request.GET.get('search', '')
+        patients = Patient.objects.all()
+
+        if search_query:
+            patients = patients.filter(
+                Q(first_name__icontains=search_query) |
+                Q(last_name__icontains=search_query) |
+                Q(phone_number__icontains=search_query) |
+                Q(patient_id__icontains=search_query)
+            )
+
+        patients = patients.order_by('-created_at')
+
+        data = [{
+            'patient_id': p.patient_id,
+            'first_name': p.user.first_name,
+            'last_name': p.user.last_name,
+            'phone_number': p.user.phone_number,
+            'email': p.user.email,
+            # 'age': p.age,
+            # 'address': p.address,
+            'created_at': p.created_at.isoformat() if p.created_at else None,
+        } for p in patients]
+
+        return JsonResponse(data, safe=False)
+
+    # POST
+    try:
+        data = json.loads(request.body)
+        last_patient = Patient.objects.order_by('-id').first()
+        last_num = int(last_patient.patient_id[1:]) if last_patient and last_patient.patient_id[1:].isdigit() else 0
+        new_patient_id = f'P{str(last_num + 1).zfill(3)}'
+
+        patient = Patient.objects.create(
+            patient_id=new_patient_id,
+            first_name=data['first_name'],
+            last_name=data['last_name'],
+            phone_number=data['phone_number'],
+            email=data['email'],
+            age=data['age'],
+            address=data['address']
+        )
+
+        return JsonResponse({
+            'patient_id': patient.patient_id,
+            'first_name': patient.user.first_name,
+            'last_name': patient.last_name,
+            'phone_number': patient.phone_number,
+            'email': patient.email,
+            'age': patient.age,
+            'address': patient.address,
+            'created_at': patient.created_at.isoformat(),
+        })
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def inventory_api(request):
+    if request.method == 'GET':
+        search_query = request.GET.get('search', '')
+        inventory = Inventory.objects.select_related('medicine').all()
+
+        if search_query:
+            inventory = inventory.filter(
+                Q(medicine__name__icontains=search_query) |
+                Q(batch_number__icontains=search_query) |
+                Q(supplier__icontains=search_query)
+            )
+
+        inventory = inventory.order_by('quantity_in_stock')
+
+        data = [{
+            'id': item.id,
+            'medicine': {
+                'id': item.medicine.id,
+                'name': item.medicine.name,
+                'strength': getattr(item.medicine, 'strength', ''),
+            },
+            'batch_number': item.batch_number,
+            'quantity_in_stock': item.quantity_in_stock,
+            'unit_price': str(item.unit_price),
+            'expiry_date': item.expiry_date.isoformat(),
+            'supplier': item.supplier,
+            'minimum_stock_level': item.minimum_stock_level,
+            'date_received': item.date_received.isoformat() if item.date_received else None,
+        } for item in inventory]
+
+        return JsonResponse(data, safe=False)
+
+    try:
+        data = json.loads(request.body)
+        medicine, _ = Medicine.objects.get_or_create(
+            name=data['medicine_name'],
+            defaults={
+                'generic_name': data.get('generic_name', ''),
+                'manufacturer': data.get('manufacturer', ''),
+                'dosage_form': 'tablet',
+                'strength': data.get('strength', ''),
+            }
+        )
+
+        inventory_item = Inventory.objects.create(
+            medicine=medicine,
+            batch_number=data['batch_number'],
+            quantity_in_stock=data['quantity_in_stock'],
+            unit_price=data['unit_price'],
+            expiry_date=data['expiry_date'],
+            supplier=data['supplier'],
+            minimum_stock_level=data['minimum_stock_level'],
+            date_received=timezone.now().date()
+        )
+
+        return JsonResponse({
+            'id': inventory_item.id,
+            'medicine': {
+                'id': medicine.id,
+                'name': medicine.name,
+                'strength': getattr(medicine, 'strength', ''),
+            },
+            'batch_number': inventory_item.batch_number,
+            'quantity_in_stock': inventory_item.quantity_in_stock,
+            'unit_price': str(inventory_item.unit_price),
+            'expiry_date': inventory_item.expiry_date.isoformat(),
+            'supplier': inventory_item.supplier,
+            'minimum_stock_level': inventory_item.minimum_stock_level,
+            'date_received': inventory_item.date_received.isoformat(),
+        })
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+@login_required
+@require_http_methods(["PATCH"])
+def update_stock_api(request, item_id):
+    try:
+        inventory_item = Inventory.objects.get(id=item_id)
+        data = json.loads(request.body)
+        inventory_item.quantity_in_stock = data['quantity_in_stock']
+        inventory_item.save()
+
+        return JsonResponse({
+            'id': inventory_item.id,
+            'quantity_in_stock': inventory_item.quantity_in_stock,
+            'message': 'Stock updated successfully'
+        })
+
+    except Inventory.DoesNotExist:
+        return JsonResponse({'error': 'Inventory item not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+
+@login_required
+@require_http_methods(["POST"])
+def dispensing_api(request):
+    try:
+        data = json.loads(request.body)
+        inventory_item = Inventory.objects.get(id=data['inventory_item_id'])
+
+        if inventory_item.quantity_in_stock < data['quantity_dispensed']:
+            return JsonResponse({'error': 'Insufficient stock available'}, status=400)
+
+        prescription = None
+        if data.get('prescription_id'):
+            # prescription = Prescription.objects.get(id=data['prescription_id'])
+            pass
+
+        dispensing = MedicineDispensing.objects.create(
+            prescription=prescription,
+            inventory_item=inventory_item,
+            quantity_dispensed=data['quantity_dispensed'],
+            pharmacist=request.user,
+            notes=data.get('notes', ''),
+            dispensed_at=timezone.now()
+        )
+
+        inventory_item.quantity_in_stock -= data['quantity_dispensed']
+        inventory_item.save()
+
+        return JsonResponse({
+            'id': dispensing.id,
+            'message': 'Medicine dispensed successfully',
+            'remaining_stock': inventory_item.quantity_in_stock
+        })
+
+    except Inventory.DoesNotExist:
+        return JsonResponse({'error': 'Inventory item not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+
 def prescription_list_api(request):
     """API endpoint for prescription list with search"""
     search_query = request.GET.get('search', '')
@@ -368,31 +579,6 @@ def dispense_medicine_api(request):
 
 
 @login_required
-@require_http_methods(['POST'])
-def update_stock_api(request):
-    """API endpoint to update inventory stock"""
-    try:
-        data = json.loads(request.body)
-        
-        inventory_item = get_object_or_404(Inventory, id=data.get('item_id'))
-        new_quantity = int(data.get('quantity'))
-        
-        inventory_item.quantity_in_stock = new_quantity
-        inventory_item.save()
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Stock updated successfully',
-        })
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'message': str(e)
-        }, status=400)
-
-
-@login_required
 def get_medicines_for_select_api(request):
     """API endpoint to get medicines for select dropdown"""
     inventory_items = Inventory.objects.filter(
@@ -410,89 +596,3 @@ def get_medicines_for_select_api(request):
     return JsonResponse({
         'medicines': medicines_data
     })
-
-
-@login_required
-def patient_detail_api(request, patient_id):
-    """API endpoint for patient details"""
-    patient = get_object_or_404(Patient, patient_id=patient_id)
-    
-    patient_data = {
-        'id': patient.patient_id,
-        'name': patient.get_full_name(),
-        'phone': patient.phone_number,
-        'email': patient.email,
-        'date_of_birth': patient.date_of_birth.strftime('%Y-%m-%d') if patient.date_of_birth else '',
-        'address': patient.address,
-        'created_at': patient.created_at.strftime('%Y-%m-%d'),
-    }
-    
-    return JsonResponse({
-        'patient': patient_data
-    })
-
-
-@login_required
-def inventory_detail_api(request, item_id):
-    """API endpoint for inventory item details"""
-    item = get_object_or_404(Inventory, id=item_id)
-    
-    item_data = {
-        'id': item.id,
-        'medicine_name': item.medicine.name,
-        'generic_name': item.medicine.generic_name,
-        'manufacturer': item.medicine.manufacturer,
-        'batch_number': item.batch_number,
-        'quantity': item.quantity_in_stock,
-        'unit_price': float(item.unit_price),
-        'expiry_date': item.expiry_date.strftime('%Y-%m-%d'),
-        'supplier': item.supplier,
-        'min_stock_level': item.minimum_stock_level,
-        'date_received': item.date_received.strftime('%Y-%m-%d'),
-    }
-    
-    return JsonResponse({
-        'item': item_data
-    })
-
-
-# Traditional form-based views (if needed)
-'''@login_required
-def add_patient(request):
-    """Traditional form view to add patient"""
-    if request.method == 'POST':
-        form = PatientForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Patient added successfully!')
-            return redirect('pharmacy:dashboard')
-    else:
-        form = PatientForm()
-    
-    return render(request, 'pharmacy/add_patient.html', {'form': form})'''
-
-
-@login_required
-def add_medicine(request):
-    """Traditional form view to add medicine"""
-    if request.method == 'POST':
-        medicine_form = MedicineForm(request.POST)
-        inventory_form = InventoryForm(request.POST)
-        
-        if medicine_form.is_valid() and inventory_form.is_valid():
-            medicine = medicine_form.save()
-            inventory = inventory_form.save(commit=False)
-            inventory.medicine = medicine
-            inventory.save()
-            
-            messages.success(request, 'Medicine added to inventory successfully!')
-            return redirect('pharmacy:dashboard')
-    else:
-        medicine_form = MedicineForm()
-        inventory_form = InventoryForm()
-    
-    context = {
-        'medicine_form': medicine_form,
-        'inventory_form': inventory_form,
-    }
-    return render(request, 'pharmacy/add_medicine.html', context)

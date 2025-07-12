@@ -15,6 +15,14 @@ class MedicalRecord(models.Model):
     follow_up_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
+    def save(self, *args, **kwargs):
+        
+        if not self.record_id:
+            self.record_id = f"REC{self.patient.patient_id:06d}"
+        
+        super().save(*args, **kwargs)
+    
+    
     class Meta:
         ordering = ['-created_at']
     

@@ -220,7 +220,7 @@
                 <i class="fas fa-user-injured"></i>
             </div>
         </div>
-        <div class="stat-number" id="totalPatients">0</div>
+        <div class="stat-number" id="totalPatients">{{total_patients}}</div>
     </div>
 
     <div class="stat-card">
@@ -334,7 +334,7 @@
 {% include 'modals/dispensing_modal.html' %}
 
 <script>
-    // Data Storage
+    // Data Storage - will be populated from backend
     let patients = [];
     let prescriptions = [];
     let medicines = [];
@@ -347,136 +347,169 @@
         todayDispensed: 0
     };
 
+    // CSRF Token for Django
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
     // Initialize Dashboard
     document.addEventListener('DOMContentLoaded', function () {
-        loadSampleData();
-        updateStats();
-        renderPatients();
-        renderPrescriptions();
-        renderInventory();
-        renderDispensingHistory();
-        populateMedicineSelect();
+        loadDataFromBackend();
+        // Initialize tooltips and other interactive elements
+        initializeInteractiveElements();
     });
 
-    // Sample Data
-    function loadSampleData() {
-        patients = [
-            {
-                id: 'P001',
-                name: 'John Smith',
-                phone: '+254712345678',
-                email: 'john.smith@email.com',
-                age: 35,
-                address: '123 Nairobi Street',
-                lastVisit: '2025-07-01'
-            },
-            {
-                id: 'P002',
-                name: 'Mary Johnson',
-                phone: '+254723456789',
-                email: 'mary.johnson@email.com',
-                age: 28,
-                address: '456 Mombasa Road',
-                lastVisit: '2025-06-28'
-            }
-        ];
+    // Load data from Django backend
+    async function loadDataFromBackend() {
+        try {
+            // Load dashboard data
+            const response = await fetch('/pharmacy/api/pharmacy-dashboard-data/', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                }
+            });
 
-        prescriptions = [
-            {
-                id: 'RX001',
-                patientId: 'P001',
-                patientName: 'John Smith',
-                medicines: ['Paracetamol 500mg', 'Amoxicillin 250mg'],
-                status: 'pending',
-                date: '2025-07-02',
-                doctor: 'Dr. Wilson'
-            },
-            {
-                id: 'RX002',
-                patientId: 'P002',
-                patientName: 'Mary Johnson',
-                medicines: ['Ibuprofen 400mg'],
-                status: 'dispensed',
-                date: '2025-07-01',
-                doctor: 'Dr. Brown'
-            }
-        ];
+            if (response.ok) {
+                const data = await response.json();
 
-        medicines = [
-            {
-                id: 'M001',
-                name: 'Paracetamol',
-                genericName: 'Acetaminophen',
-                manufacturer: 'Pharma Corp',
-                unit: 'tablets'
-            },
-            {
-                id: 'M002',
-                name: 'Amoxicillin',
-                genericName: 'Amoxicillin',
-                manufacturer: 'Med Labs',
-                unit: 'capsules'
-            },
-            {
-                id: 'M003',
-                name: 'Ibuprofen',
-                genericName: 'Ibuprofen',
-                manufacturer: 'Health Plus',
-                unit: 'tablets'
-            }
-        ];
+                // Update stats from backend
+                stats = {
+                    totalPatients: data.stats.total_patients,
+                    pendingPrescriptions: data.stats.pending_prescriptions || 0,
+                    lowStockItems: data.stats.low_stock_items,
+                    todayDispensed: data.stats.today_dispensed
+                };
 
-        inventory = [
-            {
-                id: 'I001',
-                medicineId: 'M001',
-                medicineName: 'Paracetamol 500mg',
-                batchNumber: 'B001',
-                quantity: 150,
-                unitPrice: 2.50,
-                expiryDate: '2026-12-31',
-                supplier: 'Medical Supplies Ltd',
-                minStockLevel: 50,
-                dateReceived: '2025-06-15'
-            },
-            {
-                id: 'I002',
-                medicineId: 'M002',
-                medicineName: 'Amoxicillin 250mg',
-                batchNumber: 'B002',
-                quantity: 25,
-                unitPrice: 5.00,
-                expiryDate: '2025-11-30',
-                supplier: 'Pharma Distributors',
-                minStockLevel: 30,
-                dateReceived: '2025-05-20'
-            },
-            {
-                id: 'I003',
-                medicineId: 'M003',
-                medicineName: 'Ibuprofen 400mg',
-                batchNumber: 'B003',
-                quantity: 5,
-                unitPrice: 3.75,
-                expiryDate: '2025-08-15',
-                supplier: 'Health Supplies',
-                minStockLevel: 20,
-                dateReceived: '2025-04-10'
-            }
-        ];
+                // Convert backend data to frontend format
+                patients = data.recent_patients.map(patient => ({
+                    id: patient.patient_id,
+                    name: `${patient.first_name} ${patient.last_name}`,
+                    phone: patient.phone_number,
+                    email: patient.email,
+                    age: patient.age,
+                    address: patient.address,
+                    lastVisit: patient.created_at ? patient.created_at.split('T')[0] : 'N/A'
+                }));
 
-        dispensingHistory = [
-            {
-                id: 'D001',
-                prescriptionId: 'RX002',
-                patientName: 'Mary Johnson',
-                medicineName: 'Ibuprofen 400mg',
-                quantity: 30,
-                dispensedAt: '2025-07-01 10:30',
-                pharmacist: 'Dr. Pharmacist',
-                notes: 'Take with food'
+                // Convert inventory data
+                inventory = data.critical_inventory.map(item => ({
+                    id: item.id,
+                    medicineId: item.medicine.id,
+                    medicineName: `${item.medicine.name} ${item.medicine.strength || ''}`,
+                    batchNumber: item.batch_number,
+                    quantity: item.quantity_in_stock,
+                    unitPrice: parseFloat(item.unit_price),
+                    expiryDate: item.expiry_date,
+                    supplier: item.supplier,
+                    minStockLevel: item.minimum_stock_level,
+                    dateReceived: item.date_received
+                }));
+
+                // Convert dispensing history
+                dispensingHistory = data.recent_dispensing.map(record => ({
+                    id: record.id,
+                    prescriptionId: record.prescription_id,
+                    patientName: `${record.prescription.patient.first_name} ${record.prescription.patient.last_name}`,
+                    medicineName: `${record.inventory_item.medicine.name} ${record.inventory_item.medicine.strength || ''}`,
+                    quantity: record.quantity_dispensed,
+                    dispensedAt: new Date(record.dispensed_at).toLocaleString(),
+                    pharmacist: record.pharmacist ? `${record.pharmacist.first_name} ${record.pharmacist.last_name}` : 'Unknown',
+                    notes: record.notes || ''
+                }));
+
+                // Update all displays
+                updateStats();
+                renderPatients();
+                renderPrescriptions();
+                renderInventory();
+                renderDispensingHistory();
+                await populateMedicineSelect();
+
+            } else {
+                console.error('Failed to load dashboard data');
+                showAlert('Failed to load dashboard data', 'danger');
             }
-        ];
+        } catch (error) {
+            console.error('Error loading dashboard data:', error);
+            showAlert('Error loading dashboard data', 'danger');
+        }
+    }
+
+    // Load patients from backend
+    async function loadPatients() {
+        try {
+            const response = await fetch('/pharmacy/api/patients/', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                patients = data.map(patient => ({
+                    id: patient.patient_id,
+                    name: `${patient.first_name} ${patient.last_name}`,
+                    phone: patient.phone_number,
+                    email: patient.email,
+                    age: patient.age,
+                    address: patient.address,
+                    lastVisit: patient.created_at ? patient.created_at.split('T')[0] : 'N/A'
+                }));
+                renderPatients();
+            }
+        } catch (error) {
+            console.error('Error loading patients:', error);
+        }
+    }
+
+    // Load inventory from backend
+    async function loadInventory() {
+        try {
+            const response = await fetch('/pharmacy/api/inventory/', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                inventory = data.map(item => ({
+                    id: item.id,
+                    medicineId: item.medicine.id,
+                    medicineName: `${item.medicine.name} ${item.medicine.strength || ''}`,
+                    batchNumber: item.batch_number,
+                    quantity: item.quantity_in_stock,
+                    unitPrice: parseFloat(item.unit_price),
+                    expiryDate: item.expiry_date,
+                    supplier: item.supplier,
+                    minStockLevel: item.minimum_stock_level,
+                    dateReceived: item.date_received
+                }));
+                renderInventory();
+                populateMedicineSelect();
+            }
+        } catch (error) {
+            console.error('Error loading inventory:', error);
+        }
     }
 
     // Tab Management
@@ -492,6 +525,13 @@
         // Show selected tab content
         document.getElementById(tabName).classList.add('active');
         tabElement.classList.add('active');
+
+        // Load fresh data when switching tabs
+        if (tabName === 'patients') {
+            loadPatients();
+        } else if (tabName === 'inventory') {
+            loadInventory();
+        }
     }
 
     // Modal Management
@@ -515,13 +555,6 @@
 
     // Statistics Update
     function updateStats() {
-        stats.totalPatients = patients.length;
-        stats.pendingPrescriptions = prescriptions.filter(p => p.status === 'pending').length;
-        stats.lowStockItems = inventory.filter(i => i.quantity <= i.minStockLevel).length;
-        stats.todayDispensed = dispensingHistory.filter(d =>
-            d.dispensedAt.startsWith('2025-07-02')
-        ).length;
-
         document.getElementById('totalPatients').textContent = stats.totalPatients;
         document.getElementById('pendingPrescriptions').textContent = stats.pendingPrescriptions;
         document.getElementById('lowStockItems').textContent = stats.lowStockItems;
@@ -531,6 +564,8 @@
     // Patient Management
     function renderPatients() {
         const tbody = document.getElementById('patientsTableBody');
+        if (!tbody) return;
+
         tbody.innerHTML = '';
 
         patients.forEach(patient => {
@@ -579,7 +614,14 @@
     // Prescription Management
     function renderPrescriptions() {
         const container = document.getElementById('prescriptionsList');
+        if (!container) return;
+
         container.innerHTML = '';
+
+        if (prescriptions.length === 0) {
+            container.innerHTML = '<p>No pending prescriptions.</p>';
+            return;
+        }
 
         prescriptions.forEach(prescription => {
             const statusBadge = prescription.status === 'pending' ? 'status-in-progress' : 'status-confirmed';
@@ -608,6 +650,8 @@
     // Inventory Management
     function renderInventory() {
         const tbody = document.getElementById('inventoryTableBody');
+        if (!tbody) return;
+
         tbody.innerHTML = '';
 
         inventory.forEach(item => {
@@ -705,6 +749,8 @@
     // Dispensing Management
     function renderDispensingHistory() {
         const container = document.getElementById('dispensingList');
+        if (!container) return;
+
         container.innerHTML = '';
 
         if (dispensingHistory.length === 0) {
@@ -729,8 +775,10 @@
         });
     }
 
-    function populateMedicineSelect() {
+    async function populateMedicineSelect() {
         const select = document.getElementById('medicineSelect');
+        if (!select) return;
+
         select.innerHTML = '<option value="">Select Medicine</option>';
 
         inventory.forEach(item => {
@@ -744,128 +792,121 @@
     }
 
     // Form Handlers
-    document.getElementById('patientForm').addEventListener('submit', function (e) {
+    document.getElementById('patientForm')?.addEventListener('submit', async function (e) {
         e.preventDefault();
 
-        const newPatient = {
-            id: 'P' + String(patients.length + 1).padStart(3, '0'),
-            name: document.getElementById('patientName').value,
-            phone: document.getElementById('patientPhone').value,
-            email: document.getElementById('patientEmail').value,
-            age: parseInt(document.getElementById('patientAge').value),
-            address: document.getElementById('patientAddress').value,
-            lastVisit: new Date().toISOString().split('T')[0]
+        const formData = new FormData(this);
+        const patientData = {
+            first_name: formData.get('patientName').split(' ')[0],
+            last_name: formData.get('patientName').split(' ').slice(1).join(' '),
+            phone_number: formData.get('patientPhone'),
+            email: formData.get('patientEmail'),
+            age: parseInt(formData.get('patientAge')),
+            address: formData.get('patientAddress')
         };
 
-        patients.push(newPatient);
-        renderPatients();
-        updateStats();
-        closeModal('patientModal');
-        showAlert('Patient added successfully!', 'success');
-        this.reset();
+        try {
+            const response = await fetch('/api/patients/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify(patientData)
+            });
+
+            if (response.ok) {
+                await loadPatients();
+                await loadDataFromBackend(); // Refresh stats
+                closeModal('patientModal');
+                showAlert('Patient added successfully!', 'success');
+                this.reset();
+            } else {
+                const error = await response.json();
+                showAlert('Error adding patient: ' + JSON.stringify(error), 'danger');
+            }
+        } catch (error) {
+            console.error('Error adding patient:', error);
+            showAlert('Error adding patient', 'danger');
+        }
     });
 
-    document.getElementById('medicineForm').addEventListener('submit', function (e) {
+    document.getElementById('medicineForm')?.addEventListener('submit', async function (e) {
         e.preventDefault();
 
-        const medicineName = document.getElementById('medicineName').value;
-        const genericName = document.getElementById('genericName').value;
-        const manufacturer = document.getElementById('manufacturer').value;
-
-        // Check if medicine exists, if not create it
-        let medicine = medicines.find(m => m.name === medicineName);
-        if (!medicine) {
-            medicine = {
-                id: 'M' + String(medicines.length + 1).padStart(3, '0'),
-                name: medicineName,
-                genericName: genericName,
-                manufacturer: manufacturer,
-                unit: 'units'
-            };
-            medicines.push(medicine);
-        }
-
-        const newInventoryItem = {
-            id: 'I' + String(inventory.length + 1).padStart(3, '0'),
-            medicineId: medicine.id,
-            medicineName: medicineName,
-            batchNumber: document.getElementById('batchNumber').value,
-            quantity: parseInt(document.getElementById('quantity').value),
-            unitPrice: parseFloat(document.getElementById('unitPrice').value),
-            expiryDate: document.getElementById('expiryDate').value,
-            supplier: document.getElementById('supplier').value,
-            minStockLevel: parseInt(document.getElementById('minStockLevel').value),
-            dateReceived: new Date().toISOString().split('T')[0]
+        const formData = new FormData(this);
+        const inventoryData = {
+            medicine_name: formData.get('medicineName'),
+            generic_name: formData.get('genericName'),
+            manufacturer: formData.get('manufacturer'),
+            batch_number: formData.get('batchNumber'),
+            quantity_in_stock: parseInt(formData.get('quantity')),
+            unit_price: parseFloat(formData.get('unitPrice')),
+            expiry_date: formData.get('expiryDate'),
+            supplier: formData.get('supplier'),
+            minimum_stock_level: parseInt(formData.get('minStockLevel'))
         };
 
-        inventory.push(newInventoryItem);
-        renderInventory();
-        populateMedicineSelect();
-        updateStats();
-        closeModal('medicineModal');
-        showAlert('Medicine added to inventory successfully!', 'success');
-        this.reset();
+        try {
+            const response = await fetch('/pharmacy/api/inventory/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify(inventoryData)
+            });
+
+            if (response.ok) {
+                await loadInventory();
+                await loadDataFromBackend(); // Refresh stats
+                closeModal('medicineModal');
+                showAlert('Medicine added to inventory successfully!', 'success');
+                this.reset();
+            } else {
+                const error = await response.json();
+                showAlert('Error adding medicine: ' + JSON.stringify(error), 'danger');
+            }
+        } catch (error) {
+            console.error('Error adding medicine:', error);
+            showAlert('Error adding medicine', 'danger');
+        }
     });
 
-    document.getElementById('dispensingForm').addEventListener('submit', function (e) {
+    document.getElementById('dispensingForm')?.addEventListener('submit', async function (e) {
         e.preventDefault();
 
-        const prescriptionId = document.getElementById('prescriptionId').value;
-        const inventoryItemId = document.getElementById('medicineSelect').value;
-        const quantityToDispense = parseInt(document.getElementById('dispenseQuantity').value);
-        const notes = document.getElementById('dispensingNotes').value;
-
-        // Find inventory item
-        const inventoryItem = inventory.find(item => item.id === inventoryItemId);
-        if (!inventoryItem) {
-            showAlert('Please select a valid medicine', 'danger');
-            return;
-        }
-
-        // Check stock availability
-        if (inventoryItem.quantity < quantityToDispense) {
-            showAlert('Insufficient stock available', 'danger');
-            return;
-        }
-
-        // Find prescription
-        const prescription = prescriptions.find(p => p.id === prescriptionId);
-        if (!prescription) {
-            showAlert('Prescription not found', 'danger');
-            return;
-        }
-
-        // Create dispensing record
-        const dispensingRecord = {
-            id: 'D' + String(dispensingHistory.length + 1).padStart(3, '0'),
-            prescriptionId: prescriptionId,
-            patientName: prescription.patientName,
-            medicineName: inventoryItem.medicineName,
-            quantity: quantityToDispense,
-            dispensedAt: new Date().toLocaleString(),
-            pharmacist: 'Current Pharmacist',
-            notes: notes
+        const formData = new FormData(this);
+        const dispensingData = {
+            prescription_id: formData.get('prescriptionId'),
+            inventory_item_id: formData.get('medicineSelect'),
+            quantity_dispensed: parseInt(formData.get('dispenseQuantity')),
+            notes: formData.get('dispensingNotes')
         };
 
-        // Update inventory
-        inventoryItem.quantity -= quantityToDispense;
+        try {
+            const response = await fetch('/pharmacy/api/dispensing/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify(dispensingData)
+            });
 
-        // Update prescription status
-        prescription.status = 'dispensed';
-
-        // Add to dispensing history
-        dispensingHistory.unshift(dispensingRecord);
-
-        // Update displays
-        renderInventory();
-        renderPrescriptions();
-        renderDispensingHistory();
-        populateMedicineSelect();
-        updateStats();
-
-        closeModal('dispensingModal');
-        showAlert('Medicine dispensed successfully!', 'success');
-        this.reset();
+            if (response.ok) {
+                await loadDataFromBackend(); // Refresh all data
+                closeModal('dispensingModal');
+                showAlert('Medicine dispensed successfully!', 'success');
+                this.reset();
+            } else {
+                const error = await response.json();
+                showAlert('Error dispensing medicine: ' + JSON.stringify(error), 'danger');
+            }
+        } catch (error) {
+            console.error('Error dispensing medicine:', error);
+            showAlert('Error dispensing medicine', 'danger');
+        }
     });
 
     // Helper Functions
@@ -873,10 +914,18 @@
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type}`;
         alertDiv.textContent = message;
+        alertDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            padding: 15px;
+            border-radius: 4px;
+            color: white;
+            background-color: ${type === 'success' ? '#28a745' : type === 'danger' ? '#dc3545' : '#007bff'};
+        `;
 
-        // Insert at top of dashboard
-        const dashboardContent = document.querySelector('.dashboard-stats');
-        dashboardContent.parentNode.insertBefore(alertDiv, dashboardContent);
+        document.body.appendChild(alertDiv);
 
         // Remove after 5 seconds
         setTimeout(() => {
@@ -894,7 +943,7 @@
     function editPatient(patientId) {
         const patient = patients.find(p => p.id === patientId);
         if (patient) {
-            // Pre-fill form with patient data
+            const nameParts = patient.name.split(' ');
             document.getElementById('patientName').value = patient.name;
             document.getElementById('patientPhone').value = patient.phone;
             document.getElementById('patientEmail').value = patient.email;
@@ -902,9 +951,7 @@
             document.getElementById('patientAddress').value = patient.address;
 
             openModal('patientModal');
-
-            // Note: In a real application, you'd modify the form handler to update instead of create
-            showAlert('Edit functionality would be implemented here', 'info');
+            showAlert('Edit functionality would need API endpoint for updates', 'info');
         }
     }
 
@@ -915,15 +962,34 @@
         }
     }
 
-    function updateStock(itemId) {
+    async function updateStock(itemId) {
         const item = inventory.find(i => i.id === itemId);
         if (item) {
             const newQuantity = prompt(`Current stock: ${item.quantity}\nEnter new quantity:`, item.quantity);
             if (newQuantity !== null && !isNaN(newQuantity) && newQuantity >= 0) {
-                item.quantity = parseInt(newQuantity);
-                renderInventory();
-                updateStats();
-                showAlert('Stock updated successfully!', 'success');
+                try {
+                    const response = await fetch(`/pharmacy/api/inventory/${itemId}/update-stock/`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken
+                        },
+                        body: JSON.stringify({
+                            quantity_in_stock: parseInt(newQuantity)
+                        })
+                    });
+
+                    if (response.ok) {
+                        await loadInventory();
+                        await loadDataFromBackend(); // Refresh stats
+                        showAlert('Stock updated successfully!', 'success');
+                    } else {
+                        showAlert('Error updating stock', 'danger');
+                    }
+                } catch (error) {
+                    console.error('Error updating stock:', error);
+                    showAlert('Error updating stock', 'danger');
+                }
             }
         }
     }
@@ -933,11 +999,8 @@
         openModal('dispensingModal');
     }
 
-    // Auto-refresh stats every 30 seconds
-    setInterval(updateStats, 30000);
-
-    // Initialize tooltips and other interactive elements
-    document.addEventListener('DOMContentLoaded', function () {
+    // Initialize interactive elements
+    function initializeInteractiveElements() {
         // Add hover effects for better UX
         const cards = document.querySelectorAll('.stat-card');
         cards.forEach(card => {
@@ -949,7 +1012,10 @@
                 this.style.transform = 'translateY(0)';
             });
         });
-    });
+    }
+
+    // Auto-refresh data every 5 minutes
+    setInterval(loadDataFromBackend, 300000);
 </script>
 
 {% endblock %}
