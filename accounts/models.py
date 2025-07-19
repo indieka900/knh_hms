@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from accounts.managers import CustomUserManager
 from django.core.validators import RegexValidator
 from appointments.models import Doctor, Patient
 from billing.models import BillingStaff
@@ -26,6 +27,8 @@ class User(AbstractUser):
     
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
+    
+    objects = CustomUserManager()
     
     def __str__(self):
         return f"{self.get_full_name()} - {self.role}"
