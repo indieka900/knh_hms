@@ -53,13 +53,15 @@
         </div>
         <div class="vital-item">
             <div class="vital-label">Pulse Rate</div>
-            <div class="vital-value">{% if recent_vitals.pulse_rate %}{{ recent_vitals.pulse_rate }} bpm{% else %}-{%
-                endif %}</div>
+            <div class="vital-value">
+                {% if recent_vitals.pulse_rate %}{{ recent_vitals.pulse_rate }} bpm{% else %}-{% endif %}
+            </div>
         </div>
         <div class="vital-item">
             <div class="vital-label">Temperature</div>
-            <div class="vital-value">{% if recent_vitals.temperature %}{{ recent_vitals.temperature }}°C{% else %}-{%
-                endif %}</div>
+            <div class="vital-value">
+                {% if recent_vitals.temperature %}{{ recent_vitals.temperature }}°C{% else %}-{% endif %}
+            </div>
         </div>
     </div>
 </div>

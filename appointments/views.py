@@ -67,7 +67,7 @@ def appointment_list(request):
         title = "All Appointments"
     else:
         messages.error(request, 'You do not have permission to view appointments.')
-        return redirect('home')
+        return redirect('dashboard:dashboard')
 
     # Filters
     status_filter = request.GET.get('status')
@@ -200,7 +200,7 @@ def create_appointment_view(request):
     
     if not (user_is_doctor or user_is_patient):
         messages.error(request, 'You must be either a doctor or patient to create appointments.')
-        return redirect('home')  # or appropriate redirect
+        return redirect('dashboard:dashboard') 
     
     # Get current user's profile
     current_doctor = request.user.doctor if user_is_doctor else None
