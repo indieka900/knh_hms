@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+
+{% block title %}Record Vitals - {{ patient.user.get_full_name }} - KNH HMS{% endblock %}
+
+{% block page_title %}Record Vitals - {{ patient.user.get_full_name }}{% endblock %}
+
+{% block content %}
+<!-- Patient Info Header -->
+<div class="patient-info-card">
+    <div class="patient-header">
+        <div class="patient-avatar">
+            <i class="fas fa-user-circle"></i>
+        </div>
+        <div class="patient-details">
+            <h2>{{ patient.user.get_full_name }}</h2>
+            <p><strong>Patient ID:</strong> {{ patient.patient_id }}</p>
+            <p><strong>Age:</strong> {{ patient.age }} years</p>
+            <p><strong>Gender:</strong> {{ patient.get_gender_display }}</p>
+        </div>
+        <div class="patient-actions">
+            <a href="{% url 'medical_records:patient_medical_history' patient.patient_id %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to History
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Vitals Reference -->
+{% if recent_vitals %}
+<div class="recent-vitals-card">
+    <div class="section-header">
+        <h3><i class="fas fa-history"></i> Last Recorded Vitals</h3>
+        <span class="vitals-date">{{ recent_vitals.recorded_at|date:"M d, Y H:i" }}</span>
+    </div>
+    <div class="vitals-summary">
+        <div class="vital-item">
+            <div class="vital-label">Height</div>
+            <div class="vital-value">{% if recent_vitals.height %}{{ recent_vitals.height }} cm{% else %}-{% endif %}
+            </div>
+        </div>
+        <div class="vital-item">
+            <div class="vital-label">Weight</div>
+            <div class="vital-value">{% if recent_vitals.weight %}{{ recent_vitals.weight }} kg{% else %}-{% endif %}
+            </div>
+        </div>
+        <div class="vital-item">
+            <div class="vital-label">Blood Pressure</div>
+            <div class="vital-value">
+                {% if recent_vitals.blood_pressure_systolic and recent_vitals.blood_pressure_diastolic %}
+                {{ recent_vitals.blood_pressure_systolic }}/{{ recent_vitals.blood_pressure_diastolic }}
+                {% else %}-{% endif %}
+            </div>
+        </div>
+        <div class="vital-item">
+            <div class="vital-label">Pulse Rate</div>
+            <div class="vital-value">{% if recent_vitals.pulse_rate %}{{ recent_vitals.pulse_rate }} bpm{% else %}-{%
+                endif %}</div>
+        </div>
+        <div class="vital-item">
+            <div class="vital-label">Temperature</div>
+            <div class="vital-value">{% if recent_vitals.temperature %}{{ recent_vitals.temperature }}°C{% else %}-{%
+                endif %}</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Vitals Form -->
+<div class="vitals-form-card">
+    <div class="section-header">
+        <h3><i class="fas fa-stethoscope"></i> Record New Vitals</h3>
+    </div>
+
+    <form method="post" class="vitals-form">
+        {% csrf_token %}
+
+        <div class="form-section">
+            <h4>Physical Measurements</h4>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="height">
+                        <i class="fas fa-ruler-vertical"></i> Height (cm)
+                    </label>
+                    <input type="number" id="height" name="height" class="form-control" step="0.1" min="0" max="300"
+                        placeholder="Enter height in centimeters">
+                    <small class="form-text">Normal adult range: 140-220 cm</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="weight">
+                        <i class="fas fa-weight"></i> Weight (kg)
+                    </label>
+                    <input type="number" id="weight" name="weight" class="form-control" step="0.1" min="0" max="500"
+                        placeholder="Enter weight in kilograms">
+                    <small class="form-text">Normal adult range: 40-200 kg</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>Blood Pressure</h4>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="bp_systolic">
+                        <i class="fas fa-heartbeat"></i> Systolic (mmHg)
+                    </label>
+                    <input type="number" id="bp_systolic" name="bp_systolic" class="form-control" min="50" max="300"
+                        placeholder="e.g., 120">
+                    <small class="form-text">Normal: 90-140 mmHg</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="bp_diastolic">
+                        <i class="fas fa-heartbeat"></i> Diastolic (mmHg)
+                    </label>
+                    <input type="number" id="bp_diastolic" name="bp_diastolic" class="form-control" min="30" max="200"
+                        placeholder="e.g., 80">
+                    <small class="form-text">Normal: 60-90 mmHg</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>Additional Vital Signs</h4>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="pulse_rate">
+                        <i class="fas fa-heartbeat"></i> Pulse Rate (bpm)
+                    </label>
+                    <input type="number" id="pulse_rate" name="pulse_rate" class="form-control" min="30" max="250"
+                        placeholder="e.g., 72">
+                    <small class="form-text">Normal adult: 60-100 bpm</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="temperature">
+                        <i class="fas fa-thermometer-half"></i> Temperature (°C)
+                    </label>
+                    <input type="number" id="temperature" name="temperature" class="form-control" step="0.1" min="30"
+                        max="50" placeholder="e.g., 36.5">
+                    <small class="form-text">Normal: 36.1-37.2°C</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- BMI Calculator (if height and weight are entered) -->
+        <div class="bmi-section" id="bmiSection" style="display: none;">
+            <div class="bmi-card">
+                <h4><i class="fas fa-calculator"></i> Body Mass Index (BMI)</h4>
+                <div class="bmi-result">
+                    <div class="bmi-value" id="bmiValue">-</div>
+                    <div class="bmi-category" id="bmiCategory">Enter height and weight</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vital Signs Alerts -->
+        <div class="alerts-section" id="alertsSection" style="display: none;">
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span id="alertMessage"></span>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{% url 'medical_records:patient_medical_history' patient.patient_id %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Record Vitals
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Real-time BMI calculation and vital signs validation
+    function calculateBMI() {
+        const height = parseFloat(document.getElementById('height').value);
+        const weight = parseFloat(document.getElementById('weight').value);
+
+        if (height && weight) {
+            const heightInMeters = height / 100;
+            const bmi = weight / (heightInMeters * heightInMeters);
+
+            document.getElementById('bmiValue').textContent = bmi.toFixed(1);
+            document.getElementById('bmiSection').style.display = 'block';
+
+            let category = '';
+            let categoryClass = '';
+
+            if (bmi < 18.5) {
+                category = 'Underweight';
+                categoryClass = 'bmi-underweight';
+            } else if (bmi < 25) {
+                category = 'Normal weight';
+                categoryClass = 'bmi-normal';
+            } else if (bmi < 30) {
+                category = 'Overweight';
+                categoryClass = 'bmi-overweight';
+            } else {
+                category = 'Obese';
+                categoryClass = 'bmi-obese';
+            }
+
+            const categoryElement = document.getElementById('bmiCategory');
+            categoryElement.textContent = category;
+            categoryElement.className = `bmi-category ${categoryClass}`;
+        } else {
+            document.getElementById('bmiSection').style.display = 'none';
+        }
+    }
+
+    // Validate vital signs and show alerts
+    function validateVitals() {
+        const systolic = parseFloat(document.getElementById('bp_systolic').value);
+        const diastolic = parseFloat(document.getElementById('bp_diastolic').value);
+        const pulse = parseFloat(document.getElementById('pulse_rate').value);
+        const temperature = parseFloat(document.getElementById('temperature').value);
+
+        let alerts = [];
+
+        // Blood pressure alerts
+        if (systolic && systolic > 140) {
+            alerts.push('High systolic blood pressure detected');
+        }
+        if (diastolic && diastolic > 90) {
+            alerts.push('High diastolic blood pressure detected');
+        }
+        if (systolic && systolic < 90) {
+            alerts.push('Low systolic blood pressure detected');
+        }
+        if (diastolic && diastolic < 60) {
+            alerts.push('Low diastolic blood pressure detected');
+        }
+
+        // Pulse rate alerts
+        if (pulse && (pulse < 60 || pulse > 100)) {
+            alerts.push('Abnormal pulse rate detected');
+        }
+
+        // Temperature alerts
+        if (temperature && temperature > 38.0) {
+            alerts.push('Fever detected');
+        }
+        if (temperature && temperature < 35.0) {
+            alerts.push('Low body temperature detected');
+        }
+
+        const alertsSection = document.getElementById('alertsSection');
+        const alertMessage = document.getElementById('alertMessage');
+
+        if (alerts.length > 0) {
+            alertMessage.textContent = alerts.join(', ');
+            alertsSection.style.display = 'block';
+        } else {
+            alertsSection.style.display = 'none';
+        }
+    }
+
+    // Add event listeners
+    document.getElementById('height').addEventListener('input', calculateBMI);
+    document.getElementById('weight').addEventListener('input', calculateBMI);
+    document.getElementById('bp_systolic').addEventListener('input', validateVitals);
+    document.getElementById('bp_diastolic').addEventListener('input', validateVitals);
+    document.getElementById('pulse_rate').addEventListener('input', validateVitals);
+    document.getElementById('temperature').addEventListener('input', validateVitals);
+
+    // Form validation before submission
+    document.querySelector('.vitals-form').addEventListener('submit', function (e) {
+        const systolic = document.getElementById('bp_systolic').value;
+        const diastolic = document.getElementById('bp_diastolic').value;
+
+        // If one BP value is entered, require the other
+        if ((systolic && !diastolic) || (!systolic && diastolic)) {
+            e.preventDefault();
+            alert('Please enter both systolic and diastolic blood pressure values, or leave both empty.');
+            return false;
+        }
+
+        // Check if at least one vital sign is entered
+        const height = document.getElementById('height').value;
+        const weight = document.getElementById('weight').value;
+        const pulse = document.getElementById('pulse_rate').value;
+        const temperature = document.getElementById('temperature').value;
+
+        if (!height && !weight && !systolic && !diastolic && !pulse && !temperature) {
+            e.preventDefault();
+            alert('Please enter at least one vital sign measurement.');
+            return false;
+        }
+    });
+</script>
+{% endblock %}

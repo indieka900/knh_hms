@@ -211,7 +211,7 @@ def create_prescription(request, record_id):
             instructions_list = request.POST.getlist('instructions[]')
             
             for i in range(len(medications)):
-                if medications[i]:  # Only create if medication name is provided
+                if medications[i]:  
                     Prescription.objects.create(
                         medical_record=record,
                         medication_name=medications[i],

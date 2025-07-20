@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+
+{% block title %}{{ patient.user.get_full_name }} - Medical History - KNH HMS{% endblock %}
+
+{% block page_title %}Medical History - {{ patient.user.get_full_name }}{% endblock %}
+
+{% block content %}
+<!-- Patient Info Header -->
+<div class="patient-info-card">
+    <div class="patient-header">
+        <div class="patient-avatar">
+            <i class="fas fa-user-circle"></i>
+        </div>
+        <div class="patient-details">
+            <h2>{{ patient.user.get_full_name }}</h2>
+            <p><strong>Patient ID:</strong> {{ patient.patient_id }}</p>
+            <p><strong>Age:</strong> {{ patient.age }} years</p>
+            <p><strong>Gender:</strong> {{ patient.get_gender_display }}</p>
+            <p><strong>Phone:</strong> {{ patient.phone_number }}</p>
+            <p><strong>Email:</strong> {{ patient.user.email }}</p>
+        </div>
+        <div class="patient-actions">
+            <a href="#" class="btn btn-primary" onclick="openVitalsModal()">
+                <i class="fas fa-stethoscope"></i> Record Vitals
+            </a>
+            <a href="{% url 'medical_records:create_medical_record' patient.patient_id %}"
+                class="btn btn-success">
+                <i class="fas fa-plus"></i> New Record
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Navigation Tabs -->
+<div class="history-tabs">
+    <button class="tab-btn active" onclick="showTab('records')">
+        <i class="fas fa-file-medical"></i> Medical Records
+    </button>
+    <button class="tab-btn" onclick="showTab('vitals')">
+        <i class="fas fa-heartbeat"></i> Vital Signs
+    </button>
+    <button class="tab-btn" onclick="showTab('prescriptions')">
+        <i class="fas fa-prescription"></i> Prescriptions
+    </button>
+    <button class="tab-btn" onclick="showTab('lab-tests')">
+        <i class="fas fa-flask"></i> Lab Tests
+    </button>
+</div>
+
+<!-- Medical Records Tab -->
+<div id="records-tab" class="tab-content active">
+    <div class="section-header">
+        <h3>Medical Records ({{ medical_records.count }})</h3>
+    </div>
+
+    {% if medical_records %}
+    <div class="records-timeline">
+        {% for record in medical_records %}
+        <div class="timeline-item">
+            <div class="timeline-marker">
+                <i class="fas fa-file-medical"></i>
+            </div>
+            <div class="timeline-content">
+                <div class="record-card">
+                    <div class="record-header">
+                        <div class="record-date">
+                            <strong>{{ record.created_at|date:"M d, Y" }}</strong>
+                            <span>{{ record.created_at|time:"H:i" }}</span>
+                        </div>
+                        <div class="record-doctor">
+                            Dr. {{ record.doctor.user.get_full_name }}
+                        </div>
+                    </div>
+                    <div class="record-body">
+                        <div class="diagnosis">
+                            <h4>Diagnosis</h4>
+                            <p>{{ record.diagnosis }}</p>
+                        </div>
+                        <div class="symptoms">
+                            <h4>Symptoms</h4>
+                            <p>{{ record.symptoms }}</p>
+                        </div>
+                        <div class="treatment">
+                            <h4>Treatment Plan</h4>
+                            <p>{{ record.treatment_plan }}</p>
+                        </div>
+                        {% if record.notes %}
+                        <div class="notes">
+                            <h4>Notes</h4>
+                            <p>{{ record.notes }}</p>
+                        </div>
+                        {% endif %}
+                        {% if record.follow_up_date %}
+                        <div class="follow-up">
+                            <strong>Follow-up Date:</strong> {{ record.follow_up_date|date:"M d, Y" }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="record-actions">
+                        <a href="{% url 'medical_records:medical_record_detail' record.record_id %}"
+                            class="btn btn-sm btn-primary">
+                            View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-file-medical fa-3x"></i>
+        <h3>No Medical Records</h3>
+        <p>This patient has no medical records yet.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Vitals Tab -->
+<div id="vitals-tab" class="tab-content">
+    <div class="section-header">
+        <h3>Vital Signs History</h3>
+    </div>
+
+    {% if vitals %}
+    <div class="vitals-chart">
+        <table class="vitals-table">
+            <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Height</th>
+                    <th>Weight</th>
+                    <th>Blood Pressure</th>
+                    <th>Pulse Rate</th>
+                    <th>Temperature</th>
+                    <th>Recorded By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vital in vitals %}
+                <tr>
+                    <td>{{ vital.recorded_at|date:"M d, Y H:i" }}</td>
+                    <td>{% if vital.height %}{{ vital.height }} cm{% else %}-{% endif %}</td>
+                    <td>{% if vital.weight %}{{ vital.weight }} kg{% else %}-{% endif %}</td>
+                    <td>
+                        {% if vital.blood_pressure_systolic and vital.blood_pressure_diastolic %}
+                        {% if vital.blood_pressure_systolic > 140 %}
+                        <span class="vital-critical">{{ vital.blood_pressure_systolic }}/{{
+                            vital.blood_pressure_diastolic }}</span>
+                        {% else %}
+                        {{ vital.blood_pressure_systolic }}/{{ vital.blood_pressure_diastolic }}
+                        {% endif %}
+                        {% else %}-{% endif %}
+                    </td>
+                    <td>{% if vital.pulse_rate %}{{ vital.pulse_rate }} bpm{% else %}-{% endif %}</td>
+                    <td>
+                        {% if vital.temperature %}
+                        {% if vital.temperature > 38.0 %}
+                        <span class="vital-critical">{{ vital.temperature }}°C</span>
+                        {% else %}
+                        {{ vital.temperature }}°C
+                        {% endif %}
+                        {% else %}-{% endif %}
+                    </td>
+                    <td>{{ vital.recorded_by.get_full_name }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-heartbeat fa-3x"></i>
+        <h3>No Vital Signs</h3>
+        <p>No vital signs have been recorded for this patient.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Prescriptions Tab -->
+<div id="prescriptions-tab" class="tab-content">
+    <div class="section-header">
+        <h3>Prescription History</h3>
+    </div>
+
+    {% if prescriptions %}
+    <div class="prescriptions-list">
+        {% for prescription in prescriptions %}
+        <div class="prescription-card">
+            <div class="prescription-header">
+                <div class="medication-name">{{ prescription.medication_name }}</div>
+                <div class="prescription-status">
+                    {% if prescription.is_dispensed %}
+                    <span class="badge badge-success">Dispensed</span>
+                    {% else %}
+                    <span class="badge badge-warning">Pending</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="prescription-details">
+                <div class="detail-row">
+                    <strong>Dosage:</strong> {{ prescription.dosage }}
+                </div>
+                <div class="detail-row">
+                    <strong>Frequency:</strong> {{ prescription.frequency }}
+                </div>
+                <div class="detail-row">
+                    <strong>Duration:</strong> {{ prescription.duration }}
+                </div>
+                {% if prescription.instructions %}
+                <div class="detail-row">
+                    <strong>Instructions:</strong> {{ prescription.instructions }}
+                </div>
+                {% endif %}
+                <div class="detail-row">
+                    <strong>Prescribed:</strong> {{ prescription.medical_record.created_at|date:"M d, Y" }}
+                </div>
+                {% if prescription.is_dispensed %}
+                <div class="detail-row">
+                    <strong>Dispensed:</strong> {{ prescription.dispensed_at|date:"M d, Y H:i" }}
+                    by {{ prescription.dispensed_by.get_full_name }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-prescription fa-3x"></i>
+        <h3>No Prescriptions</h3>
+        <p>No prescriptions have been issued for this patient.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Lab Tests Tab -->
+<div id="lab-tests-tab" class="tab-content">
+    <div class="section-header">
+        <h3>Laboratory Tests</h3>
+    </div>
+
+    {% if lab_tests %}
+    <div class="lab-tests-list">
+        {% for test in lab_tests %}
+        <div class="lab-test-card">
+            <div class="test-header">
+                <div class="test-name">{{ test.test_name }}</div>
+                <div class="test-status">
+                    {% if test.status == 'completed' %}
+                    <span class="badge badge-success">Completed</span>
+                    {% elif test.status == 'in_progress' %}
+                    <span class="badge badge-info">In Progress</span>
+                    {% elif test.status == 'pending' %}
+                    <span class="badge badge-warning">Pending</span>
+                    {% else %}
+                    <span class="badge badge-danger">Cancelled</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="test-details">
+                <div class="detail-row">
+                    <strong>Description:</strong> {{ test.test_description }}
+                </div>
+                <div class="detail-row">
+                    <strong>Ordered:</strong> {{ test.medical_record.created_at|date:"M d, Y" }}
+                </div>
+                {% if test.test_date %}
+                <div class="detail-row">
+                    <strong>Test Date:</strong> {{ test.test_date|date:"M d, Y H:i" }}
+                </div>
+                {% endif %}
+                {% if test.result_date %}
+                <div class="detail-row">
+                    <strong>Result Date:</strong> {{ test.result_date|date:"M d, Y H:i" }}
+                </div>
+                {% endif %}
+                {% if test.results %}
+                <div class="test-results">
+                    <strong>Results:</strong>
+                    <div class="results-content">{{ test.results }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-flask fa-3x"></i>
+        <h3>No Lab Tests</h3>
+        <p>No laboratory tests have been ordered for this patient.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Record Vitals Modal (same as in dashboard) -->
+<div id="vitalsModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Record Patient Vitals</h3>
+            <span class="close" onclick="closeVitalsModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="vitalsForm" method="post" action="{% url 'medical_records:record_vitals' patient.patient_id %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Patient</label>
+                    <input type="text" value="{{ patient.user.get_full_name }}" class="form-control" readonly>
+                </div>
+                <div class="form-row">
+                    <div class="form-group half-width">
+                        <label>Height (cm)</label>
+                        <input type="number" name="height" class="form-control" step="0.1">
+                    </div>
+                    <div class="form-group half-width">
+                        <label>Weight (kg)</label>
+                        <input type="number" name="weight" class="form-control" step="0.1">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group half-width">
+                        <label>Blood Pressure (Systolic)</label>
+                        <input type="number" name="bp_systolic" class="form-control">
+                    </div>
+                    <div class="form-group half-width">
+                        <label>Blood Pressure (Diastolic)</label>
+                        <input type="number" name="bp_diastolic" class="form-control">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group half-width">
+                        <label>Pulse Rate (bpm)</label>
+                        <input type="number" name="pulse_rate" class="form-control">
+                    </div>
+                    <div class="form-group half-width">
+                        <label>Temperature (°C)</label>
+                        <input type="number" name="temperature" class="form-control" step="0.1">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeVitalsModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Record Vitals</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showTab(tabName) {
+        // Hide all tab contents
+        const tabContents = document.querySelectorAll('.tab-content');
+        tabContents.forEach(content => content.classList.remove('active'));
+
+        // Remove active class from all tab buttons
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+
+        // Show selected tab content
+        document.getElementById(tabName + '-tab').classList.add('active');
+
+        // Add active class to clicked button
+        event.target.classList.add('active');
+    }
+
+    function openVitalsModal() {
+        document.getElementById('vitalsModal').style.display = 'block';
+    }
+
+    function closeVitalsModal() {
+        document.getElementById('vitalsModal').style.display = 'none';
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function (event) {
+        const modal = document.getElementById('vitalsModal');
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

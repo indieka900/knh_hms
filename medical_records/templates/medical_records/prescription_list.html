@@ -18,9 +18,9 @@
                 <label>Status</label>
                 <select name="status" class="form-control">
                     <option value="">All Status</option>
-                    <option value="pending" {% if current_filters.status=='pending' %}selected{% endif %}>Pending
+                    <option value="pending" {% if current_filters.status == 'pending' %}selected{% endif %}>Pending
                     </option>
-                    <option value="dispensed" {% if current_filters.status=='dispensed' %}selected{% endif %}>Dispensed
+                    <option value="dispensed" {% if current_filters.status == 'dispensed' %}selected{% endif %}>Dispensed
                     </option>
                 </select>
             </div>
