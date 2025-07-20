@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+
+{% block title %}Process Payment - KNH HMS{% endblock %}
+
+{% block page_title %}Process Payment{% endblock %}
+
+{% block content %}
+<div class="payment-container">
+    <!-- Bill Summary -->
+    <div class="section-card">
+        <h3><i class="fas fa-file-invoice"></i> Bill Summary</h3>
+        <div class="bill-summary">
+            <div class="summary-item">
+                <label>Bill ID:</label>
+                <span>{{ bill.bill_id }}</span>
+            </div>
+            <div class="summary-item">
+                <label>Patient:</label>
+                <span>{{ bill.patient.user.get_full_name }}</span>
+            </div>
+            <div class="summary-item">
+                <label>Total Amount:</label>
+                <span>KSh {{ bill.total_amount|floatformat:2 }}</span>
+            </div>
+            <div class="summary-item">
+                <label>Amount Paid:</label>
+                <span>KSh {{ bill.amount_paid|floatformat:2 }}</span>
+            </div>
+            <div class="summary-item highlight">
+                <label>Balance Due:</label>
+                <span class="amount-due">KSh {{ bill.balance_due|floatformat:2 }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Form -->
+    <div class="section-card">
+        <h3><i class="fas fa-credit-card"></i> Payment Details</h3>
+        <form method="post" class="payment-form">
+            {% csrf_token %}
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="amount">Payment Amount *</label>
+                    <input type="number" id="amount" name="amount" step="0.01" max="{{ bill.balance_due }}"
+                        placeholder="Enter payment amount" class="form-control" required>
+                    <small class="form-text">Maximum: KSh {{ bill.balance_due|floatformat:2 }}</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="payment_method">Payment Method *</label>
+                    <select id="payment_method" name="payment_method" class="form-control" required>
+                        <option value="">Select payment method</option>
+                        {% for method_code, method_name in payment_methods %}
+                        <option value="{{ method_code }}">{{ method_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="transaction_reference">Transaction Reference</label>
+                    <input type="text" id="transaction_reference" name="transaction_reference"
+                        placeholder="Enter reference number (optional)" class="form-control">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="notes">Notes</label>
+                <textarea id="notes" name="notes" rows="3" placeholder="Additional notes (optional)"
+                    class="form-control"></textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-check"></i> Process Payment
+                </button>
+                <a href="{% url 'billing:bill_detail' bill.bill_id %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .payment-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .section-card {
+        background: var(--white);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+
+    .section-card h3 {
+        margin: 0 0 20px 0;
+        color: var(--primary-dark);
+        border-bottom: 2px solid var(--primary-light);
+        padding-bottom: 10px;
+    }
+
+    .bill-summary {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--gray-light);
+    }
+
+    .summary-item.highlight {
+        background: var(--primary-light);
+        padding: 15px;
+        border-radius: 4px;
+        font-weight: 600;
+        grid-column: 1 / -1;
+    }
+
+    .amount-due {
+        color: var(--danger);
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .payment-form .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: var(--secondary-dark);
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--gray-medium);
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-dark);
+        box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.2);
+    }
+
+    .item-row {
+        display: grid;
+        grid-template-columns: 2fr 2fr 1fr 1fr 1fr auto;
+        gap: 15px;
+        align-items: end;
+        padding: 15px;
+        background: var(--gray-light);
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+
+    .items-actions {
+        margin-top: 20px;
+    }
+
+    .bill-total {
+        margin-top: 30px;
+        padding: 20px;
+        background: var(--primary-light);
+        border-radius: 8px;
+    }
+
+    .total-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .total-amount {
+        color: var(--primary-dark);
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+    }
+
+    .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-success {
+        background-color: var(--success);
+        color: var(--white);
+    }
+
+    .btn-secondary {
+        background-color: var(--gray-medium);
+        color: var(--white);
+    }
+
+    .btn-danger {
+        background-color: var(--danger);
+        color: var(--white);
+    }
+
+    .btn-sm {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+
+    @media (max-width: 768px) {
+        .item-row {
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const itemsContainer = document.getElementById('itemsContainer');
+        const addItemBtn = document.getElementById('addItem');
+        const totalAmountEl = document.getElementById('totalAmount');
+
+        function createItemRow() {
+            const itemRow = document.createElement('div');
+            itemRow.className = 'item-row';
+            itemRow.innerHTML = `
+            <div class="form-group">
+                <label>Service</label>
+                <select name="service[]" class="form-control service-select" required>
+                    <option value="">Select Service</option>
+                    {% for service in service_types %}
+                        <option value="{{ service.id }}" data-price="{{ service.base_price }}">
+                            {{ service.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Description</label>
+                <input type="text" name="description[]" placeholder="Service description" class="form-control">
+            </div>
+            
+            <div class="form-group">
+                <label>Quantity</label>
+                <input type="number" name="quantity[]" min="1" value="1" class="form-control quantity-input" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Unit Price</label>
+                <input type="number" name="unit_price[]" step="0.01" min="0" class="form-control price-input" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Total</label>
+                <input type="text" class="form-control item-total" readonly>
+            </div>
+            
+            <div class="form-group">
+                <button type="button" class="btn btn-danger btn-sm remove-item">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+            return itemRow;
+        }
+
+        function calculateItemTotal(row) {
+            const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
+            const price = parseFloat(row.querySelector('.price-input').value) || 0;
+            const total = quantity * price;
+            row.querySelector('.item-total').value = `KSh ${total.toFixed(2)}`;
+            calculateBillTotal();
+        }
+
+        function calculateBillTotal() {
+            let total = 0;
+            document.querySelectorAll('.item-row').forEach(row => {
+                const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
+                const price = parseFloat(row.querySelector('.price-input').value) || 0;
+                total += quantity * price;
+            });
+            totalAmountEl.textContent = `KSh ${total.toFixed(2)}`;
+        }
+
+        // Add item event
+        addItemBtn.addEventListener('click', function () {
+            const newRow = createItemRow();
+            itemsContainer.appendChild(newRow);
+        });
+
+        // Event delegation for dynamic elements
+        itemsContainer.addEventListener('click', function (e) {
+            if (e.target.classList.contains('remove-item') || e.target.closest('.remove-item')) {
+                e.target.closest('.item-row').remove();
+                calculateBillTotal();
+            }
+        });
+
+        itemsContainer.addEventListener('change', function (e) {
+            if (e.target.classList.contains('service-select')) {
+                const row = e.target.closest('.item-row');
+                const selectedOption = e.target.selectedOptions[0];
+                const price = selectedOption.dataset.price || 0;
+                row.querySelector('.price-input').value = price;
+                row.querySelector('input[name="description[]"]').value = selectedOption.text;
+                calculateItemTotal(row);
+            }
+        });
+
+        itemsContainer.addEventListener('input', function (e) {
+            if (e.target.classList.contains('quantity-input') || e.target.classList.contains('price-input')) {
+                const row = e.target.closest('.item-row');
+                calculateItemTotal(row);
+            }
+        });
+
+        // Initial calculation
+        calculateBillTotal();
+    });
+</script>
+{% endblock %}

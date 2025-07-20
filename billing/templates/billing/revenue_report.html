@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+
+{% block title %}Revenue Report - KNH HMS{% endblock %}
+
+{% block page_title %}Detailed Revenue Report{% endblock %}
+
+{% block content %}
+<!-- Filter Section -->
+<div class="filter-section">
+    <form method="get" class="filter-form">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label>Date From</label>
+                <input type="date" name="date_from" value="{{ date_from|date:'Y-m-d' }}" class="form-control">
+            </div>
+
+            <div class="filter-group">
+                <label>Date To</label>
+                <input type="date" name="date_to" value="{{ date_to|date:'Y-m-d' }}" class="form-control">
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Generate Report
+                </button>
+                <button onclick="window.print()" class="btn btn-secondary">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Service Revenue Breakdown -->
+<div class="section-card">
+    <h3><i class="fas fa-chart-bar"></i> Service-wise Revenue</h3>
+    <div class="table-container">
+        <table class="revenue-table">
+            <thead>
+                <tr>
+                    <th>Service</th>
+                    <th>Quantity Sold</th>
+                    <th>Total Revenue</th>
+                    <th>Percentage</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for service in service_revenue %}
+                <tr>
+                    <td class="service-name">{{ service.service_type__name }}</td>
+                    <td class="quantity">{{ service.quantity_sold }}</td>
+                    <td class="revenue">KSh {{ service.total_revenue|floatformat:2 }}</td>
+                    <td class="percentage">
+                        {% widthratio service.total_revenue total_revenue 100 %}%
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">No service data available</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Detailed Payments -->
+<div class="section-card">
+    <h3><i class="fas fa-list-alt"></i> Payment Details</h3>
+    <div class="table-container">
+        <table class="payments-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Payment ID</th>
+                    <th>Patient</th>
+                    <th>Amount</th>
+                    <th>Method</th>
+                    <th>Processed By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                <tr>
+                    <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                    <td>
+                        <a href="{% url 'billing:payment_detail' payment.payment_id %}">
+                            {{ payment.payment_id }}
+                        </a>
+                    </td>
+                    <td>{{ payment.bill.patient.user.get_full_name }}</td>
+                    <td class="amount">KSh {{ payment.amount|floatformat:2 }}</td>
+                    <td>{{ payment.get_payment_method_display }}</td>
+                    <td>{{ payment.processed_by.user.get_full_name }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">No payments found for the selected period</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .filter-section {
+        background: var(--white);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .filter-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr auto;
+        gap: 20px;
+        align-items: end;
+    }
+
+    .filter-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: var(--secondary-dark);
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .section-card {
+        background: var(--white);
+        border-radius: 8px;
+        padding: 25px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+
+    .section-card h3 {
+        margin: 0 0 20px 0;
+        color: var(--primary-dark);
+        border-bottom: 2px solid var(--primary-light);
+        padding-bottom: 10px;
+    }
+
+    .table-container {
+        overflow-x: auto;
+    }
+
+    .revenue-table,
+    .payments-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .revenue-table th,
+    .payments-table th {
+        background: var(--primary-light);
+        color: var(--primary-dark);
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+    }
+
+    .revenue-table td,
+    .payments-table td {
+        padding: 12px;
+        border-bottom: 1px solid var(--gray-light);
+    }
+
+    .service-name {
+        font-weight: 600;
+        color: var(--primary-dark);
+    }
+
+    .quantity {
+        text-align: center;
+        font-weight: 600;
+    }
+
+    .revenue,
+    .amount {
+        font-weight: 600;
+        color: var(--success);
+    }
+
+    .percentage {
+        text-align: center;
+        font-weight: 600;
+        color: var(--info);
+    }
+
+    .text-center {
+        text-align: center;
+        color: var(--gray-medium);
+        font-style: italic;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background-color: var(--primary-dark);
+        color: var(--white);
+    }
+
+    .btn-secondary {
+        background-color: var(--gray-medium);
+        color: var(--white);
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+
+    @media (max-width: 768px) {
+        .filter-row {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media print {
+        .filter-section {
+            display: none;
+        }
+
+        .section-card {
+            box-shadow: none;
+            border: 1px solid var(--gray-light);
+        }
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-dark);
+        box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.2);
+    }
+
+    .form-text {
+        color: var(--gray-medium);
+        font-size: 12px;
+        margin-top: 5px;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 30px;
+    }
+
+    @media (max-width: 768px) {
+        .bill-summary {
+            grid-template-columns: 1fr;
+        }
+
+        .payment-form .form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const amountInput = document.getElementById('amount');
+        const maxAmount = {{ bill.balance_due }
+    };
+
+    amountInput.addEventListener('input', function () {
+        const value = parseFloat(this.value);
+        if (value > maxAmount) {
+            this.value = maxAmount;
+        }
+    });
+});
+</script>
+{% endblock %

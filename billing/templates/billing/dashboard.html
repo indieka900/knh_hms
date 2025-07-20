@@ -1,0 +1,597 @@
+{% extends "base.html" %}
+
+{% block title %}Billing Dashboard - KNH HMS{% endblock %}
+
+{% block page_title %}Billing Dashboard{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <h3>Today's Revenue</h3>
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--success), #20c997);">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+        </div>
+        <div class="stat-number">KSh {{ total_revenue_today|floatformat:0|default:"0" }}</div>
+        <div class="stat-change positive">
+            <i class="fas fa-arrow-up"></i>
+            <span>Today's collections</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <h3>Pending Bills</h3>
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--warning), #fd7e14);">
+                <i class="fas fa-file-invoice"></i>
+            </div>
+        </div>
+        <div class="stat-number">{{ pending_bills_count }}</div>
+        <div class="stat-change neutral">
+            <i class="fas fa-clock"></i>
+            <span>Awaiting payment</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <h3>Overdue Bills</h3>
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--danger), #c82333);">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+        </div>
+        <div class="stat-number">{{ overdue_bills_count }}</div>
+        <div class="stat-change negative">
+            <i class="fas fa-arrow-down"></i>
+            <span>Past due date</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <h3>Monthly Revenue</h3>
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--info), #138496);">
+                <i class="fas fa-chart-line"></i>
+            </div>
+        </div>
+        <div class="stat-number">KSh {{ revenue_this_month|floatformat:0|default:"0" }}</div>
+        <div class="stat-change positive">
+            <i class="fas fa-arrow-up"></i>
+            <span>This month</span>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="quick-actions">
+    <div class="section-header">
+        <h2 class="section-title">Quick Actions</h2>
+    </div>
+    <div class="actions-grid">
+        <a href="{% url 'billing:create_bill' %}" class="action-btn">
+            <i class="fas fa-plus-circle"></i>
+            <span>Create Bill</span>
+        </a>
+
+        <a href="{% url 'billing:bill_list' %}" class="action-btn">
+            <i class="fas fa-list"></i>
+            <span>View All Bills</span>
+        </a>
+
+        <a href="{% url 'billing:payment_list' %}" class="action-btn">
+            <i class="fas fa-credit-card"></i>
+            <span>Payment History</span>
+        </a>
+
+        <a href="{% url 'billing:service_type_list' %}" class="action-btn">
+            <i class="fas fa-cogs"></i>
+            <span>Manage Services</span>
+        </a>
+
+        <a href="{% url 'billing:billing_reports' %}" class="action-btn">
+            <i class="fas fa-chart-bar"></i>
+            <span>Generate Reports</span>
+        </a>
+
+        <a href="#" class="action-btn" onclick="openQuickPayment()">
+            <i class="fas fa-dollar-sign"></i>
+            <span>Quick Payment</span>
+        </a>
+    </div>
+</div>
+
+<!-- Recent Payments -->
+<div class="recent-activity">
+    <div class="section-header">
+        <h2 class="section-title">Recent Payments</h2>
+        <a href="{% url 'billing:payment_list' %}"
+            style="color: var(--secondary-dark); text-decoration: none; font-weight: 600;">View All</a>
+    </div>
+    <table class="activity-table">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Patient</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for payment in recent_payments %}
+            <tr>
+                <td>{{ payment.payment_date|time:"H:i" }}</td>
+                <td>{{ payment.bill.patient.user.get_full_name }}</td>
+                <td>KSh {{ payment.amount|floatformat:2 }}</td>
+                <td>{{ payment.get_payment_method_display }}</td>
+                <td><span class="status-badge status-completed">Completed</span></td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align: center; color: var(--gray-medium);">No recent payments</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pending Bills -->
+<div class="recent-activity">
+    <div class="section-header">
+        <h2 class="section-title">Pending Bills</h2>
+        <a href="{% url 'billing:bill_list' %}?status=pending"
+            style="color: var(--secondary-dark); text-decoration: none; font-weight: 600;">View All</a>
+    </div>
+    <table class="activity-table">
+        <thead>
+            <tr>
+                <th>Bill ID</th>
+                <th>Patient</th>
+                <th>Amount</th>
+                <th>Due Date</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for bill in pending_bills %}
+            <tr>
+                <td>{{ bill.bill_id }}</td>
+                <td>{{ bill.patient.user.get_full_name }}</td>
+                <td>KSh {{ bill.total_amount|floatformat:2 }}</td>
+                <td>{{ bill.due_date|date:"M d, Y" }}</td>
+                <td>
+                    <a href="{% url 'billing:process_payment' bill.bill_id %}" class="btn btn-sm btn-primary">
+                        Process Payment
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align: center; color: var(--gray-medium);">No pending bills</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Quick Payment Modal -->
+<div id="quickPaymentModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Quick Payment</h3>
+            <span class="close" onclick="closeQuickPayment()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="quickPaymentForm">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Patient ID or Name</label>
+                    <input type="text" id="patientSearch" placeholder="Search patient..." class="form-control">
+                    <div id="patientResults" class="search-results"></div>
+                    <input type="hidden" id="selectedPatientId">
+                </div>
+
+                <div class="form-group">
+                    <label>Select Bill</label>
+                    <select id="patientBills" class="form-control" required>
+                        <option value="">Select a bill...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Amount</label>
+                    <input type="number" id="paymentAmount" step="0.01" class="form-control" required>
+                    <small id="balanceInfo" class="form-text text-muted"></small>
+                </div>
+
+                <div class="form-group">
+                    <label>Payment Method</label>
+                    <select id="paymentMethod" class="form-control" required>
+                        <option value="">Select payment method</option>
+                        <option value="cash">Cash</option>
+                        <option value="card">Credit/Debit Card</option>
+                        <option value="mobile_money">Mobile Money</option>
+                        <option value="insurance">Insurance</option>
+                        <option value="bank_transfer">Bank Transfer</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Transaction Reference (Optional)</label>
+                    <input type="text" id="transactionRef" class="form-control" placeholder="Reference number">
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeQuickPayment()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Process Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openQuickPayment() {
+        document.getElementById('quickPaymentModal').style.display = 'block';
+        document.getElementById('patientSearch').focus();
+    }
+
+    function closeQuickPayment() {
+        document.getElementById('quickPaymentModal').style.display = 'none';
+        // Reset form
+        document.getElementById('quickPaymentForm').reset();
+        document.getElementById('selectedPatientId').value = '';
+        document.getElementById('patientResults').style.display = 'none';
+        document.getElementById('patientBills').innerHTML = '<option value="">Select a bill...</option>';
+        document.getElementById('balanceInfo').textContent = '';
+    }
+
+    // Patient search functionality
+    document.getElementById('patientSearch').addEventListener('input', function (e) {
+        const query = e.target.value;
+        const resultsDiv = document.getElementById('patientResults');
+
+        if (query.length >= 2) {
+            fetch(`/patients/api/search/?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    resultsDiv.innerHTML = '';
+                    if (data.results && data.results.length > 0) {
+                        data.results.forEach(patient => {
+                            const div = document.createElement('div');
+                            div.className = 'search-result-item';
+                            div.innerHTML = `
+                            <strong>${patient.name}</strong><br>
+                            <small>ID: ${patient.patient_id}</small>
+                        `;
+                            div.onclick = () => selectPatient(patient);
+                            resultsDiv.appendChild(div);
+                        });
+                        resultsDiv.style.display = 'block';
+                    } else {
+                        resultsDiv.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error searching patients:', error);
+                    resultsDiv.style.display = 'none';
+                });
+        } else {
+            resultsDiv.style.display = 'none';
+        }
+    });
+
+    function selectPatient(patient) {
+        document.getElementById('patientSearch').value = `${patient.name} (${patient.patient_id})`;
+        document.getElementById('selectedPatientId').value = patient.patient_id;
+        document.getElementById('patientResults').style.display = 'none';
+
+        // Load patient bills
+        loadPatientBills(patient.patient_id);
+    }
+
+    function loadPatientBills(patientId) {
+        fetch(`/billing/api/patient-bills/${patientId}/`)
+            .then(response => response.json())
+            .then(data => {
+                const billSelect = document.getElementById('patientBills');
+                billSelect.innerHTML = '<option value="">Select a bill...</option>';
+
+                if (data.bills && data.bills.length > 0) {
+                    data.bills.forEach(bill => {
+                        if (bill.balance_due > 0) { // Only show bills with outstanding balance
+                            const option = document.createElement('option');
+                            option.value = bill.bill_id;
+                            option.textContent = `${bill.bill_id} - KSh ${bill.balance_due.toFixed(2)} (Due: ${bill.due_date})`;
+                            option.dataset.balance = bill.balance_due;
+                            option.dataset.total = bill.total_amount;
+                            option.dataset.paid = bill.amount_paid;
+                            billSelect.appendChild(option);
+                        }
+                    });
+
+                    if (billSelect.children.length === 1) {
+                        billSelect.innerHTML = '<option value="">No outstanding bills found</option>';
+                    }
+                } else {
+                    billSelect.innerHTML = '<option value="">No bills found for this patient</option>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading patient bills:', error);
+                document.getElementById('patientBills').innerHTML = '<option value="">Error loading bills</option>';
+            });
+    }
+
+    // Bill selection handler
+    document.getElementById('patientBills').addEventListener('change', function () {
+        const selectedOption = this.selectedOptions[0];
+        const amountInput = document.getElementById('paymentAmount');
+        const balanceInfo = document.getElementById('balanceInfo');
+
+        if (selectedOption && selectedOption.dataset.balance) {
+            const balance = parseFloat(selectedOption.dataset.balance);
+            const total = parseFloat(selectedOption.dataset.total);
+            const paid = parseFloat(selectedOption.dataset.paid);
+
+            amountInput.value = balance.toFixed(2);
+            amountInput.max = balance;
+
+            balanceInfo.innerHTML = `
+            <strong>Bill Details:</strong><br>
+            Total: KSh ${total.toFixed(2)} | 
+            Paid: KSh ${paid.toFixed(2)} | 
+            <span style="color: var(--danger);">Balance: KSh ${balance.toFixed(2)}</span>
+        `;
+        } else {
+            amountInput.value = '';
+            amountInput.removeAttribute('max');
+            balanceInfo.textContent = '';
+        }
+    });
+
+    // Quick payment form submission
+    document.getElementById('quickPaymentForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const billId = document.getElementById('patientBills').value;
+        const amount = parseFloat(document.getElementById('paymentAmount').value);
+        const paymentMethod = document.getElementById('paymentMethod').value;
+        const transactionRef = document.getElementById('transactionRef').value;
+
+        if (!billId) {
+            alert('Please select a bill');
+            return;
+        }
+
+        if (!amount || amount <= 0) {
+            alert('Please enter a valid payment amount');
+            return;
+        }
+
+        if (!paymentMethod) {
+            alert('Please select a payment method');
+            return;
+        }
+
+        // Get maximum allowed amount
+        const selectedBill = document.getElementById('patientBills').selectedOptions[0];
+        const maxAmount = parseFloat(selectedBill.dataset.balance);
+
+        if (amount > maxAmount) {
+            alert(`Payment amount cannot exceed the outstanding balance of KSh ${maxAmount.toFixed(2)}`);
+            return;
+        }
+
+        // Show confirmation
+        const confirmMsg = `Process payment of KSh ${amount.toFixed(2)} for bill ${billId} via ${paymentMethod}?`;
+        if (confirm(confirmMsg)) {
+            // Redirect to payment processing page
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/billing/payments/process/${billId}/`;
+
+            // Add CSRF token
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            form.appendChild(csrfInput);
+
+            // Add form data
+            const fields = {
+                'amount': amount,
+                'payment_method': paymentMethod,
+                'transaction_reference': transactionRef,
+                'notes': 'Quick payment from dashboard'
+            };
+
+            for (let [key, value] of Object.entries(fields)) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = value;
+                form.appendChild(input);
+            }
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function (e) {
+        const modal = document.getElementById('quickPaymentModal');
+        if (e.target === modal) {
+            closeQuickPayment();
+        }
+    });
+
+    // Handle escape key
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closeQuickPayment();
+        }
+    });
+</script>
+
+<style>
+    .modal {
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+        background-color: var(--white);
+        margin: 5% auto;
+        padding: 0;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        padding: 20px;
+        border-bottom: 1px solid var(--gray-light);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--primary-light);
+        border-radius: 8px 8px 0 0;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        color: var(--primary-dark);
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .close {
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+        color: var(--gray-medium);
+        background: none;
+        border: none;
+    }
+
+    .close:hover {
+        color: var(--primary-dark);
+    }
+
+    .search-results {
+        position: absolute;
+        background: var(--white);
+        border: 1px solid var(--gray-light);
+        border-radius: 4px;
+        max-height: 200px;
+        overflow-y: auto;
+        width: 100%;
+        z-index: 1001;
+        display: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .search-result-item {
+        padding: 12px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--gray-light);
+    }
+
+    .search-result-item:last-child {
+        border-bottom: none;
+    }
+
+    .search-result-item:hover {
+        background-color: var(--primary-light);
+    }
+
+    .form-group {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: var(--primary-dark);
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--gray-light);
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-dark);
+        box-shadow: 0 0 0 2px rgba(58, 43, 50, 0.1);
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--gray-light);
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background-color: var(--primary-dark);
+        color: var(--white);
+    }
+
+    .btn-secondary {
+        background-color: var(--gray-medium);
+        color: var(--white);
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+
+    .form-text {
+        font-size: 12px;
+        margin-top: 5px;
+    }
+
+    .text-muted {
+        color: var(--gray-medium);
+    }
+</style>
+{% endblock %}

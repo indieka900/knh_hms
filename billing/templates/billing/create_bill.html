@@ -1,0 +1,401 @@
+{% extends "base.html" %}
+
+{% block title %}Create Bill - KNH HMS{% endblock %}
+
+{% block page_title %}Create New Bill{% endblock %}
+
+{% block extra_css %}
+<style>
+    .bill-item-row {
+        border: 1px solid var(--gray-light);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        background: var(--white);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 2fr 2fr 1fr 1.5fr 1.5fr 80px;
+        gap: 15px;
+        align-items: end;
+        margin-bottom: 10px;
+    }
+
+    .bill-summary {
+        background: var(--primary-light);
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 20px;
+    }
+
+    .patient-search-container {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .patient-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--white);
+        border: 1px solid var(--gray-light);
+        border-radius: 4px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 100;
+        display: none;
+    }
+
+    .patient-result-item {
+        padding: 12px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--gray-light);
+    }
+
+    .patient-result-item:hover {
+        background: var(--primary-light);
+    }
+
+    .section-card {
+        background: var(--white);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--primary-light);
+    }
+
+    .add-item-btn {
+        background: var(--success);
+        color: var(--white);
+        border: none;
+        padding: 8px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .total-display {
+        background: var(--gray-light);
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<form method="post" id="billForm">
+    {% csrf_token %}
+
+    <!-- Patient Selection -->
+    <div class="section-card">
+        <div class="section-header">
+            <h3><i class="fas fa-user"></i> Patient Information</h3>
+        </div>
+
+        <div class="patient-search-container">
+            <label for="patientSearch">Search Patient</label>
+            <input type="text" id="patientSearch" class="form-control" placeholder="Search by name or Patient ID..."
+                required>
+            <div id="patientResults" class="patient-results"></div>
+            <input type="hidden" name="patient_id" id="selectedPatientId" required>
+        </div>
+
+        <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr;">
+            <div class="form-group">
+                <label>Appointment (Optional)</label>
+                <select name="appointment_id" id="appointmentSelect" class="form-control">
+                    <option value="">Select appointment...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Due Date</label>
+                <input type="date" name="due_date" class="form-control" required
+                    value="{{ request.POST.due_date|default:default_due_date }}">
+            </div>
+            <div class="form-group">
+                <label>Notes</label>
+                <input type="text" name="notes" class="form-control" placeholder="Additional notes...">
+            </div>
+        </div>
+    </div>
+
+    <!-- Bill Items -->
+    <div class="section-card">
+        <div class="section-header">
+            <h3><i class="fas fa-list"></i> Bill Items</h3>
+            <button type="button" id="addBillItem" class="add-item-btn">
+                <i class="fas fa-plus"></i> Add Item
+            </button>
+        </div>
+
+        <!-- Header Row -->
+        <div class="form-row" style="font-weight: bold; color: var(--primary-dark);">
+            <div>Service</div>
+            <div>Description</div>
+            <div>Quantity</div>
+            <div>Unit Price (KSh)</div>
+            <div>Total (KSh)</div>
+            <div>Action</div>
+        </div>
+
+        <div id="billItems">
+            <!-- Bill items will be added here -->
+        </div>
+    </div>
+
+    <!-- Bill Summary -->
+    <div class="bill-summary">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h4>Bill Summary</h4>
+                <p style="margin: 0; color: var(--gray-medium);">
+                    Review all items before creating the bill
+                </p>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 24px; font-weight: bold; color: var(--primary-dark);">
+                    Total: <span id="billTotal">KSh 0.00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div style="display: flex; justify-content: space-between; margin-top: 30px;">
+        <a href="{% url 'billing:billing_dashboard' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Cancel
+        </a>
+        <button type="submit" class="btn btn-primary" style="font-size: 16px; padding: 12px 30px;">
+            <i class="fas fa-file-invoice"></i> Create Bill
+        </button>
+    </div>
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Patient search functionality
+        const patientSearch = document.getElementById('patientSearch');
+        const patientResults = document.getElementById('patientResults');
+        const selectedPatientId = document.getElementById('selectedPatientId');
+        const appointmentSelect = document.getElementById('appointmentSelect');
+        let searchTimeout;
+
+        patientSearch.addEventListener('input', function () {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+
+            if (query.length < 2) {
+                patientResults.style.display = 'none';
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                fetch(`/patients/api/search/?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        displayPatientResults(data.results);
+                    })
+                    .catch(error => console.error('Search error:', error));
+            }, 300);
+        });
+
+        function displayPatientResults(patients) {
+            patientResults.innerHTML = '';
+
+            if (patients.length === 0) {
+                patientResults.style.display = 'none';
+                return;
+            }
+
+            patients.forEach(patient => {
+                const div = document.createElement('div');
+                div.className = 'patient-result-item';
+                div.innerHTML = `
+                <strong>${patient.name}</strong><br>
+                <small>ID: ${patient.patient_id}</small>
+            `;
+
+                div.addEventListener('click', () => {
+                    selectPatient(patient);
+                });
+
+                patientResults.appendChild(div);
+            });
+
+            patientResults.style.display = 'block';
+        }
+
+        function selectPatient(patient) {
+            patientSearch.value = `${patient.name} (${patient.patient_id})`;
+            selectedPatientId.value = patient.patient_id;
+            patientResults.style.display = 'none';
+
+            // Load patient's recent appointments
+            loadPatientAppointments(patient.patient_id);
+        }
+
+        function loadPatientAppointments(patientId) {
+            fetch(`/appointments/api/patient-appointments/${patientId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    appointmentSelect.innerHTML = '<option value="">Select appointment...</option>';
+
+                    data.appointments.forEach(appointment => {
+                        const option = document.createElement('option');
+                        option.value = appointment.appointment_id;
+                        option.textContent = `${appointment.appointment_date} - Dr. ${appointment.doctor_name}`;
+                        appointmentSelect.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error loading appointments:', error));
+        }
+
+        // Hide results when clicking outside
+        document.addEventListener('click', function (e) {
+            if (!patientSearch.contains(e.target) && !patientResults.contains(e.target)) {
+                patientResults.style.display = 'none';
+            }
+        });
+
+        // Add initial bill item
+        addBillItem();
+    });
+
+    function addBillItem() {
+        const container = document.getElementById('billItems');
+        const itemCount = container.children.length;
+
+        const itemHtml = `
+        <div class="bill-item-row" data-index="${itemCount}">
+            <div class="form-row">
+                <div class="form-group">
+                    <select name="service[]" class="form-control service-select" required onchange="updateServicePrice(this)">
+                        <option value="">Select Service</option>
+                        {% for service in service_types %}
+                        <option value="{{ service.id }}" data-price="{{ service.base_price }}" data-name="{{ service.name }}">
+                            {{ service.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="text" name="description[]" class="form-control" placeholder="Description">
+                </div>
+                <div class="form-group">
+                    <input type="number" name="quantity[]" class="form-control quantity-input" 
+                           value="1" min="1" required onchange="calculateRowTotal(this)">
+                </div>
+                <div class="form-group">
+                    <input type="number" name="unit_price[]" class="form-control price-input" 
+                           step="0.01" min="0" required onchange="calculateRowTotal(this)">
+                </div>
+                <div class="form-group">
+                    <input type="text" class="form-control total-display" readonly placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeBillItem(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+        container.insertAdjacentHTML('beforeend', itemHtml);
+    }
+
+    function removeBillItem(button) {
+        const row = button.closest('.bill-item-row');
+        row.remove();
+        calculateBillTotal();
+    }
+
+    function updateServicePrice(select) {
+        const option = select.selectedOptions[0];
+        if (option && option.dataset.price) {
+            const row = select.closest('.bill-item-row');
+            const priceInput = row.querySelector('.price-input');
+            const descInput = row.querySelector('input[name="description[]"]');
+
+            priceInput.value = option.dataset.price;
+            if (!descInput.value) {
+                descInput.value = option.dataset.name;
+            }
+
+            calculateRowTotal(priceInput);
+        }
+    }
+
+    function calculateRowTotal(input) {
+        const row = input.closest('.bill-item-row');
+        const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
+        const unitPrice = parseFloat(row.querySelector('.price-input').value) || 0;
+        const total = (quantity * unitPrice).toFixed(2);
+
+        row.querySelector('.total-display').value = total;
+        calculateBillTotal();
+    }
+
+    function calculateBillTotal() {
+        const rows = document.querySelectorAll('.bill-item-row');
+        let total = 0;
+
+        rows.forEach(row => {
+            const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
+            const unitPrice = parseFloat(row.querySelector('.price-input').value) || 0;
+            total += quantity * unitPrice;
+        });
+
+        document.getElementById('billTotal').textContent = `KSh ${total.toLocaleString('en-KE', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        })}`;
+    }
+
+    // Form validation
+    document.getElementById('billForm').addEventListener('submit', function (e) {
+        const patientId = document.getElementById('selectedPatientId').value;
+        const billItems = document.querySelectorAll('.bill-item-row');
+
+        if (!patientId) {
+            alert('Please select a patient');
+            e.preventDefault();
+            return;
+        }
+
+        if (billItems.length === 0) {
+            alert('Please add at least one bill item');
+            e.preventDefault();
+            return;
+        }
+
+        // Check if all bill items have required fields
+        let hasInvalidItems = false;
+        billItems.forEach(row => {
+            const service = row.querySelector('.service-select').value;
+            const quantity = row.querySelector('.quantity-input').value;
+            const price = row.querySelector('.price-input').value;
+
+            if (!service || !quantity || !price) {
+                hasInvalidItems = true;
+            }
+        });
+
+        if (hasInvalidItems) {
+            alert('Please fill in all required fields for bill items');
+            e.preventDefault();
+            return;
+        }
+    });
+</script>
+{% endblock %}

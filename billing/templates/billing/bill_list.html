@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+
+{% block title %}Bills - KNH HMS{% endblock %}
+
+{% block page_title %}Bill Management{% endblock %}
+
+{% block content %}
+<!-- Filter Section -->
+<div class="filter-section">
+    <form method="get" class="filter-form">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label>Patient</label>
+                <input type="text" name="patient" value="{{ current_filters.patient }}"
+                    placeholder="Search by patient name or ID" class="form-control">
+            </div>
+            <div class="filter-group">
+                <label>Status</label>
+                <select name="status" class="form-control">
+                    <option value="">All Status</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if current_filters.status == value %}selected{% endif %}>{{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>From Date</label>
+                <input type="date" name="date_from" value="{{ current_filters.date_from }}" class="form-control">
+            </div>
+            <div class="filter-group">
+                <label>To Date</label>
+                <input type="date" name="date_to" value="{{ current_filters.date_to }}" class="form-control">
+            </div>
+            <div class="filter-group">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Filter
+                </button>
+                <a href="{% url 'billing:bill_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Quick Actions -->
+<div class="actions-bar">
+    <a href="{% url 'billing:create_bill' %}" class="btn btn-success">
+        <i class="fas fa-plus"></i> Create Bill
+    </a>
+    <a href="{% url 'billing:payment_list' %}" class="btn btn-info">
+        <i class="fas fa-credit-card"></i> View Payments
+    </a>
+    <a href="{% url 'billing:billing_reports' %}" class="btn btn-warning">
+        <i class="fas fa-chart-bar"></i> Reports
+    </a>
+</div>
+
+<!-- Bills Table -->
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Bill ID</th>
+                <th>Patient</th>
+                <th>Total Amount</th>
+                <th>Amount Paid</th>
+                <th>Balance Due</th>
+                <th>Status</th>
+                <th>Issue Date</th>
+                <th>Due Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for bill in bills %}
+            <tr
+                class="{% if bill.status == 'overdue' %}overdue-row{% elif bill.status == 'pending' %}pending-row{% endif %}">
+                <td>
+                    <strong>{{ bill.bill_id }}</strong>
+                    {% if bill.appointment %}
+                    <br><small class="text-muted">Appt: {{ bill.appointment.appointment_date|date:"M d" }}</small>
+                    {% endif %}
+                </td>
+                <td>
+                    <strong>{{ bill.patient.user.get_full_name }}</strong><br>
+                    <small>{{ bill.patient.patient_id }}</small>
+                </td>
+                <td>KSh {{ bill.total_amount|floatformat:2 }}</td>
+                <td>KSh {{ bill.amount_paid|floatformat:2 }}</td>
+                <td>
+                    <strong class="{% if bill.balance_due > 0 %}text-danger{% else %}text-success{% endif %}">
+                        KSh {{ bill.balance_due|floatformat:2 }}
+                    </strong>
+                </td>
+                <td>
+                    {% if bill.status == 'pending' %}
+                    <span class="status-badge status-pending">Pending</span>
+                    {% elif bill.status == 'partial' %}
+                    <span class="status-badge status-partial">Partial</span>
+                    {% elif bill.status == 'paid' %}
+                    <span class="status-badge status-paid">Paid</span>
+                    {% elif bill.status == 'overdue' %}
+                    <span class="status-badge status-overdue">Overdue</span>
+                    {% elif bill.status == 'cancelled' %}
+                    <span class="status-badge status-cancelled">Cancelled</span>
+                    {% endif %}
+                </td>
+                <td>{{ bill.issue_date|date:"M d, Y" }}</td>
+                <td>
+                    {{ bill.due_date|date:"M d, Y" }}
+                    {% if bill.due_date < today and bill.status != 'paid' %} <br><small
+                            class="text-danger">Overdue</small>
+                        {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'billing:bill_detail' bill.bill_id %}" class="btn btn-sm btn-primary">View</a>
+
+                    {% if bill.status not in 'paid,cancelled' %}
+                    <a href="{% url 'billing:edit_bill' bill.bill_id %}" class="btn btn-sm btn-secondary">Edit</a>
+
+                    {% if bill.balance_due > 0 %}
+                    <a href="{% url 'billing:process_payment' bill.bill_id %}"
+                        class="btn btn-sm btn-success">Payment</a>
+                    {% endif %}
+                    {% endif %}
+
+                    <a href="{% url 'billing:print_bill' bill.bill_id %}" class="btn btn-sm btn-info"
+                        target="_blank">Print</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9" class="text-center">No bills found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if bills.has_other_pages %}
+<div class="pagination-container">
+    <nav aria-label="Bills pagination">
+        <ul class="pagination">
+            {% if bills.has_previous %}
+            <li class="page-item">
+                <a class="page-link"
+                    href="?page={{ bills.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Previous</a>
+            </li>
+            {% endif %}
+
+            {% for num in bills.paginator.page_range %}
+            {% if bills.number == num %}
+            <li class="page-item active">
+                <span class="page-link">{{ num }}</span>
+            </li>
+            {% elif num > bills.number|add:'-3' and num < bills.number|add:'3' %} <li class="page-item">
+                <a class="page-link"
+                    href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{
+                    num }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+
+                {% if bills.has_next %}
+                <li class="page-item">
+                    <a class="page-link"
+                        href="?page={{ bills.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Next</a>
+                </li>
+                {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}
+
+<style>
+    .filter-section {
+        background: var(--white);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .filter-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr auto;
+        gap: 15px;
+        align-items: end;
+    }
+
+    .filter-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: var(--primary-dark);
+    }
+
+    .actions-bar {
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+    }
+
+    .table-container {
+        background: var(--white);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table th {
+        background: var(--primary-light);
+        color: var(--primary-dark);
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        border-bottom: 2px solid var(--primary-dark);
+    }
+
+    .data-table td {
+        padding: 12px;
+        border-bottom: 1px solid var(--gray-light);
+        vertical-align: top;
+    }
+
+    .data-table tr:hover {
+        background: var(--gray-light);
+    }
+
+    .overdue-row {
+        background: rgba(220, 53, 69, 0.1);
+        border-left: 4px solid var(--danger);
+    }
+
+    .pending-row {
+        background: rgba(255, 193, 7, 0.1);
+    }
+
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-pending {
+        background: var(--warning);
+        color: var(--white);
+    }
+
+    .status-partial {
+        background: var(--info);
+        color: var(--white);
+    }
+
+    .status-paid {
+        background: var(--success);
+        color: var(--white);
+    }
+
+    .status-overdue {
+        background: var(--danger);
+        color: var(--white);
+    }
+
+    .status-cancelled {
+        background: var(--gray-medium);
+        color: var(--white);
+    }
+
+    .text-danger {
+        color: var(--danger);
+    }
+
+    .text-success {
+        color: var(--success);
+    }
+
+    .text-muted {
+        color: var(--gray-medium);
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+
+    .pagination {
+        display: flex;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        gap: 5px;
+    }
+
+    .page-item {
+        margin: 0;
+    }
+
+    .page-link {
+        display: block;
+        padding: 8px 12px;
+        color: var(--primary-dark);
+        text-decoration: none;
+        border: 1px solid var(--gray-light);
+        border-radius: 4px;
+        background: var(--white);
+    }
+
+    .page-link:hover {
+        background: var(--primary-light);
+    }
+
+    .page-item.active .page-link {
+        background: var(--primary-dark);
+        color: var(--white);
+        border-color: var(--primary-dark);
+    }
+
+    .btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        text-decoration: none;
+        display: inline-block;
+        margin-right: 5px;
+    }
+
+    .btn-primary {
+        background: var(--primary-dark);
+        color: var(--white);
+    }
+
+    .btn-secondary {
+        background: var(--gray-medium);
+        color: var(--white);
+    }
+
+    .btn-success {
+        background: var(--success);
+        color: var(--white);
+    }
+
+    .btn-info {
+        background: var(--info);
+        color: var(--white);
+    }
+
+    .btn-warning {
+        background: var(--warning);
+        color: var(--white);
+    }
+
+    .btn-sm {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+
+    .text-center {
+        text-align: center;
+        color: var(--gray-medium);
+        font-style: italic;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid var(--gray-light);
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-dark);
+        box-shadow: 0 0 0 2px rgba(58, 43, 50, 0.1);
+    }
+</style>
+{% endblock %}

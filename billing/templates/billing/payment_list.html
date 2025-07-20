@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}Payments - KNH HMS{% endblock %}
+
+{% block page_title %}Payment History{% endblock %}
+
+{% block content %}
+<!-- Filter Section -->
+<div class="filter-section">
+    <form method="get" class="filter-form">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label>Patient</label>
+                <input type="text" name="patient" value="{{ current_filters.patient }}"
+                    placeholder="Search by patient name or ID" class="form-control">
+            </div>
+
+            <div class="filter-group">
+                <label>Payment Method</label>
+                <select name="payment_method" class="form-control">
+                    <option value="">All Methods</option>
+                    {% for method_code, method_name in payment_methods %}
+                    <option value="{{ method_code }}" {% if current_filters.payment_method == method_code %}selected{% endif %}>
+                        {{ method_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Date From</label>
+                <input type="date" name="date_from" value="{{ current_filters.date_from }}" class="form-control">
+            </div>
+
+            <div class="filter-group">
+                <label>Date To</label>
+                <input type="date" name="date_to" value="{{ current_filters.date_to }}" class="form-control">
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Filter
+                </button>
+                <a href="{% url 'billing:payment_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-refresh"></i> Clear
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Payments Table -->
+<div class="table-section">
+    <div class="table-header">
+        <h3><i class="fas fa-list"></i> Payments ({{ payments|length }} records)</h3>
+    </div>
+
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Payment ID</th>
+                    <th>Bill ID</th>
+                    <th>Patient</th>
+                    <th>Amount</th>
+                    <th>Method</th>
+                    <th>Reference</th>
+                    <th>Date</th>
+                    <th>Processed By</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                <tr>
+                    <td>
+                        <a href="{% url 'billing:payment_detail' payment.payment_id %}" class="payment-link">
+                            {{ payment.payment_id }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="{% url 'billing:bill_detail' payment.bill.bill_id %}" class="bill-link">
+                            {{ payment.bill.bill_id }}
+                        </a>
+                    </td>
+                    <td>{{ payment.bill.patient.user.get_full_name }}</td>
+                    <td class="amount">KSh {{ payment.amount|floatformat:2 }}</td>
+                    <td>
+                        <span class="method-badge method-{{ payment.payment_method }}">
+                            {{ payment.get_payment_method_display }}
+                        </span>
+                    </td>
+                    <td>{{ payment.transaction_reference|default:"-" }}</td>
+                    <td>{{ payment.payment_date|date:"M d, Y H:i" }}</td>
+                    <td>{{ payment.processed_by.user.get_full_name }}</td>
+                    <td>
+                        <a href="{% url 'billing:payment_detail' payment.payment_id %}" class="btn btn-sm btn-info"
+                            title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center">No payments found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if payments.has_other_pages %}
+    <div class="pagination-container">
+        <div class="pagination">
+            {% if payments.has_previous %}
+            <a href="?page={{ payments.previous_page_number }}" class="page-link">
+                <i class="fas fa-chevron-left"></i> Previous
+            </a>
+            {% endif %}
+
+            <span class="page-info">
+                Page {{ payments.number }} of {{ payments.paginator.num_pages }}
+            </span>
+
+            {% if payments.has_next %}
+            <a href="?page={{ payments.next_page_number }}" class="page-link">
+                Next <i class="fas fa-chevron-right"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .filter-section {
+        background: var(--white);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .filter-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        align-items: end;
+    }
+
+    .filter-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: var(--secondary-dark);
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .table-section {
+        background: var(--white);
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .table-header {
+        padding: 20px;
+        border-bottom: 1px solid var(--gray-light);
+    }
+
+    .table-header h3 {
+        margin: 0;
+        color: var(--primary-dark);
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table th {
+        background: var(--primary-light);
+        color: var(--primary-dark);
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+    }
+
+    .data-table td {
+        padding: 12px;
+        border-bottom: 1px solid var(--gray-light);
+    }
+
+    .payment-link,
+    .bill-link {
+        color: var(--primary-dark);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .payment-link:hover,
+    .bill-link:hover {
+        text-decoration: underline;
+    }
+
+    .amount {
+        font-weight: 600;
+        color: var(--success);
+    }
+
+    .method-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .method-cash {
+        background: var(--success);
+        color: var(--white);
+    }
+
+    .method-card {
+        background: var(--info);
+        color: var(--white);
+    }
+
+    .method-mpesa {
+        background: var(--warning);
+        color: var(--white);
+    }
+
+    .method-bank {
+        background: var(--primary-dark);
+        color: var(--white);
+    }
+
+    .btn-sm {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    .pagination-container {
+        padding: 20px;
+        border-top: 1px solid var(--gray-light);
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .page-link {
+        color: var(--primary-dark);
+        text-decoration: none;
+        padding: 8px 12px;
+        border-radius: 4px;
+        border: 1px solid var(--gray-medium);
+    }
+
+    .page-link:hover {
+        background: var(--primary-light);
+    }
+
+    .page-info {
+        color: var(--gray-medium);
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .filter-row {
+            grid-template-columns: 1fr;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+    }
+</style>
+{% endblock %}

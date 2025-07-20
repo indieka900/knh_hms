@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Create Service Type - KNH HMS{% endblock %}
+
+{% block page_title %}Create Service Type{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-header">
+        <h2><i class="fas fa-plus"></i> Create New Service Type</h2>
+        <p>Add a new service type for billing purposes</p>
+    </div>
+
+    <form method="post" class="service-form">
+        {% csrf_token %}
+
+        <div class="form-section">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="name">Service Name *</label>
+                    <input type="text" id="name" name="name" placeholder="Enter service name" class="form-control"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label for="base_price">Base Price (KSh) *</label>
+                    <input type="number" id="base_price" name="base_price" step="0.01" min="0" placeholder="0.00"
+                        class="form-control" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" rows="4"
+                    placeholder="Enter service description (optional)" class="form-control"></textarea>
+            </div>
+
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="is_active" name="is_active" checked>
+                    <label for="is_active">Active Service</label>
+                </div>
+                <small class="form-text">Check this box to make the service available for billing</small>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-save"></i> Create Service Type
+            </button>
+            <a href="{% url 'billing:service_type_list' %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: var(--white);
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-header {
+        padding: 30px 30px 20px 30px;
+        border-bottom: 1px solid var(--gray-light);
+    }
+
+    .form-header h2 {
+        margin: 0 0 10px 0;
+        color: var(--primary-dark);
+    }
+
+    .form-header p {
+        margin: 0;
+        color: var(--gray-medium);
+    }
+
+    .service-form {
+        padding: 30px;
+    }
+
+    .form-section {
+        margin-bottom: 30px;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: var(--secondary-dark);
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid var(--gray-medium);
+        border-radius: 4px;
+        font-size: 14px;
+        transition: border-color 0.3s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-dark);
+        box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.2);
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        width: auto;
+    }
+
+    .form-text {
+        color: var(--gray-medium);
+        font-size: 12px;
+        margin-top: 5px;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid var(--gray-light);
+    }
+
+    .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-success {
+        background-color: var(--success);
+        color: var(--white);
+    }
+
+    .btn-secondary {
+        background-color: var(--gray-medium);
+        color: var(--white);
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+
+    @media (max-width: 768px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .form-header,
+        .service-form {
+            padding: 20px;
+        }
+    }
+</style>
+{% endblock %}
