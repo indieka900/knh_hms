@@ -1,0 +1,523 @@
+{% extends "base.html" %}
+
+{% block title %}Medical Records Dashboard - KNH HMS{% endblock %}
+
+{% block page_title %}Medical Records Dashboard{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <h3>Records Today</h3>
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--info), #138496);">
+                <i class="fas fa-file-medical"></i>
+            </div>
+        </div>
+        <div class="stat-number">{{ total_records_today }}</div>
+        <div class="stat-change positive">
+            <i class="fas fa-arrow-up"></i>
+            <span>Created today</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <h3>Pending Lab Tests</h3>
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--warning), #fd7e14);">
+                <i class="fas fa-flask"></i>
+            </div>
+        </div>
+        <div class="stat-number">{{ pending_lab_tests }}</div>
+        <div class="stat-change neutral">
+            <i class="fas fa-clock"></i>
+            <span>Awaiting results</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <h3>Pending Prescriptions</h3>
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--success), #20c997);">
+                <i class="fas fa-prescription-bottle"></i>
+            </div>
+        </div>
+        <div class="stat-number">{{ pending_prescriptions }}</div>
+        <div class="stat-change neutral">
+            <i class="fas fa-pills"></i>
+            <span>To be dispensed</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-header">
+            <h3>Critical Vitals</h3>
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--danger), #c82333);">
+                <i class="fas fa-heartbeat"></i>
+            </div>
+        </div>
+        <div class="stat-number">{{ critical_vitals.count }}</div>
+        <div class="stat-change negative">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>Need attention</span>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="quick-actions">
+    <div class="section-header">
+        <h2 class="section-title">Quick Actions</h2>
+    </div>
+    <div class="actions-grid">
+        <a href="#" class="action-btn" onclick="openPatientSearch()">
+            <i class="fas fa-search"></i>
+            <span>Find Patient</span>
+        </a>
+
+        <a href="{% url 'medical_records:medical_record_list' %}" class="action-btn">
+            <i class="fas fa-list"></i>
+            <span>All Records</span>
+        </a>
+
+        <a href="{% url 'medical_records:prescription_list' %}" class="action-btn">
+            <i class="fas fa-prescription"></i>
+            <span>Prescriptions</span>
+        </a>
+
+        <a href="{% url 'medical_records:lab_test_list' %}" class="action-btn">
+            <i class="fas fa-vial"></i>
+            <span>Lab Tests</span>
+        </a>
+
+        <a href="#" class="action-btn" onclick="openVitalsModal()">
+            <i class="fas fa-stethoscope"></i>
+            <span>Record Vitals</span>
+        </a>
+
+        <a href="#" class="action-btn">
+            <i class="fas fa-chart-line"></i>
+            <span>Reports</span>
+        </a>
+    </div>
+</div>
+
+<!-- Recent Medical Records -->
+<div class="recent-activity">
+    <div class="section-header">
+        <h2 class="section-title">Recent Medical Records</h2>
+        <a href="{% url 'medical_records:medical_record_list' %}"
+            style="color: var(--secondary-dark); text-decoration: none; font-weight: 600;">View All</a>
+    </div>
+    <table class="activity-table">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Patient</th>
+                <th>Doctor</th>
+                <th>Diagnosis</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in recent_records %}
+            <tr>
+                <td>{{ record.created_at|time:"H:i" }}</td>
+                <td>
+                    <a href="{% url 'medical_records:patient_medical_history' record.patient.patient_id %}"
+                        style="color: var(--primary-dark); text-decoration: none;">
+                        {{ record.patient.user.get_full_name }}
+                    </a>
+                </td>
+                <td>Dr. {{ record.doctor.user.get_full_name }}</td>
+                <td>{{ record.diagnosis|truncatechars:50 }}</td>
+                <td>
+                    <a href="{% url 'medical_records:medical_record_detail' record.record_id %}"
+                        class="btn btn-sm btn-primary">
+                        View
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align: center; color: var(--gray-medium);">No recent records</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Critical Vitals Alert -->
+{% if critical_vitals %}
+<div class="recent-activity">
+    <div class="section-header">
+        <h2 class="section-title" style="color: var(--danger);">
+            <i class="fas fa-exclamation-triangle"></i> Critical Vitals Alert
+        </h2>
+    </div>
+    <table class="activity-table">
+        <thead>
+            <tr>
+                <th>Patient</th>
+                <th>BP (Systolic)</th>
+                <th>Temperature</th>
+                <th>Recorded At</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for vital in critical_vitals %}
+            <tr class="critical-row">
+                <td>{{ vital.patient.user.get_full_name }}</td>
+                <td>
+                    {% if vital.blood_pressure_systolic > 140 %}
+                    <span style="color: var(--danger); font-weight: bold;">
+                        {{ vital.blood_pressure_systolic }}/{{ vital.blood_pressure_diastolic }}
+                    </span>
+                    {% else %}
+                    {{ vital.blood_pressure_systolic }}/{{ vital.blood_pressure_diastolic }}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if vital.temperature > 38.0 %}
+                    <span style="color: var(--danger); font-weight: bold;">
+                        {{ vital.temperature }}°C
+                    </span>
+                    {% else %}
+                    {{ vital.temperature }}°C
+                    {% endif %}
+                </td>
+                <td>{{ vital.recorded_at|timesince }} ago</td>
+                <td>
+                    <a href="{% url 'medical_records:patient_medical_history' vital.patient.patient_id %}"
+                        class="btn btn-sm btn-danger">
+                        Review
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- Patient Search Modal -->
+<div id="patientSearchModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Find Patient</h3>
+            <span class="close" onclick="closePatientSearch()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Search by name or Patient ID</label>
+                <input type="text" id="patientSearchInput" placeholder="Enter patient name or ID..."
+                    class="form-control" onkeyup="searchPatients()">
+                <div id="patientSearchResults" class="search-results"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Record Vitals Modal -->
+<div id="vitalsModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Record Patient Vitals</h3>
+            <span class="close" onclick="closeVitalsModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="vitalsForm">
+                <div class="form-group">
+                    <label>Patient</label>
+                    <input type="text" id="vitalsPatientSearch" placeholder="Search patient..." class="form-control"
+                        required>
+                    <div id="vitalsPatientResults" class="search-results"></div>
+                    <input type="hidden" id="selectedPatientId">
+                </div>
+                <div class="form-row">
+                    <div class="form-group half-width">
+                        <label>Height (cm)</label>
+                        <input type="number" id="height" class="form-control" step="0.1">
+                    </div>
+                    <div class="form-group half-width">
+                        <label>Weight (kg)</label>
+                        <input type="number" id="weight" class="form-control" step="0.1">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group half-width">
+                        <label>Blood Pressure (Systolic)</label>
+                        <input type="number" id="bpSystolic" class="form-control">
+                    </div>
+                    <div class="form-group half-width">
+                        <label>Blood Pressure (Diastolic)</label>
+                        <input type="number" id="bpDiastolic" class="form-control">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group half-width">
+                        <label>Pulse Rate (bpm)</label>
+                        <input type="number" id="pulseRate" class="form-control">
+                    </div>
+                    <div class="form-group half-width">
+                        <label>Temperature (°C)</label>
+                        <input type="number" id="temperature" class="form-control" step="0.1">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeVitalsModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Record Vitals</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openPatientSearch() {
+        document.getElementById('patientSearchModal').style.display = 'block';
+        document.getElementById('patientSearchInput').focus();
+    }
+
+    function closePatientSearch() {
+        document.getElementById('patientSearchModal').style.display = 'none';
+        document.getElementById('patientSearchResults').innerHTML = '';
+    }
+
+    function openVitalsModal() {
+        document.getElementById('vitalsModal').style.display = 'block';
+    }
+
+    function closeVitalsModal() {
+        document.getElementById('vitalsModal').style.display = 'none';
+        document.getElementById('vitalsForm').reset();
+    }
+
+    function searchPatients() {
+        const query = document.getElementById('patientSearchInput').value;
+        if (query.length >= 2) {
+            fetch(`/medical-records/api/patient-search/?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    const results = document.getElementById('patientSearchResults');
+                    results.innerHTML = '';
+                    data.results.forEach(patient => {
+                        const div = document.createElement('div');
+                        div.className = 'search-result-item';
+                        div.innerHTML = `
+                        <strong>${patient.name}</strong><br>
+                        <small>ID: ${patient.patient_id}</small>
+                    `;
+                        div.onclick = () => {
+                            window.location.href = `/medical-records/patient/${patient.id}/`;
+                        };
+                        results.appendChild(div);
+                    });
+                    results.style.display = data.results.length > 0 ? 'block' : 'none';
+                });
+        } else {
+            document.getElementById('patientSearchResults').style.display = 'none';
+        }
+    }
+
+    // Vitals patient search
+    document.getElementById('vitalsPatientSearch').addEventListener('input', function (e) {
+        const query = e.target.value;
+        if (query.length >= 2) {
+            fetch(`/medical-records/api/patient-search/?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    const results = document.getElementById('vitalsPatientResults');
+                    results.innerHTML = '';
+                    data.results.forEach(patient => {
+                        const div = document.createElement('div');
+                        div.className = 'search-result-item';
+                        div.textContent = `${patient.name} (${patient.patient_id})`;
+                        div.onclick = () => {
+                            document.getElementById('vitalsPatientSearch').value = `${patient.name} (${patient.patient_id})`;
+                            document.getElementById('selectedPatientId').value = patient.id;
+                            results.style.display = 'none';
+                        };
+                        results.appendChild(div);
+                    });
+                    results.style.display = data.results.length > 0 ? 'block' : 'none';
+                });
+        } else {
+            document.getElementById('vitalsPatientResults').style.display = 'none';
+        }
+    });
+
+    // Submit vitals form
+    document.getElementById('vitalsForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const patientId = document.getElementById('selectedPatientId').value;
+        if (!patientId) {
+            alert('Please select a patient');
+            return;
+        }
+
+        // Redirect to vitals recording page
+        window.location.href = `/medical-records/vitals/record/${patientId}/`;
+    });
+</script>
+
+<style>
+    .critical-row {
+        background-color: rgba(220, 53, 69, 0.1);
+        border-left: 4px solid var(--danger);
+    }
+
+    .form-row {
+        display: flex;
+        gap: 15px;
+    }
+
+    .half-width {
+        flex: 1;
+    }
+
+    .modal {
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+        background-color: var(--white);
+        margin: 5% auto;
+        padding: 0;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 600px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        padding: 20px;
+        border-bottom: 1px solid var(--gray-light);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        background: var(--white);
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .close {
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+        color: var(--gray-medium);
+    }
+
+    .close:hover {
+        color: var(--primary-dark);
+    }
+
+    .search-results {
+        position: absolute;
+        background: var(--white);
+        border: 1px solid var(--gray-light);
+        border-radius: 4px;
+        max-height: 200px;
+        overflow-y: auto;
+        width: 100%;
+        z-index: 1001;
+        display: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .search-result-item {
+        padding: 12px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--gray-light);
+    }
+
+    .search-result-item:last-child {
+        border-bottom: none;
+    }
+
+    .search-result-item:hover {
+        background-color: var(--primary-light);
+    }
+
+    .form-group {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: var(--primary-dark);
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--gray-light);
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-dark);
+        box-shadow: 0 0 0 2px rgba(58, 43, 50, 0.1);
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 14px;
+    }
+
+    .btn-primary {
+        background-color: var(--primary-dark);
+        color: var(--white);
+    }
+
+    .btn-secondary {
+        background-color: var(--gray-medium);
+        color: var(--white);
+    }
+
+    .btn-danger {
+        background-color: var(--danger);
+        color: var(--white);
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+</style>
+{% endblock %}

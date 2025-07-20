@@ -1,0 +1,608 @@
+{% extends "base.html" %}
+
+{% block title %}Create Medical Record - KNH HMS{% endblock %}
+
+{% block page_title %}Create Medical Record{% endblock %}
+
+{% block extra_css %}
+<style>
+    .section-card {
+        background: var(--white);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--primary-light);
+    }
+
+    .patient-info-card {
+        background: linear-gradient(135deg, var(--primary-light), var(--white));
+        border-left: 4px solid var(--primary-dark);
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 0 8px 8px 0;
+    }
+
+    .vitals-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .vital-item {
+        text-align: center;
+        padding: 10px;
+        background: var(--gray-light);
+        border-radius: 6px;
+    }
+
+    .vital-value {
+        font-size: 18px;
+        font-weight: bold;
+        color: var(--primary-dark);
+    }
+
+    .vital-label {
+        font-size: 12px;
+        color: var(--gray-medium);
+        margin-top: 5px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .prescription-row {
+        border: 1px solid var(--gray-light);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        background: var(--white);
+    }
+
+    .prescription-templates {
+        margin-bottom: 20px;
+    }
+
+    .medication-suggestions {
+        position: absolute;
+        background: var(--white);
+        border: 1px solid var(--gray-light);
+        border-radius: 4px;
+        max-height: 150px;
+        overflow-y: auto;
+        width: 100%;
+        z-index: 100;
+        display: none;
+    }
+
+    .suggestion-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--gray-light);
+    }
+
+    .suggestion-item:hover {
+        background: var(--primary-light);
+    }
+
+    .drug-interaction-warning {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+        padding: 15px;
+        border-radius: 6px;
+        margin: 15px 0;
+    }
+
+    .save-indicator {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--success);
+        color: var(--white);
+        padding: 10px 15px;
+        border-radius: 4px;
+        display: none;
+        z-index: 1000;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<form method="post" id="medicalRecordForm" data-autosave="true">
+    {% csrf_token %}
+
+    <!-- Patient Information -->
+    <div class="patient-info-card">
+        <h3><i class="fas fa-user-circle"></i> {{ patient.user.get_full_name }}</h3>
+        <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+            <div>
+                <strong>Patient ID:</strong> {{ patient.patient_id }}<br>
+                <strong>Age:</strong> {{ patient.user.date_of_birth|timesince|cut:", 0 minutes" }}
+            </div>
+            <div>
+                <strong>Gender:</strong> {{ patient.get_gender_display }}<br>
+                <strong>Blood Group:</strong> {{ patient.blood_group|default:"Not specified" }}
+            </div>
+            <div>
+                <strong>Phone:</strong> {{ patient.user.phone_number|default:"Not provided" }}<br>
+                <strong>Emergency Contact:</strong> {{ patient.emergency_contact_name }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Vitals -->
+    {% if recent_vitals %}
+    <div class="section-card">
+        <div class="section-header">
+            <h3><i class="fas fa-heartbeat"></i> Recent Vitals</h3>
+            <small style="color: var(--gray-medium);">
+                Recorded {{ recent_vitals.recorded_at|timesince }} ago
+            </small>
+        </div>
+
+        <div class="vitals-grid">
+            {% if recent_vitals.blood_pressure_systolic %}
+            <div class="vital-item">
+                <div class="vital-value">{{ recent_vitals.blood_pressure_systolic }}/{{
+                    recent_vitals.blood_pressure_diastolic }}</div>
+                <div class="vital-label">Blood Pressure (mmHg)</div>
+            </div>
+            {% endif %}
+            {% if recent_vitals.pulse_rate %}
+            <div class="vital-item">
+                <div class="vital-value">{{ recent_vitals.pulse_rate }}</div>
+                <div class="vital-label">Pulse Rate (bpm)</div>
+            </div>
+            {% endif %}
+            {% if recent_vitals.temperature %}
+            <div class="vital-item">
+                <div class="vital-value">{{ recent_vitals.temperature }}°C</div>
+                <div class="vital-label">Temperature</div>
+            </div>
+            {% endif %}
+            {% if recent_vitals.weight %}
+            <div class="vital-item">
+                <div class="vital-value">{{ recent_vitals.weight }} kg</div>
+                <div class="vital-label">Weight</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Medical Record Details -->
+    <div class="section-card">
+        <div class="section-header">
+            <h3><i class="fas fa-file-medical"></i> Medical Record</h3>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Related Appointment (Optional)</label>
+                <select name="appointment_id" class="form-control">
+                    <option value="">Select appointment...</option>
+                    {% for appointment in recent_appointments %}
+                    <option value="{{ appointment.appointment_id }}">
+                        {{ appointment.appointment_date|date:"M d, Y" }} - {{ appointment.appointment_time|time:"H:i" }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Follow-up Date (Optional)</label>
+                <input type="date" name="follow_up_date" class="form-control">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="symptoms">Symptoms *</label>
+            <textarea name="symptoms" id="symptoms" class="form-control" rows="4"
+                placeholder="Describe the patient's symptoms..." required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="diagnosis">Diagnosis *</label>
+            <textarea name="diagnosis" id="diagnosis" class="form-control" rows="3" placeholder="Enter diagnosis..."
+                required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="treatment_plan">Treatment Plan *</label>
+            <textarea name="treatment_plan" id="treatment_plan" class="form-control" rows="4"
+                placeholder="Outline the treatment plan..." required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="notes">Additional Notes</label>
+            <textarea name="notes" id="notes" class="form-control" rows="3"
+                placeholder="Any additional observations or notes..."></textarea>
+        </div>
+    </div>
+
+    <!-- Prescriptions -->
+    <div class="section-card">
+        <div class="section-header">
+            <h3><i class="fas fa-prescription-bottle"></i> Prescriptions</h3>
+            <div>
+                <select id="prescriptionTemplate" class="form-control"
+                    style="width: auto; display: inline-block; margin-right: 10px;">
+                    <option value="">Use template...</option>
+                </select>
+                <button type="button" id="addPrescription" class="btn btn-success btn-sm">
+                    <i class="fas fa-plus"></i> Add Prescription
+                </button>
+            </div>
+        </div>
+
+        <div class="prescription-templates">
+            <button type="button" id="savePrescriptionTemplate" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-save"></i> Save as Template
+            </button>
+        </div>
+
+        <div id="prescriptionItems">
+            <!-- Prescription items will be added here -->
+        </div>
+    </div>
+
+    <!-- Lab Tests -->
+    <div class="section-card">
+        <div class="section-header">
+            <h3><i class="fas fa-flask"></i> Lab Tests</h3>
+            <button type="button" id="addLabTest" class="btn btn-success btn-sm">
+                <i class="fas fa-plus"></i> Add Lab Test
+            </button>
+        </div>
+
+        <div id="labTestItems">
+            <!-- Lab test items will be added here -->
+        </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div style="display: flex; justify-content: space-between; margin-top: 30px;">
+        <a href="{% url 'medical_records:patient_medical_history' patient.patient_id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Patient History
+        </a>
+        <div>
+            <button type="button" class="btn btn-outline-primary" onclick="saveDraft()">
+                <i class="fas fa-save"></i> Save Draft
+            </button>
+            <button type="submit" class="btn btn-primary" style="font-size: 16px; padding: 12px 30px;">
+                <i class="fas fa-file-medical"></i> Create Medical Record
+            </button>
+        </div>
+    </div>
+</form>
+
+<!-- Save indicator -->
+<div id="saveIndicator" class="save-indicator">Draft saved</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize medical records manager
+        const medicalRecordsManager = new MedicalRecordsManager();
+
+        // Add initial prescription row
+        addPrescriptionRow();
+    });
+
+    function addPrescriptionRow() {
+        const container = document.getElementById('prescriptionItems');
+        const rowCount = container.children.length;
+
+        const rowHtml = `
+        <div class="prescription-row" data-index="${rowCount}">
+            <div class="form-row" style="display: grid; grid-template-columns: 2fr 1fr 1.5fr 1fr 60px; gap: 15px; margin-bottom: 10px;">
+                <div class="form-group" style="position: relative;">
+                    <label>Medication Name *</label>
+                    <input type="text" name="medication_name[]" class="form-control medication-input" 
+                           placeholder="Medication name" required>
+                    <div class="medication-suggestions"></div>
+                </div>
+                <div class="form-group">
+                    <label>Dosage</label>
+                    <input type="text" name="dosage[]" class="form-control" placeholder="e.g., 500mg">
+                </div>
+                <div class="form-group">
+                    <label>Frequency</label>
+                    <select name="frequency[]" class="form-control">
+                        <option value="">Select frequency</option>
+                        <option value="Once daily">Once daily</option>
+                        <option value="Twice daily">Twice daily</option>
+                        <option value="Three times daily">Three times daily</option>
+                        <option value="Four times daily">Four times daily</option>
+                        <option value="Every 4 hours">Every 4 hours</option>
+                        <option value="Every 6 hours">Every 6 hours</option>
+                        <option value="Every 8 hours">Every 8 hours</option>
+                        <option value="As needed">As needed</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Duration</label>
+                    <input type="text" name="duration[]" class="form-control" placeholder="e.g., 7 days">
+                </div>
+                <div class="form-group">
+                    <label>&nbsp;</label>
+                    <button type="button" class="btn btn-danger btn-sm remove-prescription" 
+                            onclick="removePrescriptionRow(this)" style="width: 100%;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Instructions</label>
+                <textarea name="instructions[]" class="form-control" rows="2" 
+                          placeholder="Special instructions (e.g., take with food)"></textarea>
+            </div>
+        </div>
+    `;
+
+        container.insertAdjacentHTML('beforeend', rowHtml);
+
+        // Initialize medication autocomplete for new row
+        initMedicationAutocomplete(container.lastElementChild);
+    }
+
+    function removePrescriptionRow(button) {
+        const row = button.closest('.prescription-row');
+        row.remove();
+
+        // Check for drug interactions after removal
+        checkDrugInteractions();
+    }
+
+    function addLabTestRow() {
+        const container = document.getElementById('labTestItems');
+        const rowCount = container.children.length;
+
+        const rowHtml = `
+        <div class="lab-test-row" data-index="${rowCount}" style="border: 1px solid var(--gray-light); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+            <div class="form-row" style="display: grid; grid-template-columns: 2fr 1fr 60px; gap: 15px; margin-bottom: 10px;">
+                <div class="form-group">
+                    <label>Test Name *</label>
+                    <input type="text" name="test_name[]" class="form-control" placeholder="Test name" required>
+                </div>
+                <div class="form-group">
+                    <label>Priority</label>
+                    <select name="priority[]" class="form-control">
+                        <option value="routine">Routine</option>
+                        <option value="urgent">Urgent</option>
+                        <option value="stat">STAT</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>&nbsp;</label>
+                    <button type="button" class="btn btn-danger btn-sm remove-lab-test" 
+                            onclick="removeLabTestRow(this)" style="width: 100%;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Test Description/Notes</label>
+                <textarea name="test_description[]" class="form-control" rows="2" 
+                          placeholder="Test description or special notes"></textarea>
+            </div>
+        </div>
+    `;
+
+        container.insertAdjacentHTML('beforeend', rowHtml);
+    }
+
+    function removeLabTestRow(button) {
+        const row = button.closest('.lab-test-row');
+        row.remove();
+    }
+
+    function initMedicationAutocomplete(container) {
+        const input = container.querySelector('.medication-input');
+        const suggestions = container.querySelector('.medication-suggestions');
+
+        if (!input || !suggestions) return;
+
+        let debounceTimer;
+
+        input.addEventListener('input', function (e) {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                searchMedications(e.target.value, suggestions);
+            }, 300);
+        });
+
+        input.addEventListener('blur', function () {
+            setTimeout(() => {
+                suggestions.style.display = 'none';
+            }, 200);
+        });
+
+        // Check for drug interactions when medication changes
+        input.addEventListener('change', function () {
+            setTimeout(checkDrugInteractions, 500);
+        });
+    }
+
+    function searchMedications(query, suggestionsElement) {
+        if (query.length < 2) {
+            suggestionsElement.style.display = 'none';
+            return;
+        }
+
+        // Mock medication database
+        const medications = [
+            'Paracetamol 500mg', 'Ibuprofen 400mg', 'Aspirin 75mg', 'Amoxicillin 500mg',
+            'Ciprofloxacin 250mg', 'Metformin 500mg', 'Amlodipine 5mg', 'Lisinopril 10mg',
+            'Simvastatin 20mg', 'Omeprazole 20mg', 'Prednisolone 5mg', 'Dexamethasone 4mg',
+            'Insulin (Rapid Acting)', 'Warfarin 5mg', 'Heparin 5000 units'
+        ];
+
+        const matches = medications.filter(med =>
+            med.toLowerCase().includes(query.toLowerCase())
+        );
+
+        if (matches.length === 0) {
+            suggestionsElement.style.display = 'none';
+            return;
+        }
+
+        suggestionsElement.innerHTML = matches.map(med =>
+            `<div class="suggestion-item" onclick="selectMedication('${med}', this)">${med}</div>`
+        ).join('');
+
+        suggestionsElement.style.display = 'block';
+    }
+
+    function selectMedication(medication, element) {
+        const input = element.closest('.prescription-row').querySelector('.medication-input');
+        input.value = medication;
+        element.closest('.medication-suggestions').style.display = 'none';
+
+        // Check for drug interactions
+        setTimeout(checkDrugInteractions, 500);
+    }
+
+    function checkDrugInteractions() {
+        const medications = Array.from(document.querySelectorAll('input[name="medication_name[]"]'))
+            .map(input => input.value.trim().toLowerCase())
+            .filter(med => med);
+
+        // Remove existing warnings
+        document.querySelectorAll('.drug-interaction-warning').forEach(el => el.remove());
+
+        if (medications.length < 2) return;
+
+        // Simple interaction database
+        const interactions = {
+            'warfarin': {
+                'aspirin': 'Increased bleeding risk - monitor INR closely',
+                'ibuprofen': 'Increased bleeding risk - avoid combination'
+            },
+            'metformin': {
+                'alcohol': 'Risk of lactic acidosis - counsel patient'
+            }
+        };
+
+        const warnings = [];
+
+        for (let i = 0; i < medications.length; i++) {
+            for (let j = i + 1; j < medications.length; j++) {
+                const med1 = medications[i];
+                const med2 = medications[j];
+
+                // Check for interactions
+                Object.keys(interactions).forEach(drug1 => {
+                    if (med1.includes(drug1) && interactions[drug1]) {
+                        Object.keys(interactions[drug1]).forEach(drug2 => {
+                            if (med2.includes(drug2)) {
+                                warnings.push({
+                                    drugs: [med1, med2],
+                                    warning: interactions[drug1][drug2]
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        if (warnings.length > 0) {
+            const warningDiv = document.createElement('div');
+            warningDiv.className = 'drug-interaction-warning';
+            warningDiv.innerHTML = `
+            <h5><i class="fas fa-exclamation-triangle"></i> Drug Interaction Warnings</h5>
+            <ul>
+                ${warnings.map(w =>
+                `<li><strong>${w.drugs.join(' + ')}:</strong> ${w.warning}</li>`
+            ).join('')}
+            </ul>
+        `;
+
+            const prescriptionSection = document.getElementById('prescriptionItems').parentNode;
+            prescriptionSection.insertBefore(warningDiv, document.getElementById('prescriptionItems'));
+        }
+    }
+
+    function saveDraft() {
+        const form = document.getElementById('medicalRecordForm');
+        const formData = new FormData(form);
+        const data = {};
+
+        for (let [key, value] of formData.entries()) {
+            data[key] = value;
+        }
+
+        localStorage.setItem('medical_record_draft', JSON.stringify(data));
+
+        // Show save indicator
+        const indicator = document.getElementById('saveIndicator');
+        indicator.style.display = 'block';
+        setTimeout(() => {
+            indicator.style.display = 'none';
+        }, 2000);
+    }
+
+    // Load draft on page load
+    window.addEventListener('load', function () {
+        const savedDraft = localStorage.getItem('medical_record_draft');
+        if (savedDraft) {
+            try {
+                const data = JSON.parse(savedDraft);
+
+                Object.entries(data).forEach(([key, value]) => {
+                    const input = document.querySelector(`[name="${key}"]`);
+                    if (input) {
+                        input.value = value;
+                    }
+                });
+
+                // Show notification
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-info';
+                alert.innerHTML = `
+                <i class="fas fa-info-circle"></i> Draft loaded from previous session
+                <button type="button" class="btn btn-sm btn-outline-primary" 
+                        onclick="localStorage.removeItem('medical_record_draft'); this.parentElement.remove();" 
+                        style="float: right;">
+                    Clear Draft
+                </button>
+            `;
+
+                const form = document.getElementById('medicalRecordForm');
+                form.insertBefore(alert, form.firstChild);
+            } catch (error) {
+                console.error('Error loading draft:', error);
+            }
+        }
+    });
+
+    // Form validation
+    document.getElementById('medicalRecordForm').addEventListener('submit', function (e) {
+        const diagnosis = document.getElementById('diagnosis').value.trim();
+        const symptoms = document.getElementById('symptoms').value.trim();
+        const treatmentPlan = document.getElementById('treatment_plan').value.trim();
+
+        if (!diagnosis || !symptoms || !treatmentPlan) {
+            alert('Please fill in all required fields: Symptoms, Diagnosis, and Treatment Plan');
+            e.preventDefault();
+            return;
+        }
+
+        // Clear draft on successful submission
+        localStorage.removeItem('medical_record_draft');
+    });
+</script>
+{% endblock %}

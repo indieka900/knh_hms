@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}Prescriptions - KNH HMS{% endblock %}
+
+{% block page_title %}Prescription Management{% endblock %}
+
+{% block content %}
+<!-- Filter Section -->
+<div class="filter-section">
+    <form method="get" class="filter-form">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label>Patient</label>
+                <input type="text" name="patient" value="{{ current_filters.patient }}"
+                    placeholder="Search by patient name or ID" class="form-control">
+            </div>
+            <div class="filter-group">
+                <label>Status</label>
+                <select name="status" class="form-control">
+                    <option value="">All Status</option>
+                    <option value="pending" {% if current_filters.status=='pending' %}selected{% endif %}>Pending
+                    </option>
+                    <option value="dispensed" {% if current_filters.status=='dispensed' %}selected{% endif %}>Dispensed
+                    </option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>From Date</label>
+                <input type="date" name="date_from" value="{{ current_filters.date_from }}" class="form-control">
+            </div>
+            <div class="filter-group">
+                <label>To Date</label>
+                <input type="date" name="date_to" value="{{ current_filters.date_to }}" class="form-control">
+            </div>
+            <div class="filter-group">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Filter
+                </button>
+                <a href="{% url 'medical_records:prescription_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Prescriptions Table -->
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Patient</th>
+                <th>Medication</th>
+                <th>Dosage</th>
+                <th>Frequency</th>
+                <th>Duration</th>
+                <th>Doctor</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for prescription in prescriptions %}
+            <tr>
+                <td>
+                    <strong>{{ prescription.medical_record.patient.user.get_full_name }}</strong><br>
+                    <small>{{ prescription.medical_record.patient.patient_id }}</small>
+                </td>
+                <td>{{ prescription.medication_name }}</td>
+                <td>{{ prescription.dosage }}</td>
+                <td>{{ prescription.frequency }}</td>
+                <td>{{ prescription.duration }}</td>
+                <td>Dr. {{ prescription.medical_record.doctor.user.get_full_name }}</td>
+                <td>{{ prescription.medical_record.created_at|date:"M d, Y" }}</td>
+                <td>
+                    {% if prescription.is_dispensed %}
+                    <span class="status-badge status-completed">Dispensed</span>
+                    {% else %}
+                    <span class="status-badge status-pending">Pending</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'medical_records:prescription_detail' prescription.id %}"
+                        class="btn btn-sm btn-primary">View</a>
+                    {% if not prescription.is_dispensed %}
+                    <a href="{% url 'medical_records:edit_prescription' prescription.id %}"
+                        class="btn btn-sm btn-secondary">Edit</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9" class="text-center">No prescriptions found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if prescriptions.has_other_pages %}
+<div class="pagination-container">
+    <nav aria-label="Prescription pagination">
+        <ul class="pagination">
+            {% if prescriptions.has_previous %}
+            <li class="page-item">
+                <a class="page-link"
+                    href="?page={{ prescriptions.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Previous</a>
+            </li>
+            {% endif %}
+
+            {% for num in prescriptions.paginator.page_range %}
+            {% if prescriptions.number == num %}
+            <li class="page-item active">
+                <span class="page-link">{{ num }}</span>
+            </li>
+            {% elif num > prescriptions.number|add:'-3' and num < prescriptions.number|add:'3' %} <li class="page-item">
+                <a class="page-link"
+                    href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{
+                    num }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+
+                {% if prescriptions.has_next %}
+                <li class="page-item">
+                    <a class="page-link"
+                        href="?page={{ prescriptions.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Next</a>
+                </li>
+                {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}
+
+<style>
+    .filter-section {
+        background: var(--white);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .filter-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr auto;
+        gap: 15px;
+        align-items: end;
+    }
+
+    .filter-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: var(--primary-dark);
+    }
+
+    .table-container {
+        background: var(--white);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table th {
+        background: var(--primary-light);
+        color: var(--primary-dark);
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        border-bottom: 2px solid var(--primary-dark);
+    }
+
+    .data-table td {
+        padding: 12px;
+        border-bottom: 1px solid var(--gray-light);
+    }
+
+    .data-table tr:hover {
+        background: var(--gray-light);
+    }
+
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-completed {
+        background: var(--success);
+        color: var(--white);
+    }
+
+    .status-pending {
+        background: var(--warning);
+        color: var(--white);
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+
+    .pagination {
+        display: flex;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        gap: 5px;
+    }
+
+    .page-item {
+        margin: 0;
+    }
+
+    .page-link {
+        display: block;
+        padding: 8px 12px;
+        color: var(--primary-dark);
+        text-decoration: none;
+        border: 1px solid var(--gray-light);
+        border-radius: 4px;
+        background: var(--white);
+    }
+
+    .page-link:hover {
+        background: var(--primary-light);
+    }
+
+    .page-item.active .page-link {
+        background: var(--primary-dark);
+        color: var(--white);
+        border-color: var(--primary-dark);
+    }
+
+    .btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        text-decoration: none;
+        display: inline-block;
+        margin-right: 5px;
+    }
+
+    .btn-primary {
+        background: var(--primary-dark);
+        color: var(--white);
+    }
+
+    .btn-secondary {
+        background: var(--gray-medium);
+        color: var(--white);
+    }
+
+    .btn-sm {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+
+    .text-center {
+        text-align: center;
+        color: var(--gray-medium);
+        font-style: italic;
+    }
+</style>
+{% endblock %}

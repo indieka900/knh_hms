@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Medical Record - KNH HMS{% endblock %}
+
+{% block page_title %}Edit Medical Record{% endblock %}
+
+{% block content %}
+<div class="section-card">
+    <!-- Patient Information -->
+    <div class="patient-info-card">
+        <h3><i class="fas fa-user-circle"></i> {{ patient.user.get_full_name }}</h3>
+        <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+            <div>
+                <strong>Patient ID:</strong> {{ patient.patient_id }}<br>
+                <strong>Record ID:</strong> {{ record.record_id }}
+            </div>
+            <div>
+                <strong>Gender:</strong> {{ patient.get_gender_display }}<br>
+                <strong>Blood Group:</strong> {{ patient.blood_group|default:"Not specified" }}
+            </div>
+            <div>
+                <strong>Created:</strong> {{ record.created_at|date:"M d, Y H:i" }}<br>
+                <strong>Doctor:</strong> Dr. {{ record.doctor.user.get_full_name }}
+            </div>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="symptoms">Symptoms *</label>
+            <textarea name="symptoms" id="symptoms" class="form-control" rows="4"
+                placeholder="Describe the patient's symptoms..." required>{{ record.symptoms }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="diagnosis">Diagnosis *</label>
+            <textarea name="diagnosis" id="diagnosis" class="form-control" rows="3" placeholder="Enter diagnosis..."
+                required>{{ record.diagnosis }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="treatment_plan">Treatment Plan *</label>
+            <textarea name="treatment_plan" id="treatment_plan" class="form-control" rows="4"
+                placeholder="Outline the treatment plan..." required>{{ record.treatment_plan }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="notes">Additional Notes</label>
+            <textarea name="notes" id="notes" class="form-control" rows="3"
+                placeholder="Any additional observations or notes...">{{ record.notes }}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="follow_up_date">Follow-up Date</label>
+            <input type="date" name="follow_up_date" id="follow_up_date" class="form-control"
+                value="{{ record.follow_up_date|date:'Y-m-d' }}">
+        </div>
+
+        <!-- Form Actions -->
+        <div style="display: flex; justify-content: space-between; margin-top: 30px;">
+            <a href="{% url 'medical_records:medical_record_detail' record.record_id %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Cancel
+            </a>
+            <button type="submit" class="btn btn-primary" style="font-size: 16px; padding: 12px 30px;">
+                <i class="fas fa-save"></i> Update Record
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .section-card {
+        background: var(--white);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .patient-info-card {
+        background: linear-gradient(135deg, var(--primary-light), var(--white));
+        border-left: 4px solid var(--primary-dark);
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 0 8px 8px 0;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: var(--primary-dark);
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--gray-light);
+        border-radius: 4px;
+        font-size: 14px;
+        font-family: inherit;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-dark);
+        box-shadow: 0 0 0 2px rgba(58, 43, 50, 0.1);
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background-color: var(--primary-dark);
+        color: var(--white);
+    }
+
+    .btn-secondary {
+        background-color: var(--gray-medium);
+        color: var(--white);
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+</style>
+{% endblock %}

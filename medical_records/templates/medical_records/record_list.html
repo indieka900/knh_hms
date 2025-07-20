@@ -1,0 +1,483 @@
+<!-- medical_records/templates/medical_records/record_list.html -->
+{% extends "base.html" %}
+
+{% block title %}Medical Records - KNH HMS{% endblock %}
+
+{% block page_title %}Medical Records Management{% endblock %}
+
+{% block content %}
+<!-- Filter Section -->
+<div class="filter-section">
+    <form method="get" class="filter-form">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label>Patient</label>
+                <input type="text" name="patient" value="{{ current_filters.patient }}"
+                    placeholder="Search by patient name or ID" class="form-control">
+            </div>
+            <div class="filter-group">
+                <label>Doctor</label>
+                <input type="text" name="doctor" value="{{ current_filters.doctor }}"
+                    placeholder="Search by doctor name" class="form-control">
+            </div>
+            <div class="filter-group">
+                <label>From Date</label>
+                <input type="date" name="date_from" value="{{ current_filters.date_from }}" class="form-control">
+            </div>
+            <div class="filter-group">
+                <label>To Date</label>
+                <input type="date" name="date_to" value="{{ current_filters.date_to }}" class="form-control">
+            </div>
+            <div class="filter-group">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Filter
+                </button>
+                <a href="{% url 'medical_records:medical_record_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Quick Actions -->
+<div class="actions-bar">
+    <a href="#" class="btn btn-success" onclick="openPatientSearch()">
+        <i class="fas fa-plus"></i> New Record
+    </a>
+    <a href="{% url 'medical_records:prescription_list' %}" class="btn btn-info">
+        <i class="fas fa-pills"></i> View Prescriptions
+    </a>
+    <a href="{% url 'medical_records:lab_test_list' %}" class="btn btn-warning">
+        <i class="fas fa-flask"></i> View Lab Tests
+    </a>
+</div>
+
+<!-- Medical Records Table -->
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Record ID</th>
+                <th>Patient</th>
+                <th>Doctor</th>
+                <th>Diagnosis</th>
+                <th>Symptoms</th>
+                <th>Date Created</th>
+                <th>Follow-up</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in records %}
+            <tr>
+                <td>
+                    <strong>{{ record.record_id }}</strong>
+                    {% if record.appointment %}
+                    <br><small class="text-muted">Appointment: {{ record.appointment.appointment_date|date:"M d"
+                        }}</small>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'medical_records:patient_medical_history' record.patient.patient_id %}"
+                        style="color: var(--primary-dark); text-decoration: none;">
+                        <strong>{{ record.patient.user.get_full_name }}</strong>
+                    </a>
+                    <br><small>{{ record.patient.patient_id }}</small>
+                </td>
+                <td>Dr. {{ record.doctor.user.get_full_name }}</td>
+                <td>{{ record.diagnosis|truncatechars:50 }}</td>
+                <td>{{ record.symptoms|truncatechars:40 }}</td>
+                <td>
+                    {{ record.created_at|date:"M d, Y" }}<br>
+                    <small class="text-muted">{{ record.created_at|time:"H:i" }}</small>
+                </td>
+                <td>
+                    {% if record.follow_up_date %}
+                    <span class="follow-up-date">{{ record.follow_up_date|date:"M d, Y" }}</span>
+                    {% if record.follow_up_date <= today %} <br><small class="text-danger">Due/Overdue</small>
+                        {% endif %}
+                        {% else %}
+                        <span class="text-muted">None</span>
+                        {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'medical_records:medical_record_detail' record.record_id %}"
+                        class="btn btn-sm btn-primary">View</a>
+
+                    {% if user.role == 'doctor' and record.doctor.user == user %}
+                    <a href="{% url 'medical_records:edit_medical_record' record.record_id %}"
+                        class="btn btn-sm btn-secondary">Edit</a>
+                    {% endif %}
+
+                    <a href="{% url 'medical_records:print_medical_record' record.record_id %}"
+                        class="btn btn-sm btn-info" target="_blank">Print</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" class="text-center">No medical records found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if records.has_other_pages %}
+<div class="pagination-container">
+    <nav aria-label="Records pagination">
+        <ul class="pagination">
+            {% if records.has_previous %}
+            <li class="page-item">
+                <a class="page-link"
+                    href="?page={{ records.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Previous</a>
+            </li>
+            {% endif %}
+
+            {% for num in records.paginator.page_range %}
+            {% if records.number == num %}
+            <li class="page-item active">
+                <span class="page-link">{{ num }}</span>
+            </li>
+            {% elif num > records.number|add:'-3' and num < records.number|add:'3' %} <li class="page-item">
+                <a class="page-link"
+                    href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{
+                    num }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+
+                {% if records.has_next %}
+                <li class="page-item">
+                    <a class="page-link"
+                        href="?page={{ records.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Next</a>
+                </li>
+                {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}
+
+<!-- Patient Search Modal -->
+<div id="patientSearchModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Select Patient for New Record</h3>
+            <span class="close" onclick="closePatientSearch()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Search by name or Patient ID</label>
+                <input type="text" id="patientSearchInput" placeholder="Enter patient name or ID..."
+                    class="form-control" onkeyup="searchPatients()">
+                <div id="patientSearchResults" class="search-results"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openPatientSearch() {
+        document.getElementById('patientSearchModal').style.display = 'block';
+        document.getElementById('patientSearchInput').focus();
+    }
+
+    function closePatientSearch() {
+        document.getElementById('patientSearchModal').style.display = 'none';
+        document.getElementById('patientSearchResults').innerHTML = '';
+    }
+
+    function searchPatients() {
+        const query = document.getElementById('patientSearchInput').value;
+        if (query.length >= 2) {
+            fetch(`/medical-records/api/patient-search/?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    const results = document.getElementById('patientSearchResults');
+                    results.innerHTML = '';
+                    data.results.forEach(patient => {
+                        const div = document.createElement('div');
+                        div.className = 'search-result-item';
+                        div.innerHTML = `
+                        <strong>${patient.name}</strong><br>
+                        <small>ID: ${patient.patient_id}</small>
+                    `;
+                        div.onclick = () => {
+                            window.location.href = `/medical-records/records/create/${patient.id}/`;
+                        };
+                        results.appendChild(div);
+                    });
+                    results.style.display = data.results.length > 0 ? 'block' : 'none';
+                });
+        } else {
+            document.getElementById('patientSearchResults').style.display = 'none';
+        }
+    }
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function (e) {
+        const modal = document.getElementById('patientSearchModal');
+        if (e.target === modal) {
+            closePatientSearch();
+        }
+    });
+</script>
+
+<style>
+    .filter-section {
+        background: var(--white);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .filter-row {
+        display: grid;
+        grid-template-columns: 2fr 2fr 1fr 1fr auto;
+        gap: 15px;
+        align-items: end;
+    }
+
+    .filter-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: var(--primary-dark);
+    }
+
+    .actions-bar {
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+    }
+
+    .table-container {
+        background: var(--white);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table th {
+        background: var(--primary-light);
+        color: var(--primary-dark);
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        border-bottom: 2px solid var(--primary-dark);
+    }
+
+    .data-table td {
+        padding: 12px;
+        border-bottom: 1px solid var(--gray-light);
+        vertical-align: top;
+    }
+
+    .data-table tr:hover {
+        background: var(--gray-light);
+    }
+
+    .follow-up-date {
+        color: var(--warning);
+        font-weight: 600;
+    }
+
+    .text-danger {
+        color: var(--danger);
+    }
+
+    .text-muted {
+        color: var(--gray-medium);
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+
+    .pagination {
+        display: flex;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        gap: 5px;
+    }
+
+    .page-item {
+        margin: 0;
+    }
+
+    .page-link {
+        display: block;
+        padding: 8px 12px;
+        color: var(--primary-dark);
+        text-decoration: none;
+        border: 1px solid var(--gray-light);
+        border-radius: 4px;
+        background: var(--white);
+    }
+
+    .page-link:hover {
+        background: var(--primary-light);
+    }
+
+    .page-item.active .page-link {
+        background: var(--primary-dark);
+        color: var(--white);
+        border-color: var(--primary-dark);
+    }
+
+    .btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        text-decoration: none;
+        display: inline-block;
+        margin-right: 5px;
+    }
+
+    .btn-primary {
+        background: var(--primary-dark);
+        color: var(--white);
+    }
+
+    .btn-secondary {
+        background: var(--gray-medium);
+        color: var(--white);
+    }
+
+    .btn-success {
+        background: var(--success);
+        color: var(--white);
+    }
+
+    .btn-info {
+        background: var(--info);
+        color: var(--white);
+    }
+
+    .btn-warning {
+        background: var(--warning);
+        color: var(--white);
+    }
+
+    .btn-sm {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+
+    .text-center {
+        text-align: center;
+        color: var(--gray-medium);
+        font-style: italic;
+    }
+
+    .modal {
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+        background-color: var(--white);
+        margin: 10% auto;
+        padding: 0;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header {
+        padding: 20px;
+        border-bottom: 1px solid var(--gray-light);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--primary-light);
+        border-radius: 8px 8px 0 0;
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .close {
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+        color: var(--gray-medium);
+    }
+
+    .close:hover {
+        color: var(--primary-dark);
+    }
+
+    .search-results {
+        position: absolute;
+        background: var(--white);
+        border: 1px solid var(--gray-light);
+        border-radius: 4px;
+        max-height: 200px;
+        overflow-y: auto;
+        width: 100%;
+        z-index: 1001;
+        display: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .search-result-item {
+        padding: 12px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--gray-light);
+    }
+
+    .search-result-item:last-child {
+        border-bottom: none;
+    }
+
+    .search-result-item:hover {
+        background-color: var(--primary-light);
+    }
+
+    .form-group {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: var(--primary-dark);
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--gray-light);
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-dark);
+        box-shadow: 0 0 0 2px rgba(58, 43, 50, 0.1);
+    }
+</style>
+{% endblock %}

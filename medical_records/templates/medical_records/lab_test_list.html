@@ -1,0 +1,339 @@
+<!-- medical_records/templates/medical_records/lab_test_list.html -->
+{% extends "base.html" %}
+
+{% block title %}Lab Tests - KNH HMS{% endblock %}
+
+{% block page_title %}Laboratory Test Management{% endblock %}
+
+{% block content %}
+<!-- Filter Section -->
+<div class="filter-section">
+    <form method="get" class="filter-form">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label>Patient</label>
+                <input type="text" name="patient" value="{{ current_filters.patient }}"
+                    placeholder="Search by patient name or ID" class="form-control">
+            </div>
+            <div class="filter-group">
+                <label>Status</label>
+                <select name="status" class="form-control">
+                    <option value="">All Status</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if current_filters.status == value %}selected{% endif %}>{{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>From Date</label>
+                <input type="date" name="date_from" value="{{ current_filters.date_from }}" class="form-control">
+            </div>
+            <div class="filter-group">
+                <label>To Date</label>
+                <input type="date" name="date_to" value="{{ current_filters.date_to }}" class="form-control">
+            </div>
+            <div class="filter-group">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Filter
+                </button>
+                <a href="{% url 'medical_records:lab_test_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Lab Tests Table -->
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Patient</th>
+                <th>Test Name</th>
+                <th>Description</th>
+                <th>Test Date</th>
+                <th>Status</th>
+                <th>Results</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for test in lab_tests %}
+            <tr class="{% if test.status == 'pending' %}pending-row{% endif %}">
+                <td>
+                    <strong>{{ test.medical_record.patient.user.get_full_name }}</strong><br>
+                    <small>{{ test.medical_record.patient.patient_id }}</small>
+                </td>
+                <td>{{ test.test_name }}</td>
+                <td>{{ test.test_description|truncatechars:50 }}</td>
+                <td>
+                    {% if test.test_date %}
+                    {{ test.test_date|date:"M d, Y H:i" }}
+                    {% else %}
+                    <span class="text-muted">Not scheduled</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if test.status == 'pending' %}
+                    <span class="status-badge status-pending">Pending</span>
+                    {% elif test.status == 'in_progress' %}
+                    <span class="status-badge status-progress">In Progress</span>
+                    {% elif test.status == 'completed' %}
+                    <span class="status-badge status-completed">Completed</span>
+                    {% elif test.status == 'cancelled' %}
+                    <span class="status-badge status-cancelled">Cancelled</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if test.results %}
+                    <span class="text-success">
+                        <i class="fas fa-check-circle"></i> Available
+                    </span>
+                    {% else %}
+                    <span class="text-muted">Pending</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'medical_records:lab_test_detail' test.id %}"
+                        class="btn btn-sm btn-primary">View</a>
+
+                    {% if test.status != 'completed' and test.status != 'cancelled' %}
+                    <a href="{% url 'medical_records:edit_lab_test' test.id %}"
+                        class="btn btn-sm btn-secondary">Edit</a>
+                    {% endif %}
+
+                    {% if test.status != 'completed' and not test.results %}
+                    <a href="{% url 'medical_records:update_lab_results' test.id %}" class="btn btn-sm btn-success">Add
+                        Results</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center">No lab tests found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if lab_tests.has_other_pages %}
+<div class="pagination-container">
+    <nav aria-label="Lab test pagination">
+        <ul class="pagination">
+            {% if lab_tests.has_previous %}
+            <li class="page-item">
+                <a class="page-link"
+                    href="?page={{ lab_tests.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Previous</a>
+            </li>
+            {% endif %}
+
+            {% for num in lab_tests.paginator.page_range %}
+            {% if lab_tests.number == num %}
+            <li class="page-item active">
+                <span class="page-link">{{ num }}</span>
+            </li>
+            {% elif num > lab_tests.number|add:'-3' and num < lab_tests.number|add:'3' %} <li class="page-item">
+                <a class="page-link"
+                    href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{
+                    num }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+
+                {% if lab_tests.has_next %}
+                <li class="page-item">
+                    <a class="page-link"
+                        href="?page={{ lab_tests.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Next</a>
+                </li>
+                {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}
+
+<style>
+    .filter-section {
+        background: var(--white);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .filter-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr auto;
+        gap: 15px;
+        align-items: end;
+    }
+
+    .filter-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: var(--primary-dark);
+    }
+
+    .table-container {
+        background: var(--white);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table th {
+        background: var(--primary-light);
+        color: var(--primary-dark);
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+        border-bottom: 2px solid var(--primary-dark);
+    }
+
+    .data-table td {
+        padding: 12px;
+        border-bottom: 1px solid var(--gray-light);
+    }
+
+    .data-table tr:hover {
+        background: var(--gray-light);
+    }
+
+    .pending-row {
+        background: rgba(255, 193, 7, 0.1);
+    }
+
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .status-pending {
+        background: var(--warning);
+        color: var(--white);
+    }
+
+    .status-progress {
+        background: var(--info);
+        color: var(--white);
+    }
+
+    .status-completed {
+        background: var(--success);
+        color: var(--white);
+    }
+
+    .status-cancelled {
+        background: var(--danger);
+        color: var(--white);
+    }
+
+    .text-success {
+        color: var(--success);
+    }
+
+    .text-muted {
+        color: var(--gray-medium);
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+
+    .pagination {
+        display: flex;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        gap: 5px;
+    }
+
+    .page-item {
+        margin: 0;
+    }
+
+    .page-link {
+        display: block;
+        padding: 8px 12px;
+        color: var(--primary-dark);
+        text-decoration: none;
+        border: 1px solid var(--gray-light);
+        border-radius: 4px;
+        background: var(--white);
+    }
+
+    .page-link:hover {
+        background: var(--primary-light);
+    }
+
+    .page-item.active .page-link {
+        background: var(--primary-dark);
+        color: var(--white);
+        border-color: var(--primary-dark);
+    }
+
+    .btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        text-decoration: none;
+        display: inline-block;
+        margin-right: 5px;
+    }
+
+    .btn-primary {
+        background: var(--primary-dark);
+        color: var(--white);
+    }
+
+    .btn-secondary {
+        background: var(--gray-medium);
+        color: var(--white);
+    }
+
+    .btn-success {
+        background: var(--success);
+        color: var(--white);
+    }
+
+    .btn-sm {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+
+    .text-center {
+        text-align: center;
+        color: var(--gray-medium);
+        font-style: italic;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid var(--gray-light);
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-dark);
+        box-shadow: 0 0 0 2px rgba(58, 43, 50, 0.1);
+    }
+</style>
+{% endblock %}

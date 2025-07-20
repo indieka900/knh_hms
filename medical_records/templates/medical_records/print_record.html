@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Record - {{ record.record_id }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.4;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #3A2B32;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .hospital-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3A2B32;
+            margin: 0;
+        }
+
+        .hospital-subtitle {
+            font-size: 14px;
+            color: #654351;
+            margin: 5px 0;
+        }
+
+        .record-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 15px 0 5px 0;
+        }
+
+        .info-grid {
+            display: table;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .info-row {
+            display: table-row;
+        }
+
+        .info-label {
+            display: table-cell;
+            font-weight: bold;
+            width: 150px;
+            padding: 5px 10px 5px 0;
+            vertical-align: top;
+        }
+
+        .info-value {
+            display: table-cell;
+            padding: 5px 0;
+            vertical-align: top;
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #3A2B32;
+            border-bottom: 1px solid #E7C1BF;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+
+        .prescription-item {
+            border: 1px solid #E7C1BF;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .prescription-header {
+            font-weight: bold;
+            color: #3A2B32;
+            margin-bottom: 5px;
+        }
+
+        .lab-test-item {
+            border-left: 3px solid #654351;
+            padding-left: 10px;
+            margin-bottom: 10px;
+        }
+
+        .footer {
+            margin-top: 40px;
+            border-top: 1px solid #E7C1BF;
+            padding-top: 15px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .signature-section {
+            display: table;
+            width: 100%;
+            margin-top: 30px;
+        }
+
+        .signature-box {
+            display: table-cell;
+            width: 50%;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .signature-line {
+            border-top: 1px solid #333;
+            margin-top: 40px;
+            padding-top: 5px;
+        }
+
+        @media print {
+            body {
+                margin: 0;
+                padding: 15px;
+            }
+
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1 class="hospital-name">KENYATTA NATIONAL HOSPITAL</h1>
+        <p class="hospital-subtitle">Hospital Management System</p>
+        <h2 class="record-title">MEDICAL RECORD</h2>
+    </div>
+
+    <!-- Patient Information -->
+    <div class="section">
+        <h3 class="section-title">Patient Information</h3>
+        <div class="info-grid">
+            <div class="info-row">
+                <div class="info-label">Record ID:</div>
+                <div class="info-value">{{ record.record_id }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Patient Name:</div>
+                <div class="info-value">{{ record.patient.user.get_full_name }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Patient ID:</div>
+                <div class="info-value">{{ record.patient.patient_id }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Gender:</div>
+                <div class="info-value">{{ record.patient.get_gender_display }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Date of Birth:</div>
+                <div class="info-value">{{ record.patient.user.date_of_birth|date:"M d, Y"|default:"Not specified" }}
+                </div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Blood Group:</div>
+                <div class="info-value">{{ record.patient.blood_group|default:"Not specified" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Medical Record Details -->
+    <div class="section">
+        <h3 class="section-title">Medical Record Details</h3>
+        <div class="info-grid">
+            <div class="info-row">
+                <div class="info-label">Date Created:</div>
+                <div class="info-value">{{ record.created_at|date:"M d, Y H:i" }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Attending Doctor:</div>
+                <div class="info-value">Dr. {{ record.doctor.user.get_full_name }}</div>
+            </div>
+            {% if record.appointment %}
+            <div class="info-row">
+                <div class="info-label">Related Appointment:</div>
+                <div class="info-value">{{ record.appointment.appointment_date|date:"M d, Y" }} at {{
+                    record.appointment.appointment_time|time:"H:i" }}</div>
+            </div>
+            {% endif %}
+            {% if record.follow_up_date %}
+            <div class="info-row">
+                <div class="info-label">Follow-up Date:</div>
+                <div class="info-value">{{ record.follow_up_date|date:"M d, Y" }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Symptoms -->
+    <div class="section">
+        <h3 class="section-title">Symptoms</h3>
+        <p>{{ record.symptoms }}</p>
+    </div>
+
+    <!-- Diagnosis -->
+    <div class="section">
+        <h3 class="section-title">Diagnosis</h3>
+        <p>{{ record.diagnosis }}</p>
+    </div>
+
+    <!-- Treatment Plan -->
+    <div class="section">
+        <h3 class="section-title">Treatment Plan</h3>
+        <p>{{ record.treatment_plan }}</p>
+    </div>
+
+    {% if record.notes %}
+    <!-- Additional Notes -->
+    <div class="section">
+        <h3 class="section-title">Additional Notes</h3>
+        <p>{{ record.notes }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Prescriptions -->
+    {% if prescriptions %}
+    <div class="section">
+        <h3 class="section-title">Prescriptions</h3>
+        {% for prescription in prescriptions %}
+        <div class="prescription-item">
+            <div class="prescription-header">{{ prescription.medication_name }}</div>
+            <div><strong>Dosage:</strong> {{ prescription.dosage }}</div>
+            <div><strong>Frequency:</strong> {{ prescription.frequency }}</div>
+            <div><strong>Duration:</strong> {{ prescription.duration }}</div>
+            {% if prescription.instructions %}
+            <div><strong>Instructions:</strong> {{ prescription.instructions }}</div>
+            {% endif %}
+            <div><strong>Status:</strong>
+                {% if prescription.is_dispensed %}
+                Dispensed on {{ prescription.dispensed_at|date:"M d, Y H:i" }}
+                {% else %}
+                Pending
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Lab Tests -->
+    {% if lab_tests %}
+    <div class="section">
+        <h3 class="section-title">Laboratory Tests</h3>
+        {% for test in lab_tests %}
+        <div class="lab-test-item">
+            <div><strong>Test:</strong> {{ test.test_name }}</div>
+            <div><strong>Description:</strong> {{ test.test_description }}</div>
+            <div><strong>Status:</strong> {{ test.get_status_display }}</div>
+            {% if test.test_date %}
+            <div><strong>Test Date:</strong> {{ test.test_date|date:"M d, Y H:i" }}</div>
+            {% endif %}
+            {% if test.results %}
+            <div><strong>Results:</strong> {{ test.results }}</div>
+            {% endif %}
+            {% if test.result_date %}
+            <div><strong>Result Date:</strong> {{ test.result_date|date:"M d, Y H:i" }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Signature Section -->
+    <div class="signature-section">
+        <div class="signature-box">
+            <div class="signature-line">
+                <strong>Dr. {{ record.doctor.user.get_full_name }}</strong><br>
+                Attending Physician
+            </div>
+        </div>
+        <div class="signature-box">
+            <div class="signature-line">
+                <strong>Date:</strong> {{ print_date|date:"M d, Y" }}
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p><strong>Kenyatta National Hospital</strong> | Hospital Management System</p>
+        <p>This is a computer-generated document. No signature required.</p>
+        <p>Printed on: {{ print_date|date:"M d, Y H:i" }}</p>
+    </div>
+
+    <!-- Print Button (hidden when printing) -->
+    <div class="no-print" style="position: fixed; top: 20px; right: 20px;">
+        <button onclick="window.print()"
+            style="padding: 10px 20px; background: #3A2B32; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            <i class="fas fa-print"></i> Print
+        </button>
+        <button onclick="window.close()"
+            style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 5px;">
+            Close
+        </button>
+    </div>
+</body>
+
+</html>
