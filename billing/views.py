@@ -5,11 +5,14 @@ from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum, Count
+from django.db import transaction
 from django.utils import timezone
 from django.template.loader import render_to_string
 from decimal import Decimal
 import json
+from django.views.decorators.http import require_http_methods
 
+from .utils import generate_payment_id_uuid
 from .models import Bill, BillItem, Payment, ServiceType, BillingStaff
 from patients.models import Patient
 from appointments.models import Appointment
@@ -96,7 +99,7 @@ def create_bill(request):
             patient = get_object_or_404(Patient, patient_id=patient_id)
             appointment = None
             if appointment_id:
-                appointment = get_object_or_404(Appointment, appointment_id=appointment_id)
+                appointment = get_object_or_404(Appointment, id=appointment_id)
             
             # Generate bill ID
             bill_id = f"BILL{timezone.now().strftime('%Y%m%d')}{Bill.objects.count() + 1:04d}"
@@ -196,14 +199,13 @@ def process_payment(request, bill_id):
                 return redirect('billing:bill_detail', bill_id=bill_id)
             
             # Generate payment ID
-            payment_id = f"PAY{timezone.now().strftime('%Y%m%d')}{Payment.objects.count() + 1:04d}"
             
             # Get billing staff
             billing_staff = BillingStaff.objects.get(user=request.user)
             
             # Create payment
-            payment = Payment.objects.create(
-                payment_id=payment_id,
+            Payment.objects.create(
+                payment_id = generate_payment_id_uuid(),
                 bill=bill,
                 amount=amount,
                 payment_method=payment_method,
@@ -583,3 +585,174 @@ def calculate_bill_total(request):
             return JsonResponse({'error': str(e)}, status=400)
     
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+@login_required
+@require_http_methods(["GET"])
+def patient_pending_bills_api(request, patient_id):
+    """API endpoint to get pending bills for a patient"""
+    try:
+        patient = get_object_or_404(Patient, patient_id=patient_id)
+        
+        # Get bills that have a balance (not fully paid)
+        pending_bills = Bill.objects.filter(
+            patient=patient,
+            status__in=['pending', 'partial']  # Adjust status values as per your model
+        ).annotate(
+            paid_amount=Sum('payments__amount')  # Assuming you have a Payment model with reverse relation
+        ).order_by('-created_at')
+        
+        bills_data = []
+        for bill in pending_bills:
+            paid_amount = bill.paid_amount or Decimal('0')
+            balance = bill.total_amount - paid_amount
+            
+            # Only include bills with positive balance
+            if balance > 0:
+                bills_data.append({
+                    'bill_id': bill.bill_id,
+                    'total_amount': str(bill.total_amount),
+                    'paid_amount': str(paid_amount),
+                    'balance': str(balance),
+                    'due_date': bill.due_date.strftime('%Y-%m-%d'),
+                    'created_date': bill.created_at.strftime('%Y-%m-%d'),
+                    'status': bill.status
+                })
+        
+        return JsonResponse({
+            'success': True,
+            'bills': bills_data,
+            'patient_name': f"{patient.user.first_name} {patient.user.last_name}",
+            'patient_id': patient.patient_id
+        })
+        
+    except Patient.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Patient not found'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@login_required
+@require_http_methods(["POST"])
+@transaction.atomic 
+def quick_payment_api(request):
+    """API endpoint to process quick payments"""
+    try:
+        # Get form data
+        patient_id = request.POST.get('patient_id')
+        bill_id = request.POST.get('bill_id')
+        amount_str = request.POST.get('amount', '0')
+        payment_method = request.POST.get('payment_method')
+        transaction_ref = request.POST.get('transaction_ref', '')
+        
+        # Validate and parse amount
+        try:
+            amount = Decimal(amount_str)
+        except (ValueError, TypeError):
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid amount format'
+            }, status=400)
+        
+        # Validate required fields
+        if not all([patient_id, bill_id, payment_method]):
+            return JsonResponse({
+                'success': False,
+                'error': 'Missing required fields'
+            }, status=400)
+        
+        if amount <= 0:
+            return JsonResponse({
+                'success': False,
+                'error': 'Payment amount must be greater than 0'
+            }, status=400)
+        
+        # Get patient and bill
+        try:
+            patient = get_object_or_404(Patient, patient_id=patient_id)
+            bill = get_object_or_404(Bill, bill_id=bill_id, patient=patient)
+        except (Patient.DoesNotExist, Bill.DoesNotExist):
+            return JsonResponse({
+                'success': False,
+                'error': 'Patient or Bill not found'
+            }, status=404)
+        
+        # Calculate current balance
+        paid_amount = bill.payments.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        current_balance = bill.total_amount - paid_amount
+        
+        # Validate payment amount against balance
+        if amount > current_balance:
+            return JsonResponse({
+                'success': False,
+                'error': f'Payment amount cannot exceed balance of KSh {current_balance:,.2f}'
+            }, status=400)
+        
+        # Check if bill is already fully paid
+        if current_balance <= 0:
+            return JsonResponse({
+                'success': False,
+                'error': 'This bill is already fully paid'
+            }, status=400)
+        
+        # Get billing staff
+        try:
+            billing_staff = get_object_or_404(BillingStaff, user=request.user)
+        except BillingStaff.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'User is not authorized to process payments'
+            }, status=403)
+        
+        
+        # Create payment record
+        payment = Payment.objects.create(
+            payment_id = generate_payment_id_uuid(),
+            bill=bill,
+            amount=amount,
+            payment_method=payment_method,
+            transaction_reference=transaction_ref,
+            processed_by=billing_staff,
+            payment_date=timezone.now().date()
+        )
+        
+        # Calculate new totals
+        new_paid_amount = paid_amount + amount
+        new_balance = bill.total_amount - new_paid_amount
+        
+        # Update bill status
+        if new_balance <= 0:
+            bill.status = 'paid'
+        elif paid_amount == 0:
+            bill.status = 'partial'
+        else:
+            bill.status = 'partial' 
+        
+        bill.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Payment processed successfully',
+            'payment_id': payment.payment_id,
+            'payment_pk': payment.pk,
+            'new_balance': str(new_balance),
+            'payment_amount': str(amount),
+            'bill_status': bill.status,
+            'total_paid': str(new_paid_amount)
+        })
+        
+    except Exception as e:
+        # Log the error for debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Quick payment error: {str(e)}", exc_info=True)
+        
+        return JsonResponse({
+            'success': False,
+            'error': 'An unexpected error occurred. Please try again.'
+        }, status=500)

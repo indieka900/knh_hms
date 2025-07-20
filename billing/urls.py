@@ -31,4 +31,7 @@ urlpatterns = [
     # API endpoints for AJAX
     path('api/patient-bills/<str:patient_id>/', views.get_patient_bills, name='get_patient_bills'),
     path('api/bill-calculate/', views.calculate_bill_total, name='calculate_bill_total'),
+    path('api/patient-pending-bills/<str:patient_id>/', views.patient_pending_bills_api, name='patient_pending_bills_api'),
+    
+    path('api/quick-payment/', views.quick_payment_api, name='quick_payment_api'),
 ]

@@ -68,7 +68,7 @@
 
     .section-header {
         display: flex;
-        justify-content: between;
+        justify-content: space-between;
         align-items: center;
         margin-bottom: 20px;
         padding-bottom: 10px;
@@ -133,7 +133,7 @@
     <div class="section-card">
         <div class="section-header">
             <h3><i class="fas fa-list"></i> Bill Items</h3>
-            <button type="button" id="addBillItem" class="add-item-btn">
+            <button type="button" id="addBillItem" class="btn add-item-btn btn-secondary" onclick="addBillItem()">
                 <i class="fas fa-plus"></i> Add Item
             </button>
         </div>
@@ -149,7 +149,78 @@
         </div>
 
         <div id="billItems">
-            <!-- Bill items will be added here -->
+            <!-- Initial bill items with Django template -->
+            <div class="bill-item-row" data-index="0">
+                <div class="form-row">
+                    <div class="form-group">
+                        <select name="service[]" class="form-control service-select" required
+                            onchange="updateServicePrice(this)">
+                            <option value="">Select Service</option>
+                            {% for service in service_types %}
+                            <option value="{{ service.id }}" data-price="{{ service.base_price }}"
+                                data-name="{{ service.name }}">
+                                {{ service.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" name="description[]" class="form-control" placeholder="Description">
+                    </div>
+                    <div class="form-group">
+                        <input type="number" name="quantity[]" class="form-control quantity-input" value="1" min="1"
+                            required onchange="calculateRowTotal(this)">
+                    </div>
+                    <div class="form-group">
+                        <input type="number" name="unit_price[]" class="form-control price-input" step="0.01" min="0"
+                            required onchange="calculateRowTotal(this)">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" class="form-control total-display" readonly placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeBillItem(this)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bill-item-row" data-index="1">
+                <div class="form-row">
+                    <div class="form-group">
+                        <select name="service[]" class="form-control service-select" required
+                            onchange="updateServicePrice(this)">
+                            <option value="">Select Service</option>
+                            {% for service in service_types %}
+                            <option value="{{ service.id }}" data-price="{{ service.base_price }}"
+                                data-name="{{ service.name }}">
+                                {{ service.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" name="description[]" class="form-control" placeholder="Description">
+                    </div>
+                    <div class="form-group">
+                        <input type="number" name="quantity[]" class="form-control quantity-input" value="1" min="1"
+                            required onchange="calculateRowTotal(this)">
+                    </div>
+                    <div class="form-group">
+                        <input type="number" name="unit_price[]" class="form-control price-input" step="0.01" min="0"
+                            required onchange="calculateRowTotal(this)">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" class="form-control total-display" readonly placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeBillItem(this)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -181,6 +252,9 @@
     </div>
 </form>
 
+<!-- Store services data in JavaScript variable -->
+
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         // Patient search functionality
@@ -190,102 +264,55 @@
         const appointmentSelect = document.getElementById('appointmentSelect');
         let searchTimeout;
 
-        patientSearch.addEventListener('input', function () {
-            clearTimeout(searchTimeout);
-            const query = this.value.trim();
+        if (patientSearch) {
+            patientSearch.addEventListener('input', function () {
+                clearTimeout(searchTimeout);
+                const query = this.value.trim();
 
-            if (query.length < 2) {
-                patientResults.style.display = 'none';
-                return;
-            }
+                if (query.length < 2) {
+                    patientResults.style.display = 'none';
+                    return;
+                }
 
-            searchTimeout = setTimeout(() => {
-                fetch(`/patients/api/search/?q=${encodeURIComponent(query)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        displayPatientResults(data.results);
-                    })
-                    .catch(error => console.error('Search error:', error));
-            }, 300);
-        });
-
-        function displayPatientResults(patients) {
-            patientResults.innerHTML = '';
-
-            if (patients.length === 0) {
-                patientResults.style.display = 'none';
-                return;
-            }
-
-            patients.forEach(patient => {
-                const div = document.createElement('div');
-                div.className = 'patient-result-item';
-                div.innerHTML = `
-                <strong>${patient.name}</strong><br>
-                <small>ID: ${patient.patient_id}</small>
-            `;
-
-                div.addEventListener('click', () => {
-                    selectPatient(patient);
-                });
-
-                patientResults.appendChild(div);
+                searchTimeout = setTimeout(() => {
+                    fetch(`/patients/search/?q=${encodeURIComponent(query)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            displayPatientResults(data.results);
+                        })
+                        .catch(error => console.error('Search error:', error));
+                }, 300);
             });
-
-            patientResults.style.display = 'block';
-        }
-
-        function selectPatient(patient) {
-            patientSearch.value = `${patient.name} (${patient.patient_id})`;
-            selectedPatientId.value = patient.patient_id;
-            patientResults.style.display = 'none';
-
-            // Load patient's recent appointments
-            loadPatientAppointments(patient.patient_id);
-        }
-
-        function loadPatientAppointments(patientId) {
-            fetch(`/appointments/api/patient-appointments/${patientId}/`)
-                .then(response => response.json())
-                .then(data => {
-                    appointmentSelect.innerHTML = '<option value="">Select appointment...</option>';
-
-                    data.appointments.forEach(appointment => {
-                        const option = document.createElement('option');
-                        option.value = appointment.appointment_id;
-                        option.textContent = `${appointment.appointment_date} - Dr. ${appointment.doctor_name}`;
-                        appointmentSelect.appendChild(option);
-                    });
-                })
-                .catch(error => console.error('Error loading appointments:', error));
         }
 
         // Hide results when clicking outside
         document.addEventListener('click', function (e) {
-            if (!patientSearch.contains(e.target) && !patientResults.contains(e.target)) {
+            if (patientResults && patientSearch &&
+                !patientSearch.contains(e.target) && !patientResults.contains(e.target)) {
                 patientResults.style.display = 'none';
             }
         });
-
-        // Add initial bill item
-        addBillItem();
     });
+
 
     function addBillItem() {
         const container = document.getElementById('billItems');
         const itemCount = container.children.length;
+
+        // Build service options from the global data
+        let serviceOptionsHtml = '<option value="">Select Service</option>';
+        if (window.servicesData) {
+            window.servicesData.forEach(service => {
+                serviceOptionsHtml += `<option value="${service.id}" data-price="${service.price}" data-name="${service.name}">${service.name}</option>`;
+            });
+        }
 
         const itemHtml = `
         <div class="bill-item-row" data-index="${itemCount}">
             <div class="form-row">
                 <div class="form-group">
                     <select name="service[]" class="form-control service-select" required onchange="updateServicePrice(this)">
-                        <option value="">Select Service</option>
-                        {% for service in service_types %}
-                        <option value="{{ service.id }}" data-price="{{ service.base_price }}" data-name="{{ service.name }}">
-                            {{ service.name }}
-                        </option>
-                        {% endfor %}
+                        ${serviceOptionsHtml}
                     </select>
                 </div>
                 <div class="form-group">
@@ -309,7 +336,7 @@
                 </div>
             </div>
         </div>
-    `;
+        `;
 
         container.insertAdjacentHTML('beforeend', itemHtml);
     }

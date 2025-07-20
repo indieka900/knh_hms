@@ -181,7 +181,7 @@ def patient_medical_history(request, patient_id):
     # Get all lab tests
     lab_tests = LabTest.objects.filter(
         medical_record__patient=patient
-    ).order_by('-created_at')
+    ).order_by('-test_date')
     
     # Get vitals history
     vitals = PatientVitals.objects.filter(

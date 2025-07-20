@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 from patients.models import Patient
 from appointments.models import Appointment
 from pharmacy.models import MedicineDispensing
@@ -88,6 +89,14 @@ class Payment(models.Model):
     payment_date = models.DateTimeField(auto_now_add=True)
     processed_by = models.ForeignKey(BillingStaff, on_delete=models.CASCADE)
     notes = models.TextField(blank=True)
+    
+    # def save(self, *args, **kwargs):
+    #     if not self.payment_id:
+    #         super().save(*args, **kwargs) 
+    #         self.payment_id = generate_payment_id()
+    #         super().save(update_fields=['payment_id'])
+    #     else:
+    #         super().save(*args, **kwargs)
     
     def __str__(self):
         return f"Payment {self.payment_id} - KES {self.amount}"

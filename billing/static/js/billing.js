@@ -293,13 +293,30 @@ class PatientSearch {
             return;
         }
 
-        fetch(`/patients/api/search/?q=${encodeURIComponent(query)}`)
+        fetch(`/patients/search/?q=${encodeURIComponent(query)}`)
             .then(response => response.json())
-            .then(data => this.displayResults(data.results))
+            .then(data => this.displayResults(data.patients))
             .catch(error => {
                 console.error('Search error:', error);
                 this.hideResults();
             });
+    }
+
+    selectPatient(patient) {
+        this.input.value = `${patient.name} (${patient.patient_id})`;
+        this.hideResults();
+
+        const hiddenInput = document.getElementById('selectedPatientId');
+        if (hiddenInput) {
+            hiddenInput.value = patient.patient_id;
+        }
+
+        if (this.onSelect) {
+            this.onSelect(patient);
+        }
+
+        // Load pending bills for selected patient (instead of appointments)
+        loadPatientPendingBills(patient.patient_id);
     }
 
     displayResults(patients) {
@@ -330,15 +347,6 @@ class PatientSearch {
         this.showResults();
     }
 
-    selectPatient(patient) {
-        this.input.value = `${patient.name} (${patient.patient_id})`;
-        this.hideResults();
-
-        if (this.onSelect) {
-            this.onSelect(patient);
-        }
-    }
-
     showResults() {
         this.results.style.display = 'block';
     }
@@ -348,9 +356,190 @@ class PatientSearch {
     }
 }
 
+// Function to load pending bills for a patient
+function loadPatientPendingBills(patientId) {
+    const billSelect = document.getElementById('patientBills');
+    const paymentAmount = document.getElementById('paymentAmount');
+    const balanceInfo = document.getElementById('balanceInfo');
+
+    if (!billSelect) return;
+
+    // Clear existing options and show loading
+    billSelect.innerHTML = '<option value="">Loading bills...</option>';
+
+    // Clear payment amount and balance info
+    if (paymentAmount) paymentAmount.value = '';
+    if (balanceInfo) balanceInfo.textContent = '';
+
+    fetch(`/billing/api/patient-pending-bills/${patientId}/`)
+        .then(response => response.json())
+        .then(data => {
+            billSelect.innerHTML = '<option value="">Select a bill...</option>';
+
+            if (data.bills.length === 0) {
+                const option = document.createElement('option');
+                option.text = 'No pending bills found';
+                option.disabled = true;
+                billSelect.appendChild(option);
+            } else {
+                data.bills.forEach(bill => {
+                    const option = document.createElement('option');
+                    option.value = bill.bill_id;
+                    option.dataset.totalAmount = bill.total_amount;
+                    option.dataset.paidAmount = bill.paid_amount || 0;
+                    option.dataset.balance = bill.balance;
+                    option.textContent = `${bill.bill_id} - KSh ${parseFloat(bill.balance).toLocaleString('en-KE', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    })} (Due: ${bill.due_date})`;
+                    billSelect.appendChild(option);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error loading bills:', error);
+            billSelect.innerHTML = '<option value="">Error loading bills</option>';
+        });
+}
+
+// Function to handle bill selection and auto-fill payment amount
+function handleBillSelection() {
+    const billSelect = document.getElementById('patientBills');
+    const paymentAmount = document.getElementById('paymentAmount');
+    const balanceInfo = document.getElementById('balanceInfo');
+
+    if (!billSelect || !paymentAmount || !balanceInfo) return;
+
+    billSelect.addEventListener('change', function () {
+        const selectedOption = this.selectedOptions[0];
+
+        if (selectedOption && selectedOption.value) {
+            const balance = parseFloat(selectedOption.dataset.balance) || 0;
+            const totalAmount = parseFloat(selectedOption.dataset.totalAmount) || 0;
+            const paidAmount = parseFloat(selectedOption.dataset.paidAmount) || 0;
+
+            // Auto-fill the payment amount with the balance
+            paymentAmount.value = balance.toFixed(2);
+            paymentAmount.max = balance; // Set max to prevent overpayment
+
+            // Show balance information
+            balanceInfo.innerHTML = `
+                <strong>Bill Details:</strong><br>
+                Total: KSh ${totalAmount.toLocaleString('en-KE', { minimumFractionDigits: 2 })} | 
+                Paid: KSh ${paidAmount.toLocaleString('en-KE', { minimumFractionDigits: 2 })} | 
+                <span class="text-danger">Balance: KSh ${balance.toLocaleString('en-KE', { minimumFractionDigits: 2 })}</span>
+            `;
+        } else {
+            paymentAmount.value = '';
+            paymentAmount.removeAttribute('max');
+            balanceInfo.textContent = '';
+        }
+    });
+}
+
+// Function to validate payment amount
+function validatePaymentAmount() {
+    const paymentAmount = document.getElementById('paymentAmount');
+    const billSelect = document.getElementById('patientBills');
+
+    if (!paymentAmount || !billSelect) return;
+
+    paymentAmount.addEventListener('input', function () {
+        const selectedOption = billSelect.selectedOptions[0];
+        if (selectedOption && selectedOption.value) {
+            const balance = parseFloat(selectedOption.dataset.balance) || 0;
+            const enteredAmount = parseFloat(this.value) || 0;
+
+            if (enteredAmount > balance) {
+                this.setCustomValidity(`Amount cannot exceed balance of KSh ${balance.toFixed(2)}`);
+            } else if (enteredAmount <= 0) {
+                this.setCustomValidity('Amount must be greater than 0');
+            } else {
+                this.setCustomValidity('');
+            }
+        }
+    });
+}
+
+// Initialize the quick payment modal
+function initializeQuickPayment() {
+    const patientSearchInput = document.getElementById('patientSearch');
+    const patientResults = document.getElementById('patientResults');
+
+    if (patientSearchInput && patientResults) {
+        new PatientSearch(patientSearchInput, patientResults, (patient) => {
+            console.log('Patient selected:', patient);
+        });
+    }
+
+    // Initialize bill selection handler
+    handleBillSelection();
+
+    // Initialize payment amount validation
+    validatePaymentAmount();
+
+    // Handle form submission
+    const quickPaymentForm = document.getElementById('quickPaymentForm');
+    if (quickPaymentForm) {
+        quickPaymentForm.addEventListener('submit', handleQuickPaymentSubmission);
+    }
+}
+
+// Handle form submission
+function handleQuickPaymentSubmission(e) {
+    e.preventDefault();
+
+    const formData = new FormData();
+    formData.append('patient_id', document.getElementById('selectedPatientId').value);
+    formData.append('bill_id', document.getElementById('patientBills').value);
+    formData.append('amount', document.getElementById('paymentAmount').value);
+    formData.append('payment_method', document.getElementById('paymentMethod').value);
+    formData.append('transaction_ref', document.getElementById('transactionRef').value || '');
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+    // Submit the payment
+    fetch('/billing/api/quick-payment/', {
+        method: 'POST',
+        body: formData
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Payment processed successfully!');
+                closeQuickPayment();
+                // Optionally refresh the page or update the UI
+                location.reload();
+            } else {
+                alert('Error processing payment: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Payment error:', error);
+            alert('Error processing payment. Please try again.');
+        });
+}
+
+// Functions to open and close the modal
+function openQuickPayment() {
+    document.getElementById('quickPaymentModal').style.display = 'block';
+}
+
+function closeQuickPayment() {
+    const modal = document.getElementById('quickPaymentModal');
+    modal.style.display = 'none';
+
+    // Reset form
+    document.getElementById('quickPaymentForm').reset();
+    document.getElementById('selectedPatientId').value = '';
+    document.getElementById('patientBills').innerHTML = '<option value="">Select a bill...</option>';
+    document.getElementById('balanceInfo').textContent = '';
+    document.getElementById('patientResults').style.display = 'none';
+}
+
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function () {
     new BillingManager();
+    initializeQuickPayment();
 
     // Initialize patient search if elements exist
     const patientInput = document.getElementById('patientSearch');
