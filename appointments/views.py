@@ -6,6 +6,7 @@ from datetime import timedelta, timezone, date
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_GET
 import uuid
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
@@ -427,7 +428,7 @@ def get_available_slots(request):
 
 
 @login_required
-@csrf_exempt  # if you're using fetch, make sure to handle CSRF properly
+@csrf_exempt
 def update_appointment_status(request, appointment_id, new_status):
     if request.method == 'POST':
         try:
@@ -443,4 +444,24 @@ def update_appointment_status(request, appointment_id, new_status):
         except Appointment.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Appointment not found'}, status=404)
     return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
-# Create your views here.
+
+
+@require_GET
+def patient_appointments_api(request, patient_id):
+    """Returns all appointments for a given patient ID as JSON"""
+    appointments = Appointment.objects.select_related('doctor__user').filter(patient__patient_id=patient_id)
+
+    data = {
+        'appointments': [
+            {
+                'appointment_id': appt.id,
+                'appointment_date': appt.appointment_date.strftime('%Y-%m-%d'),
+                'appointment_time': appt.appointment_time.strftime('%H:%M'),
+                'status': appt.status,
+                'doctor_name': appt.doctor.user.get_full_name(),
+            }
+            for appt in appointments
+        ]
+    }
+
+    return JsonResponse(data)
