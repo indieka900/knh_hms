@@ -190,46 +190,47 @@ def inventory_api(request):
     if request.method == 'GET':
         search_query = request.GET.get('search', '')
         inventory = Inventory.objects.select_related('medicine').all()
-
         if search_query:
             inventory = inventory.filter(
                 Q(medicine__name__icontains=search_query) |
                 Q(batch_number__icontains=search_query) |
                 Q(supplier__icontains=search_query)
             )
-
         inventory = inventory.order_by('quantity_in_stock')
-
         data = [{
             'id': item.id,
             'medicine': {
                 'id': item.medicine.id,
                 'name': item.medicine.name,
-                'strength': getattr(item.medicine, 'strength', ''),
+                'generic_name': item.medicine.generic_name,
             },
             'batch_number': item.batch_number,
             'quantity_in_stock': item.quantity_in_stock,
             'unit_price': str(item.unit_price),
-            'expiry_date': item.expiry_date.isoformat(),
+            'expiry_date': item.expiry_date.isoformat() if item.expiry_date else None,
             'supplier': item.supplier,
             'minimum_stock_level': item.minimum_stock_level,
             'date_received': item.date_received.isoformat() if item.date_received else None,
         } for item in inventory]
-
         return JsonResponse(data, safe=False)
-
+    
+    # Handle POST request
     try:
         data = json.loads(request.body)
-        medicine, _ = Medicine.objects.get_or_create(
+        print(f"Received data: {data}")
+        
+        # Create or get the medicine
+        medicine, created = Medicine.objects.get_or_create(
             name=data['medicine_name'],
             defaults={
                 'generic_name': data.get('generic_name', ''),
                 'manufacturer': data.get('manufacturer', ''),
-                'dosage_form': 'tablet',
-                'strength': data.get('strength', ''),
+                'unit_of_measurement': 'units',  # Add default unit
+                'description': '',  # Add default description
             }
         )
-
+        
+        # Create the inventory item
         inventory_item = Inventory.objects.create(
             medicine=medicine,
             batch_number=data['batch_number'],
@@ -240,26 +241,27 @@ def inventory_api(request):
             minimum_stock_level=data['minimum_stock_level'],
             date_received=timezone.now().date()
         )
-
+        
         return JsonResponse({
+            'success': True,
             'id': inventory_item.id,
             'medicine': {
                 'id': medicine.id,
                 'name': medicine.name,
-                'strength': getattr(medicine, 'strength', ''),
+                'generic_name': medicine.generic_name,
             },
             'batch_number': inventory_item.batch_number,
             'quantity_in_stock': inventory_item.quantity_in_stock,
             'unit_price': str(inventory_item.unit_price),
-            'expiry_date': inventory_item.expiry_date.isoformat(),
+            'expiry_date': inventory_item.expiry_date.isoformat() if inventory_item.expiry_date else None,
             'supplier': inventory_item.supplier,
             'minimum_stock_level': inventory_item.minimum_stock_level,
-            'date_received': inventory_item.date_received.isoformat(),
+            'date_received': inventory_item.date_received.isoformat() if inventory_item.date_received else None,
         })
-
+        
     except Exception as e:
+        print(f"Error creating inventory item: {str(e)}")
         return JsonResponse({'error': str(e)}, status=400)
-
 
 @login_required
 @require_http_methods(["PATCH"])
@@ -477,6 +479,7 @@ def add_medicine_api(request):
     """API endpoint to add medicine to inventory"""
     try:
         data = json.loads(request.body)
+        print(f"---------------{data}")
         
         # Get or create medicine
         medicine, created = Medicine.objects.get_or_create(

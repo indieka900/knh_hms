@@ -5,39 +5,39 @@
         <form id="medicineForm">
             <div class="form-group">
                 <label for="medicineName">Medicine Name</label>
-                <input type="text" class="form-control" id="medicineName" required>
+                <input type="text" class="form-control" id="medicineName" name="medicine_name" required>
             </div>
             <div class="form-group">
                 <label for="genericName">Generic Name</label>
-                <input type="text" class="form-control" id="genericName">
+                <input type="text" class="form-control" id="genericName" name="generic_name" required>
             </div>
             <div class="form-group">
                 <label for="manufacturer">Manufacturer</label>
-                <input type="text" class="form-control" id="manufacturer" required>
+                <input type="text" class="form-control" id="manufacturer" name="manufacturer" required>
             </div>
             <div class="form-group">
                 <label for="batchNumber">Batch Number</label>
-                <input type="text" class="form-control" id="batchNumber" required>
+                <input type="text" class="form-control" id="batchNumber" name="batch_number" required>
             </div>
             <div class="form-group">
                 <label for="quantity">Quantity</label>
-                <input type="number" class="form-control" id="quantity" min="1" required>
+                <input type="number" class="form-control" id="quantity" min="1" name="quantity_in_stock" required>
             </div>
             <div class="form-group">
                 <label for="unitPrice">Unit Price</label>
-                <input type="number" class="form-control" id="unitPrice" step="0.01" min="0" required>
+                <input type="number" class="form-control" id="unitPrice" step="0.01" min="0" required name="unit_price">
             </div>
             <div class="form-group">
                 <label for="expiryDate">Expiry Date</label>
-                <input type="date" class="form-control" id="expiryDate" required>
+                <input type="date" class="form-control" id="expiryDate" name="expiry_date" required>
             </div>
             <div class="form-group">
                 <label for="supplier">Supplier</label>
-                <input type="text" class="form-control" id="supplier" required>
+                <input type="text" class="form-control" id="supplier" name="supplier" required>
             </div>
             <div class="form-group">
                 <label for="minStockLevel">Minimum Stock Level</label>
-                <input type="number" class="form-control" id="minStockLevel" min="1" value="10" required>
+                <input type="number" class="form-control" id="minStockLevel" name="minimum_stock_level" min="1" value="10" required>
             </div>
             <button type="submit" class="btn btn-primary">Add to Inventory</button>
         </form>
