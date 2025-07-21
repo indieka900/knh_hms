@@ -3,6 +3,7 @@ import json
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.utils import timezone
+from collections import defaultdict
 from django.views import View
 from django.db.models import Q, F
 from django.core.paginator import Paginator
@@ -97,8 +98,8 @@ def pharmacy_dashboard_data(request):
                 'prescription_id': record.prescription.id if record.prescription else None,
                 'prescription': {
                     'patient': {
-                        'first_name': record.prescription.patient.first_name,
-                        'last_name': record.prescription.patient.last_name,
+                        'first_name': record.prescription.medical_record.patient.user.first_name,
+                        'last_name': record.prescription.medical_record.patient.user.last_name,
                     }
                 } if record.prescription else None,
                 'inventory_item': {
@@ -110,8 +111,8 @@ def pharmacy_dashboard_data(request):
                 'quantity_dispensed': record.quantity_dispensed,
                 'dispensed_at': record.dispensed_at.isoformat(),
                 'pharmacist': {
-                    'first_name': record.pharmacist.first_name,
-                    'last_name': record.pharmacist.last_name,
+                    'first_name': record.pharmacist.user.first_name,
+                    'last_name': record.pharmacist.user.last_name,
                 } if record.pharmacist else None,
                 'notes': record.notes,
             }
@@ -290,6 +291,7 @@ def update_stock_api(request, item_id):
 def dispensing_api(request):
     try:
         data = json.loads(request.body)
+        # print(f"Received dispensing data: {data}")
         inventory_item = Inventory.objects.get(id=data['inventory_item_id'])
 
         if inventory_item.quantity_in_stock < data['quantity_dispensed']:
@@ -297,14 +299,14 @@ def dispensing_api(request):
 
         prescription = None
         if data.get('prescription_id'):
-            # prescription = Prescription.objects.get(id=data['prescription_id'])
+            prescription = Prescription.objects.get(id=1)
             pass
-
+        pharmacist = Pharmacist.objects.get(user=request.user)
         dispensing = MedicineDispensing.objects.create(
             prescription=prescription,
             inventory_item=inventory_item,
             quantity_dispensed=data['quantity_dispensed'],
-            pharmacist=request.user,
+            pharmacist=pharmacist,
             notes=data.get('notes', ''),
             dispensed_at=timezone.now()
         )
@@ -326,44 +328,41 @@ def dispensing_api(request):
 
 
 def prescription_list_api(request):
-    """API endpoint for prescription list with search"""
-    search_query = request.GET.get('search', '')
-    status_filter = request.GET.get('status', '')
+    """API endpoint for prescription list grouped by medical record"""
     
-    prescriptions = Prescription.objects.select_related('patient').all()
-    
-    if search_query:
-        prescriptions = prescriptions.filter(
-            Q(prescription_id__icontains=search_query) |
-            Q(patient__first_name__icontains=search_query) |
-            Q(patient__last_name__icontains=search_query) |
-            Q(doctor_name__icontains=search_query)
-        )
-    
-    if status_filter:
-        prescriptions = prescriptions.filter(status=status_filter)
-    
-    prescriptions = prescriptions.order_by('-created_at')
-    
-    prescriptions_data = []
+    prescriptions = Prescription.objects.select_related(
+        'medical_record__patient__user',
+        'medical_record__doctor__user',
+        'dispensed_by'
+    ).all()
+    # Group prescriptions by medical record
+    grouped_prescriptions = defaultdict(list)
     for prescription in prescriptions:
-        # Get medicines from prescription items
-        medicines = [item.medicine_name for item in prescription.prescription_items.all()]
+        grouped_prescriptions[prescription.medical_record.record_id].append(prescription)
+    prescriptions_data = []
+    for record_id, prescription_list in grouped_prescriptions.items():
+        # Use the first prescription to get patient/doctor info
+        first_prescription = prescription_list[0]
         
+        # Collect all medicines for this medical record
+        medicines = [p.medication_name for p in prescription_list]
+        
+        # Determine overall status
+        all_dispensed = all(p.is_dispensed for p in prescription_list)
+        status = "dispensed" if all_dispensed else "pending"
         prescriptions_data.append({
-            'id': prescription.prescription_id,
-            'patient_id': prescription.patient.patient_id,
-            'patient_name': prescription.patient.get_full_name(),
-            'doctor': prescription.doctor_name,
-            'date': prescription.created_at.strftime('%Y-%m-%d'),
+            'id': record_id,
+            'patient_id': first_prescription.medical_record.patient.patient_id,
+            'patient_name': first_prescription.medical_record.patient.user.get_full_name(),
+            'doctor': first_prescription.medical_record.doctor.user.get_full_name(),
+            'date': first_prescription.medical_record.created_at.strftime('%Y-%m-%d'),
             'medicines': medicines,
-            'status': prescription.status,
+            'status': status,
+            'prescription_count': len(prescription_list)
         })
-    
     return JsonResponse({
         'prescriptions': prescriptions_data
     })
-
 
 @login_required
 def inventory_list_api(request):
@@ -479,7 +478,6 @@ def add_medicine_api(request):
     """API endpoint to add medicine to inventory"""
     try:
         data = json.loads(request.body)
-        print(f"---------------{data}")
         
         # Get or create medicine
         medicine, created = Medicine.objects.get_or_create(
