@@ -1,8 +1,8 @@
 :root {
-    --primary-light: #FDE8E3;
-    --primary-medium: #E7C1BF;
-    --primary-dark: #3A2B32;
-    --secondary-dark: #654351;
+    --primary-light: #7AC6D2;
+    --primary-medium: #3D90D7;
+    --primary-dark: #3A59D1;
+    --secondary-dark: #B5FCCD;
     --white: #ffffff;
     --gray-light: #f8f9fa;
     --gray-medium: #6c757d;
@@ -10,8 +10,11 @@
     --warning: #ffc107;
     --danger: #dc3545;
     --info: #17a2b8;
-    --shadow-light: rgba(58, 43, 50, 0.1);
-    --shadow-medium: rgba(58, 43, 50, 0.2);
+
+    --border-radius: 8px;
+    --box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    --box-shadow-hover: 0 4px 20px rgba(0, 0, 0, 0.15);
+    --transition: all 0.3s ease;
 }
 
 * {
@@ -66,7 +69,7 @@ body::before {
 /* Left Panel - Welcome Section */
 .welcome-panel {
     flex: 1;
-    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary-dark) 100%);
+    background: var(--primary-dark);
     padding: 60px 40px;
     display: flex;
     flex-direction: column;
@@ -251,7 +254,7 @@ body::before {
 .form-select:focus {
     outline: none;
     border-color: var(--primary-medium);
-    box-shadow: 0 0 0 3px rgba(231, 193, 191, 0.2);
+    box-shadow: var(--box-shadow);
 }
 
 /* Submit Button */
@@ -287,7 +290,7 @@ body::before {
 }
 
 .form-link {
-    color: var(--secondary-dark);
+    color: var(--primary-dark);
     text-decoration: none;
     font-weight: 600;
     transition: color 0.3s ease;
