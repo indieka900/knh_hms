@@ -1,18 +1,46 @@
 {% extends "base.html" %}
 
+{% load static %}
+
 {% block title %}Pharmacy Dashboard - KNH HMS{% endblock %}
 
 {% block page_title %}Pharmacy Dashboard{% endblock %}
 
 {% block extrahead %}
 <style>
+    .modal {
+        display: none;
+        /* Hidden by default */
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+        background-color: #fff;
+        margin: 10% auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 60%;
+    }
+
+    .close {
+        float: right;
+        font-size: 1.5rem;
+        cursor: pointer;
+    }
+
     .dashboard-header {
         background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary-dark) 100%);
         color: var(--white);
         padding: 2rem;
         margin-bottom: 2rem;
         border-radius: 0 0 15px 15px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     }
 
     .dashboard-header h1 {
@@ -46,7 +74,7 @@
         background: var(--white);
         border-radius: 12px;
         padding: 1.5rem;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
     }
 
     .section h2 {
@@ -86,6 +114,7 @@
     .tab-content.active {
         display: block;
     }
+
     .btn {
         padding: 0.75rem 1.5rem;
         border: none;
@@ -195,15 +224,15 @@
         .main-container {
             grid-template-columns: 1fr;
         }
-        
+
         .dashboard-stats {
             grid-template-columns: 1fr;
         }
-        
+
         .dashboard-header {
             padding: 1rem;
         }
-        
+
         .dashboard-header h1 {
             font-size: 2rem;
         }
@@ -274,8 +303,8 @@
                     <tr>
                         <th>ID</th>
                         <th>Name</th>
-                        <th>Phone</th>
-                        <th>Last Visit</th>
+                        <!-- <th>Phone</th>
+                        <th>Last Visit</th> -->
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -333,746 +362,8 @@
 {% include 'modals/medicine_modal.html' %}
 {% include 'modals/dispensing_modal.html' %}
 
-<script>
-    // Data Storage - will be populated from backend
-    let patients = [];
-    let prescriptions = [];
-    let medicines = [];
-    let inventory = [];
-    let dispensingHistory = [];
-    let stats = {
-        totalPatients: 0,
-        pendingPrescriptions: 0,
-        lowStockItems: 0,
-        todayDispensed: 0
-    };
-
-    // CSRF Token for Django
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-
-    const csrftoken = getCookie('csrftoken');
-
-    // Initialize Dashboard
-    document.addEventListener('DOMContentLoaded', function () {
-        loadDataFromBackend();
-        // Initialize tooltips and other interactive elements
-        initializeInteractiveElements();
-    });
-
-    // Load data from Django backend
-    async function loadDataFromBackend() {
-        try {
-            // Load dashboard data
-            const response = await fetch('/pharmacy/api/pharmacy-dashboard-data/', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-
-                // Update stats from backend
-                stats = {
-                    totalPatients: data.stats.total_patients,
-                    pendingPrescriptions: data.stats.pending_prescriptions || 0,
-                    lowStockItems: data.stats.low_stock_items,
-                    todayDispensed: data.stats.today_dispensed
-                };
-
-                // Convert backend data to frontend format
-                patients = data.recent_patients.map(patient => ({
-                    id: patient.patient_id,
-                    name: `${patient.first_name} ${patient.last_name}`,
-                    phone: patient.phone_number,
-                    email: patient.email,
-                    age: patient.age,
-                    address: patient.address,
-                    lastVisit: patient.created_at ? patient.created_at.split('T')[0] : 'N/A'
-                }));
-
-                // Convert inventory data
-                inventory = data.critical_inventory.map(item => ({
-                    id: item.id,
-                    medicineId: item.medicine.id,
-                    medicineName: `${item.medicine.name} ${item.medicine.strength || ''}`,
-                    batchNumber: item.batch_number,
-                    quantity: item.quantity_in_stock,
-                    unitPrice: parseFloat(item.unit_price),
-                    expiryDate: item.expiry_date,
-                    supplier: item.supplier,
-                    minStockLevel: item.minimum_stock_level,
-                    dateReceived: item.date_received
-                }));
-
-                // Convert dispensing history
-                dispensingHistory = data.recent_dispensing.map(record => ({
-                    id: record.id,
-                    prescriptionId: record.prescription_id,
-                    patientName: `${record.prescription.patient.first_name} ${record.prescription.patient.last_name}`,
-                    medicineName: `${record.inventory_item.medicine.name} ${record.inventory_item.medicine.strength || ''}`,
-                    quantity: record.quantity_dispensed,
-                    dispensedAt: new Date(record.dispensed_at).toLocaleString(),
-                    pharmacist: record.pharmacist ? `${record.pharmacist.first_name} ${record.pharmacist.last_name}` : 'Unknown',
-                    notes: record.notes || ''
-                }));
-
-                // Update all displays
-                updateStats();
-                renderPatients();
-                renderPrescriptions();
-                renderInventory();
-                renderDispensingHistory();
-                await populateMedicineSelect();
-
-            } else {
-                console.error('Failed to load dashboard data');
-                showAlert('Failed to load dashboard data', 'danger');
-            }
-        } catch (error) {
-            console.error('Error loading dashboard data:', error);
-            showAlert('Error loading dashboard data', 'danger');
-        }
-    }
-
-    // Load patients from backend
-    async function loadPatients() {
-        try {
-            const response = await fetch('/pharmacy/api/patients/', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                patients = data.map(patient => ({
-                    id: patient.patient_id,
-                    name: `${patient.first_name} ${patient.last_name}`,
-                    phone: patient.phone_number,
-                    email: patient.email,
-                    age: patient.age,
-                    address: patient.address,
-                    lastVisit: patient.created_at ? patient.created_at.split('T')[0] : 'N/A'
-                }));
-                renderPatients();
-            }
-        } catch (error) {
-            console.error('Error loading patients:', error);
-        }
-    }
-
-    // Load inventory from backend
-    async function loadInventory() {
-        try {
-            const response = await fetch('/pharmacy/api/inventory/', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                inventory = data.map(item => ({
-                    id: item.id,
-                    medicineId: item.medicine.id,
-                    medicineName: `${item.medicine.name} ${item.medicine.strength || ''}`,
-                    batchNumber: item.batch_number,
-                    quantity: item.quantity_in_stock,
-                    unitPrice: parseFloat(item.unit_price),
-                    expiryDate: item.expiry_date,
-                    supplier: item.supplier,
-                    minStockLevel: item.minimum_stock_level,
-                    dateReceived: item.date_received
-                }));
-                renderInventory();
-                populateMedicineSelect();
-            }
-        } catch (error) {
-            console.error('Error loading inventory:', error);
-        }
-    }
-
-    // Tab Management
-    function switchTab(tabName, tabElement) {
-        // Hide all tab contents
-        const tabContents = document.querySelectorAll('.tab-content');
-        tabContents.forEach(content => content.classList.remove('active'));
-
-        // Remove active class from all tabs
-        const tabs = document.querySelectorAll('.nav-tab');
-        tabs.forEach(tab => tab.classList.remove('active'));
-
-        // Show selected tab content
-        document.getElementById(tabName).classList.add('active');
-        tabElement.classList.add('active');
-
-        // Load fresh data when switching tabs
-        if (tabName === 'patients') {
-            loadPatients();
-        } else if (tabName === 'inventory') {
-            loadInventory();
-        } else if (tabName === 'prescriptions') {
-            loadPrescriptions();
-        }
-    }
-
-    // Modal Management
-    function openModal(modalId) {
-        document.getElementById(modalId).style.display = 'block';
-    }
-
-    function closeModal(modalId) {
-        document.getElementById(modalId).style.display = 'none';
-    }
-
-    // Close modal when clicking outside
-    window.onclick = function (event) {
-        const modals = document.querySelectorAll('.modal');
-        modals.forEach(modal => {
-            if (event.target === modal) {
-                modal.style.display = 'none';
-            }
-        });
-    }
-
-    // Statistics Update
-    function updateStats() {
-        document.getElementById('totalPatients').textContent = stats.totalPatients;
-        document.getElementById('pendingPrescriptions').textContent = stats.pendingPrescriptions;
-        document.getElementById('lowStockItems').textContent = stats.lowStockItems;
-        document.getElementById('todayDispensed').textContent = stats.todayDispensed;
-    }
-
-    // Patient Management
-    function renderPatients() {
-        const tbody = document.getElementById('patientsTableBody');
-        if (!tbody) return;
-
-        tbody.innerHTML = '';
-
-        patients.forEach(patient => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${patient.id}</td>
-                <td>${patient.name}</td>
-                <td>${patient.phone}</td>
-                <td>${patient.lastVisit}</td>
-                <td>
-                    <button class="btn btn-sm btn-primary" onclick="viewPatient('${patient.id}')">View</button>
-                    <button class="btn btn-sm btn-warning" onclick="editPatient('${patient.id}')">Edit</button>
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
-    }
-
-    function searchPatients() {
-        const searchTerm = document.getElementById('patientSearch').value.toLowerCase();
-        const filteredPatients = patients.filter(patient =>
-            patient.name.toLowerCase().includes(searchTerm) ||
-            patient.phone.includes(searchTerm) ||
-            patient.id.toLowerCase().includes(searchTerm)
-        );
-
-        const tbody = document.getElementById('patientsTableBody');
-        tbody.innerHTML = '';
-
-        filteredPatients.forEach(patient => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${patient.id}</td>
-                <td>${patient.name}</td>
-                <td>${patient.phone}</td>
-                <td>${patient.lastVisit}</td>
-                <td>
-                    <button class="btn btn-sm btn-primary" onclick="viewPatient('${patient.id}')">View</button>
-                    <button class="btn btn-sm btn-warning" onclick="editPatient('${patient.id}')">Edit</button>
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
-    }
-
-    // Prescription Management
-    function renderPrescriptions() {
-        const container = document.getElementById('prescriptionsList');
-        if (!container) return;
-
-        container.innerHTML = '';
-
-        if (prescriptions.length === 0) {
-            container.innerHTML = '<p>No pending prescriptions.</p>';
-            return;
-        }
-
-        prescriptions.forEach(prescription => {
-            const statusBadge = prescription.status === 'pending' ? 'status-in-progress' : 'status-confirmed';
-            const prescriptionDiv = document.createElement('div');
-            prescriptionDiv.className = 'prescription-item';
-            prescriptionDiv.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: start;">
-                    <div>
-                        <h4>${prescription.id} - ${prescription.patientName}</h4>
-                        <p><strong>Doctor:</strong> ${prescription.doctor}</p>
-                        <p><strong>Date:</strong> ${prescription.date}</p>
-                        <p><strong>Medicines:</strong> ${prescription.medicines.join(', ')}</p>
-                    </div>
-                    <div>
-                        <span class="status-badge ${statusBadge}">${prescription.status.toUpperCase()}</span>
-                        ${prescription.status === 'pending' ?
-                    `<button class="btn btn-sm btn-success" onclick="dispensePrescription('${prescription.id}')">Dispense</button>` :
-                    ''}
-                    </div>
-                </div>
-            `;
-            container.appendChild(prescriptionDiv);
-        });
-    }
-
-    // Inventory Management
-    function renderInventory() {
-        const tbody = document.getElementById('inventoryTableBody');
-        if (!tbody) return;
-
-        tbody.innerHTML = '';
-
-        inventory.forEach(item => {
-            const row = document.createElement('tr');
-            let statusClass = '';
-            let status = 'Normal';
-
-            if (item.quantity <= 5) {
-                statusClass = 'inventory-critical';
-                status = 'Critical';
-            } else if (item.quantity <= item.minStockLevel) {
-                statusClass = 'inventory-low';
-                status = 'Low Stock';
-            }
-
-            // Check expiry date
-            const expiryDate = new Date(item.expiryDate);
-            const today = new Date();
-            const monthsToExpiry = (expiryDate - today) / (1000 * 60 * 60 * 24 * 30);
-
-            if (monthsToExpiry < 3) {
-                status = 'Expiring Soon';
-                statusClass = 'inventory-critical';
-            }
-
-            const badgeClass = status === 'Normal' ? 'status-confirmed' :
-                status === 'Low Stock' ? 'status-in-progress' : 'status-cancelled';
-
-            row.className = statusClass;
-            row.innerHTML = `
-                <td>${item.medicineName}</td>
-                <td>${item.quantity}</td>
-                <td>${item.expiryDate}</td>
-                <td><span class="status-badge ${badgeClass}">${status}</span></td>
-                <td>
-                    <button class="btn btn-sm btn-primary" onclick="viewInventoryItem('${item.id}')">View</button>
-                    <button class="btn btn-sm btn-warning" onclick="updateStock('${item.id}')">Update</button>
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
-    }
-
-    function searchInventory() {
-        const searchTerm = document.getElementById('inventorySearch').value.toLowerCase();
-        const filteredInventory = inventory.filter(item =>
-            item.medicineName.toLowerCase().includes(searchTerm) ||
-            item.batchNumber.toLowerCase().includes(searchTerm) ||
-            item.supplier.toLowerCase().includes(searchTerm)
-        );
-
-        const tbody = document.getElementById('inventoryTableBody');
-        tbody.innerHTML = '';
-
-        filteredInventory.forEach(item => {
-            const row = document.createElement('tr');
-            let statusClass = '';
-            let status = 'Normal';
-
-            if (item.quantity <= 5) {
-                statusClass = 'inventory-critical';
-                status = 'Critical';
-            } else if (item.quantity <= item.minStockLevel) {
-                statusClass = 'inventory-low';
-                status = 'Low Stock';
-            }
-
-            const expiryDate = new Date(item.expiryDate);
-            const today = new Date();
-            const monthsToExpiry = (expiryDate - today) / (1000 * 60 * 60 * 24 * 30);
-
-            if (monthsToExpiry < 3) {
-                status = 'Expiring Soon';
-                statusClass = 'inventory-critical';
-            }
-
-            const badgeClass = status === 'Normal' ? 'status-confirmed' :
-                status === 'Low Stock' ? 'status-in-progress' : 'status-cancelled';
-
-            row.className = statusClass;
-            row.innerHTML = `
-                <td>${item.medicineName}</td>
-                <td>${item.quantity}</td>
-                <td>${item.expiryDate}</td>
-                <td><span class="status-badge ${badgeClass}">${status}</span></td>
-                <td>
-                    <button class="btn btn-sm btn-primary" onclick="viewInventoryItem('${item.id}')">View</button>
-                    <button class="btn btn-sm btn-warning" onclick="updateStock('${item.id}')">Update</button>
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
-    }
-
-    // Dispensing Management
-    async function loadPrescriptions() {
-            try {
-                const response = await fetch('/pharmacy/api/prescriptions/', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrftoken
-                    }
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-
-                    // Convert backend data to frontend format
-                    prescriptions = data.prescriptions.map(prescription => ({
-                        id: prescription.id,
-                        patientName: prescription.patient_name,
-                        doctor: prescription.doctor,
-                        date: prescription.date,
-                        medicines: prescription.medicines,
-                        status: prescription.status,
-                        patientId: prescription.patient_id
-                    }));
-
-                    renderPrescriptions();
-
-                } else {
-                    console.error('Failed to load prescriptions');
-                    showAlert('Failed to load prescriptions', 'danger');
-                }
-            } catch (error) {
-                console.error('Error loading prescriptions:', error);
-                showAlert('Error loading prescriptions', 'danger');
-            }
-        }
-
-        // Updated renderPrescriptions function with better error handling
-        function renderPrescriptions() {
-            const container = document.getElementById('prescriptionsList');
-            if (!container) {
-                console.error('prescriptionsList container not found');
-                return;
-            }
-
-            container.innerHTML = '';
-
-            if (!prescriptions || prescriptions.length === 0) {
-                container.innerHTML = '<div class="alert alert-info">No prescriptions found.</div>';
-                return;
-            }
-
-            prescriptions.forEach(prescription => {
-                const statusBadge = prescription.status === 'pending' ? 'status-in-progress' : 'status-confirmed';
-                const prescriptionDiv = document.createElement('div');
-                prescriptionDiv.className = 'prescription-item';
-                prescriptionDiv.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: start; padding: 15px; border: 1px solid #ddd; margin-bottom: 10px; border-radius: 5px;">
-                <div>
-                    <h4>Prescription #${prescription.id}</h4>
-                    <p><strong>Patient:</strong> ${prescription.patientName}</p>
-                    <p><strong>Doctor:</strong> ${prescription.doctor}</p>
-                    <p><strong>Date:</strong> ${prescription.date}</p>
-                    <p><strong>Medicines:</strong> ${prescription.medicines.length > 0 ? prescription.medicines.join(', ') : 'No medicines listed'}</p>
-                </div>
-                <div style="text-align: right;">
-                    <span class="status-badge ${statusBadge}" style="display: block; margin-bottom: 10px;">${prescription.status.toUpperCase()}</span>
-                    ${prescription.status === 'pending' ?
-                        `<button class="btn btn-sm btn-success" onclick="dispensePrescription('${prescription.id}')">Dispense</button>` :
-                        ''}
-                </div>
-            </div>
-        `;
-                container.appendChild(prescriptionDiv);
-            });
-        }
-
-        // Search prescriptions function
-        function searchPrescriptions() {
-            const searchTerm = document.getElementById('prescriptionSearch').value.toLowerCase();
-            const filteredPrescriptions = prescriptions.filter(prescription =>
-                prescription.id.toLowerCase().includes(searchTerm) ||
-                prescription.patientName.toLowerCase().includes(searchTerm) ||
-                prescription.doctor.toLowerCase().includes(searchTerm) ||
-                prescription.medicines.some(medicine => medicine.toLowerCase().includes(searchTerm))
-            );
-
-            // Temporarily store original prescriptions
-            const originalPrescriptions = [...prescriptions];
-            prescriptions = filteredPrescriptions;
-            renderPrescriptions();
-            prescriptions = originalPrescriptions;
-        }
-
-    // Form Handlers
-    document.getElementById('patientForm')?.addEventListener('submit', async function (e) {
-        e.preventDefault();
-
-        const formData = new FormData(this);
-        const patientData = {
-            first_name: formData.get('patientName').split(' ')[0],
-            last_name: formData.get('patientName').split(' ').slice(1).join(' '),
-            phone_number: formData.get('patientPhone'),
-            email: formData.get('patientEmail'),
-            age: parseInt(formData.get('patientAge')),
-            address: formData.get('patientAddress')
-        };
-
-        try {
-            const response = await fetch('/api/patients/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken
-                },
-                body: JSON.stringify(patientData)
-            });
-
-            if (response.ok) {
-                await loadPatients();
-                await loadDataFromBackend(); // Refresh stats
-                closeModal('patientModal');
-                showAlert('Patient added successfully!', 'success');
-                this.reset();
-            } else {
-                const error = await response.json();
-                showAlert('Error adding patient: ' + JSON.stringify(error), 'danger');
-            }
-        } catch (error) {
-            console.error('Error adding patient:', error);
-            showAlert('Error adding patient', 'danger');
-        }
-    });
-
-    document.getElementById('medicineForm').addEventListener('submit', async function (e) {
-            e.preventDefault();
-
-            const formData = new FormData(this);
-            const data = {};
-
-            // Convert form data to JSON
-            for (let [key, value] of formData.entries()) {
-                data[key] = value;
-            }
-
-            try {
-                const response = await fetch('/pharmacy/api/inventory/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrftoken
-                    },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    // Success - close modal and refresh inventory
-                    closeModal('medicineModal');
-                    showAlert('Medicine added to inventory successfully!', 'success');
-
-                    // Reset form
-                    this.reset();
-
-                    // Reload inventory data
-                    await loadInventory();
-
-                } else {
-                    // Error
-                    showAlert(result.error || 'Failed to add medicine to inventory', 'danger');
-                }
-
-            } catch (error) {
-                console.error('Error submitting form:', error);
-                showAlert('Network error occurred', 'danger');
-            }
-        });
-
-    document.getElementById('dispensingForm')?.addEventListener('submit', async function (e) {
-            e.preventDefault();
-
-            // Get values directly from form elements using their IDs
-            const dispensingData = {
-                prescription_id: document.getElementById('prescriptionId').value,
-                inventory_item_id: document.getElementById('medicineSelect').value,
-                quantity_dispensed: parseInt(document.getElementById('dispenseQuantity').value),
-                notes: document.getElementById('dispensingNotes').value
-            };
-
-            // Log the data to check what's being sent
-            console.log('Dispensing data:', dispensingData);
-
-            try {
-                const response = await fetch('/pharmacy/api/dispensing/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrftoken
-                    },
-                    body: JSON.stringify(dispensingData)
-                });
-
-                if (response.ok) {
-                    await loadDataFromBackend(); // Refresh all data
-                    closeModal('dispensingModal');
-                    showAlert('Medicine dispensed successfully!', 'success');
-                    this.reset();
-                } else {
-                    const error = await response.json();
-                    showAlert('Error dispensing medicine: ' + JSON.stringify(error), 'danger');
-                }
-            } catch (error) {
-                console.error('Error dispensing medicine:', error);
-                showAlert('Error dispensing medicine', 'danger');
-            }
-        });
-
-    // Helper Functions
-    function showAlert(message, type) {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type}`;
-        alertDiv.textContent = message;
-        alertDiv.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            padding: 15px;
-            border-radius: 4px;
-            color: white;
-            background-color: ${type === 'success' ? '#28a745' : type === 'danger' ? '#dc3545' : '#007bff'};
-        `;
-
-        document.body.appendChild(alertDiv);
-
-        // Remove after 5 seconds
-        setTimeout(() => {
-            alertDiv.remove();
-        }, 5000);
-    }
-
-    function viewPatient(patientId) {
-        const patient = patients.find(p => p.id === patientId);
-        if (patient) {
-            alert(`Patient Details:\n\nName: ${patient.name}\nPhone: ${patient.phone}\nEmail: ${patient.email}\nAge: ${patient.age}\nAddress: ${patient.address}\nLast Visit: ${patient.lastVisit}`);
-        }
-    }
-
-    function editPatient(patientId) {
-        const patient = patients.find(p => p.id === patientId);
-        if (patient) {
-            const nameParts = patient.name.split(' ');
-            document.getElementById('patientName').value = patient.name;
-            document.getElementById('patientPhone').value = patient.phone;
-            document.getElementById('patientEmail').value = patient.email;
-            document.getElementById('patientAge').value = patient.age;
-            document.getElementById('patientAddress').value = patient.address;
-
-            openModal('patientModal');
-            showAlert('Edit functionality would need API endpoint for updates', 'info');
-        }
-    }
-
-    function viewInventoryItem(itemId) {
-        const item = inventory.find(i => i.id === itemId);
-        if (item) {
-            alert(`Inventory Details:\n\nMedicine: ${item.medicineName}\nBatch: ${item.batchNumber}\nQuantity: ${item.quantity}\nUnit Price: ${item.unitPrice}\nExpiry: ${item.expiryDate}\nSupplier: ${item.supplier}\nMin Stock: ${item.minStockLevel}`);
-        }
-    }
-
-    async function updateStock(itemId) {
-        const item = inventory.find(i => i.id === itemId);
-        if (item) {
-            const newQuantity = prompt(`Current stock: ${item.quantity}\nEnter new quantity:`, item.quantity);
-            if (newQuantity !== null && !isNaN(newQuantity) && newQuantity >= 0) {
-                try {
-                    const response = await fetch(`/pharmacy/api/inventory/${itemId}/update-stock/`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrftoken
-                        },
-                        body: JSON.stringify({
-                            quantity_in_stock: parseInt(newQuantity)
-                        })
-                    });
-
-                    if (response.ok) {
-                        await loadInventory();
-                        await loadDataFromBackend(); // Refresh stats
-                        showAlert('Stock updated successfully!', 'success');
-                    } else {
-                        showAlert('Error updating stock', 'danger');
-                    }
-                } catch (error) {
-                    console.error('Error updating stock:', error);
-                    showAlert('Error updating stock', 'danger');
-                }
-            }
-        }
-    }
-
-    function dispensePrescription(prescriptionId) {
-        document.getElementById('prescriptionId').value = prescriptionId;
-        openModal('dispensingModal');
-    }
-
-    // Initialize interactive elements
-    function initializeInteractiveElements() {
-        // Add hover effects for better UX
-        const cards = document.querySelectorAll('.stat-card');
-        cards.forEach(card => {
-            card.addEventListener('mouseenter', function () {
-                this.style.transform = 'translateY(-5px)';
-            });
-
-            card.addEventListener('mouseleave', function () {
-                this.style.transform = 'translateY(0)';
-            });
-        });
-    }
-
-    // Auto-refresh data every 5 minutes
-    setInterval(loadDataFromBackend, 300000);
-</script>
+{% block extrajs %}
+<!-- <script src="{% static 'pharmacy/js/script.js' %}"></script> -->
+{% endblock %}
 
 {% endblock %}

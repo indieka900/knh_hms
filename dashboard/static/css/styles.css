@@ -247,7 +247,7 @@ body {
 }
 
 .stat-card h3 {
-    color: var(--secondary-dark);
+    color: var(--primary-medium);
     font-size: 0.9rem;
     font-weight: 600;
     text-transform: uppercase;

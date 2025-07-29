@@ -1,4 +1,5 @@
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
+from decimal import Decimal
 import json
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
@@ -236,8 +237,8 @@ def inventory_api(request):
             medicine=medicine,
             batch_number=data['batch_number'],
             quantity_in_stock=data['quantity_in_stock'],
-            unit_price=data['unit_price'],
-            expiry_date=data['expiry_date'],
+            unit_price=Decimal(data['unit_price']),
+            expiry_date=datetime.strptime(data['expiry_date'], '%Y-%m-%d').date(),
             supplier=data['supplier'],
             minimum_stock_level=data['minimum_stock_level'],
             date_received=timezone.now().date()
