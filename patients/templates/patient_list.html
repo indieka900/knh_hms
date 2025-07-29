@@ -1,0 +1,599 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extrahead %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        padding: 2rem 0;
+        margin: -1rem -1rem 2rem -1rem;
+        border-radius: 0 0 15px 15px;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .page-subtitle {
+        opacity: 0.9;
+        margin: 0;
+        font-size: 1.1rem;
+    }
+
+    .stats-container {
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-left: 4px solid var(--secondary-color);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        height: 100%;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .stat-card.success {
+        border-left-color: var(--success-color);
+    }
+
+    .stat-card.warning {
+        border-left-color: var(--warning-color);
+    }
+
+    .stat-card.info {
+        border-left-color: var(--info-color);
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-icon {
+        font-size: 2.5rem;
+        opacity: 0.3;
+        color: var(--secondary-color);
+        float: right;
+        margin-top: -1rem;
+    }
+
+    .main-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .card-header-custom {
+        background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        padding: 1.5rem;
+        border: none;
+    }
+
+    .search-container {
+        background: var(--light-color);
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .search-box {
+        position: relative;
+    }
+
+    .search-box input {
+        border-radius: 25px;
+        padding: 12px 20px 12px 45px;
+        border: 2px solid transparent;
+        background: white;
+        transition: border-color 0.3s ease;
+    }
+
+    .search-box input:focus {
+        border-color: var(--secondary-color);
+        box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+    }
+
+    .search-box i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+
+    .btn-add-patient {
+        background: linear-gradient(45deg, var(--success-color), #2ecc71);
+        border: none;
+        border-radius: 25px;
+        padding: 12px 25px;
+        color: white;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-add-patient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4);
+        color: var(--primary-color);
+    }
+
+    .table-container {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+
+    .patients-table {
+        margin: 0;
+    }
+
+    .patients-table thead {
+        background: var(--primary-color);
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .patients-table thead th {
+        border: none;
+        padding: 1rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.85rem;
+    }
+
+    .patients-table tbody tr {
+        transition: background-color 0.3s ease;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .patients-table tbody tr:hover {
+        background-color: rgba(52, 152, 219, 0.1);
+    }
+
+    .patients-table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+    }
+
+    .patient-avatar {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background: linear-gradient(45deg, var(--secondary-color), var(--info-color));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+
+    .patient-id-badge {
+        background: var(--secondary-color);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .gender-badge {
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .gender-male {
+        background: rgba(52, 152, 219, 0.2);
+        color: var(--secondary-color);
+    }
+
+    .gender-female {
+        background: rgba(231, 76, 60, 0.2);
+        color: var(--danger-color);
+    }
+
+    .gender-other {
+        background: rgba(155, 89, 182, 0.2);
+        color: #9b59b6;
+    }
+
+    .blood-group-badge {
+        background: var(--danger-color);
+        color: white;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .action-buttons .btn {
+        margin: 0 2px;
+        border-radius: 20px;
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .btn-view {
+        background: var(--info-color);
+        border-color: var(--info-color);
+        color: white;
+    }
+
+    .btn-edit {
+        background: var(--warning-color);
+        border-color: var(--warning-color);
+        color: white;
+    }
+
+    .btn-delete {
+        background: var(--danger-color);
+        border-color: var(--danger-color);
+        color: white;
+    }
+
+    .no-patients {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+
+    .no-patients i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .contact-info {
+        font-size: 0.9rem;
+    }
+
+    .contact-info i {
+        width: 15px;
+        text-align: center;
+        margin-right: 5px;
+    }
+
+    /* Patient Details Modal */
+
+    .modal-header {
+        background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        border-bottom: none;
+    }
+
+    .modal-header .btn-close {
+        filter: brightness(0) invert(1);
+    }
+
+    .patient-detail-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .detail-label {
+        font-weight: 600;
+        color: var(--primary-color);
+        margin-bottom: 0.25rem;
+    }
+
+    .detail-value {
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+
+    @media (max-width: 768px) {
+        .page-header {
+            padding: 1.5rem 0;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .stat-card {
+            margin-bottom: 1rem;
+        }
+
+        .search-container {
+            padding: 1rem;
+        }
+
+        .btn-add-patient {
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .table-responsive {
+            font-size: 0.9rem;
+        }
+
+        .action-buttons .btn {
+            padding: 4px 8px;
+            font-size: 0.7rem;
+        }
+    }
+</style>
+{% endblock extrahead %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container-fluid px-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="page-title">
+                    <i class="fas fa-user-injured me-3"></i>
+                    {{ title }}
+                </h1>
+                <p class="page-subtitle mb-0">Manage and monitor patient information</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                {% if user.role == 'doctor' or user.role == 'administrator' %}
+                <a href="{% url 'patients:create_patient' %}" class="btn btn-add-patient">
+                    <i class="fas fa-plus me-2"></i>Add New Patient
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-container">
+    <div class="row g-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-number">{{ patients|length }}</div>
+                <div class="stat-label">Total Patients</div>
+                <i class="fas fa-users stat-icon"></i>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card success">
+                <div class="stat-number">{{ patients|length|floatformat:0 }}</div>
+                <div class="stat-label">Active Patients</div>
+                <i class="fas fa-user-check stat-icon"></i>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card warning">
+                <div class="stat-number" id="newPatientsCount">0</div>
+                <div class="stat-label">New This Month</div>
+                <i class="fas fa-user-plus stat-icon"></i>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="stat-card info">
+                <div class="stat-number">{{ patients|length|floatformat:0 }}</div>
+                <div class="stat-label">Registered Today</div>
+                <i class="fas fa-calendar-check stat-icon"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Patients Table -->
+<div class="main-card">
+    <div class="card-header-custom">
+        <h5 class="mb-0">
+            <i class="fas fa-list me-2"></i>
+            Patients Directory
+        </h5>
+    </div>
+
+    <div class="search-container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" class="form-control" id="searchInput"
+                        placeholder="Search by name, patient ID, phone, or email...">
+                </div>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="d-flex align-items-center justify-content-md-end">
+                    <span class="text-muted me-3">
+                        Total: <span id="patientCount" class="fw-bold text-primary">{{ patients|length }}</span>
+                    </span>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="window.location.reload()">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        {% if patients %}
+        <table class="table table-hover patients-table" id="patientsTable">
+            <thead>
+                <tr>
+                    <th>Patient</th>
+                    <th>ID</th>
+                    <th>Gender</th>
+                    <th>Blood Group</th>
+                    <th>Contact</th>
+                    <th>Emergency Contact</th>
+                    <th>Registered</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="patientsTableBody">
+                {% for patient in patients %}
+                <tr class="patient-row"
+                    data-search="{{ patient.user.first_name|lower }} {{ patient.user.last_name|lower }} {{ patient.patient_id|lower }} {{ patient.user.phone_number }} {{ patient.user.email|lower }}">
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="patient-avatar me-3">
+                                {{ patient.user.first_name|first|upper }}{{ patient.user.last_name|first|upper }}
+                            </div>
+                            <div>
+                                <div class="fw-bold">{{ patient.user.first_name }} {{ patient.user.last_name }}</div>
+                                {% if patient.user.date_of_birth %}
+                                <small class="text-muted">
+                                    DOB: {{ patient.user.date_of_birth|date:"M d, Y" }}
+                                </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="patient-id-badge">{{ patient.patient_id }}</span>
+                    </td>
+                    <td>
+                        {% if patient.gender == 'M' %}
+                        <span class="gender-badge gender-male">
+                            <i class="fas fa-mars me-1"></i>Male
+                        </span>
+                        {% elif patient.gender == 'F' %}
+                        <span class="gender-badge gender-female">
+                            <i class="fas fa-venus me-1"></i>Female
+                        </span>
+                        {% elif patient.gender == 'O' %}
+                        <span class="gender-badge gender-other">
+                            <i class="fas fa-genderless me-1"></i>Other
+                        </span>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if patient.blood_group %}
+                        <span class="blood-group-badge">
+                            <i class="fas fa-tint me-1"></i>{{ patient.blood_group }}
+                        </span>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="contact-info">
+                            {% if patient.user.phone_number %}
+                            <div>
+                                <i class="fas fa-phone"></i>
+                                {{ patient.user.phone_number }}
+                            </div>
+                            {% endif %}
+                            {% if patient.user.email %}
+                            <div>
+                                <i class="fas fa-envelope"></i>
+                                {{ patient.user.email }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="contact-info">
+                            {% if patient.emergency_contact_name %}
+                            <div>
+                                <i class="fas fa-user-shield"></i>
+                                {{ patient.emergency_contact_name }}
+                            </div>
+                            {% if patient.emergency_contact_phone %}
+                            <div>
+                                <i class="fas fa-phone"></i>
+                                {{ patient.emergency_contact_phone }}
+                            </div>
+                            {% endif %}
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        {% if patient.created_at %}
+                        {{ patient.created_at|date:"M d, Y" }}
+                        <br>
+                        <small class="text-muted">{{ patient.created_at|timesince }} ago</small>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-view btn-sm" onclick="viewPatient('{{ patient.patient_id }}')"
+                                title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            {% if user.role == 'doctor' or user.role == 'administrator' %}
+                            <a href="#" class="btn btn-edit btn-sm"
+                                title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {% endif %}
+                            {% if user.role == 'administrator' %}
+                            <button class="btn btn-delete btn-sm" onclick="deletePatient('{{ patient.patient_id }}')"
+                                title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="no-patients">
+            <i class="fas fa-user-injured"></i>
+            <h5>No Patients Found</h5>
+            <p>No patients have been registered yet.</p>
+            {% if user.role == 'doctor' or user.role == 'administrator' %}
+            <a href="{% url 'patients:patient_create' %}" class="btn btn-add-patient">
+                <i class="fas fa-plus me-2"></i>Add First Patient
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Patient Details Modal -->
+<!-- Modal -->
+<div class="modal fade" id="patientDetailsModal" tabindex="-1" inert>
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="patientDetailsModalLabel">Patient Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="patientDetailsContent">
+                <!-- Patient details will be injected here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button id="editPatientBtn" type="button" class="btn btn-primary">Edit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

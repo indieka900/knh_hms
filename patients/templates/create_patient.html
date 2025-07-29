@@ -271,9 +271,10 @@
 
                         <!-- Form Actions -->
                         <div class="d-flex justify-content-between align-items-center mt-5 pt-4 border-top">
-                            <a href="{% url 'appointments:appointments' %}" class="btn btn-outline-secondary">
-                                <i class="fas fa-arrow-left me-1"></i> Cancel
+                            <a href="javascript:void(0);" onclick="history.back();" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Back
                             </a>
+
                             <button type="submit" class="btn btn-primary btn-lg">
                                 <i class="fas fa-user-plus me-1"></i> Create Patient
                             </button>

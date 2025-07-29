@@ -98,3 +98,28 @@ def patient_search_ajax(request):
     } for patient in patients]
     
     return JsonResponse({'patients': patient_data})
+
+from datetime import date
+
+@login_required
+def patient_list(request):
+    """List all patients - accessible by doctors and staff"""
+    
+    if not request.user.role in ['doctor', 'administrator', 'billing_staff']:
+        messages.error(request, "You don't have permission to view patients.")
+        return redirect('/')
+    
+    patients = Patient.objects.all().order_by('user__last_name')
+    
+    # Calculate ages
+    for patient in patients:
+        if patient.user.date_of_birth:
+            today = date.today()
+            patient.calculated_age = today.year - patient.user.date_of_birth.year - ((today.month, today.day) < (patient.user.date_of_birth.month, patient.user.date_of_birth.day))
+    
+    context = {
+        'patients': patients,
+        'title': 'Patient List'
+    }
+    
+    return render(request, 'patient_list.html', context)

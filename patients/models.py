@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from datetime import date
 
 class Patient(models.Model):
     GENDER_CHOICES = [
@@ -54,6 +55,13 @@ class Patient(models.Model):
                 user=instance,
                 patient_id=f"PAT{instance.id:06d}"
             )
+
+    @property
+    def age(self):
+        if self.user.date_of_birth:
+            today = date.today()
+            return today.year - self.user.date_of_birth.year - ((today.month, today.day) < (self.user.date_of_birth.month, self.user.date_of_birth.day))
+        return None
 
 class PatientVitals(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='vitals')

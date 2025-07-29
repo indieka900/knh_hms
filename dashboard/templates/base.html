@@ -29,15 +29,19 @@
     {% include 'includes/pop_up.html' %}
     {% endif %}
 
-    <!-- Load jQuery and Bootstrap first -->
     <script src="https://code.jquery.com/jquery-3.7.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Now load your custom scripts AFTER Bootstrap -->
+    
+    {% if request.resolver_match.app_name == 'pharmacy' %}
     <script src="{% static 'pharmacy/js/script.js' %}"></script>
+    {% endif %}
+
+    {% if request.resolver_match.app_name == 'patients' %}
+    <script src="{% static 'patients/js/scripts.js' %}"></script>
+    {% endif %}
     
     {% block extrajs %}
-    <!-- Optional additional page-specific JS -->
     {% endblock %}
 
 
