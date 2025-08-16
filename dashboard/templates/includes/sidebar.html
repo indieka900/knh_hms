@@ -1,117 +1,191 @@
 <nav class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-                <h2>KNH HMS</h2>
-                <p>Hospital Management System</p>
-        </div>
-        <ul class="sidebar-menu">
-                <li>
-                        <a href="{% url 'dashboard:dashboard' %}"
-                                class="{% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}">
-                                <i class="fas fa-tachometer-alt"></i> Dashboard
-                        </a>
-                </li>
+  <div class="sidebar-header">
+    <h2>KNH HMS</h2>
+    <p>Hospital Management System</p>
+  </div>
+  <ul class="sidebar-menu">
+    <li>
+      <a
+        href="{% url 'dashboard:dashboard' %}"
+        class="{% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}"
+      >
+        <i class="fas fa-tachometer-alt"></i> Dashboard
+      </a>
+    </li>
 
-                <!-- Patient Management -->
-                {% if user.role == 'doctor' or user.role == 'nurse' or user.role == 'admin' %}
-                <li>
-                        <a href="{% url 'patients:patient_list' %}"
-                                class="{% if request.resolver_match.app_name == 'patients' %}active{% endif %}">
-                                <i class="fas fa-user-injured"></i> Patients
-                        </a>
-                </li>
-                {% endif %}
+    <!-- Patient Management - Only for Admin/Staff/Doctors -->
+    {% if user.role == 'doctor' or user.role == 'nurse' or user.role ==
+    'administrator' or user.role == 'billing_staff' %}
+    <li>
+      <a
+        href="{% url 'patients:patient_list' %}"
+        class="{% if request.resolver_match.app_name == 'patients' %}active{% endif %}"
+      >
+        <i class="fas fa-user-injured"></i> All Patients
+      </a>
+    </li>
+    {% endif %}
 
-                <!-- Medical Records -->
-                {% if user.role == 'doctor' or user.role == 'nurse' or user.role == 'admin' %}
-                <li>
-                        <a href="{% url 'medical_records:medical_records_dashboard' %}"
-                                class="{% if request.resolver_match.app_name == 'medical_records' %}active{% endif %}">
-                                <i class="fas fa-file-medical"></i> Medical Records
-                        </a>
-                </li>
-                {% endif %}
+    <!-- Medical Records -->
+    {% if user.role == 'doctor' or user.role == 'nurse' or user.role ==
+    'administrator' %}
+    <li>
+      <a
+        href="{% url 'medical_records:medical_records_dashboard' %}"
+        class="{% if request.resolver_match.app_name == 'medical_records' %}active{% endif %}"
+      >
+        <i class="fas fa-file-medical"></i> Medical Records
+      </a>
+    </li>
+    {% endif %}
 
-                <!-- Appointments -->
-                <li>
-                        <a href="{% url 'appointments:appointments' %}"
-                                class="{% if request.resolver_match.app_name == 'appointments' %}active{% endif %}">
-                                <i class="fas fa-calendar-alt"></i> Appointments
-                        </a>
-                </li>
+    <!-- Appointments - Different for Patients vs Admin/Staff -->
+    {% if user.role == 'patient' %}
+    <!-- Patient can only book appointments -->
+    <li>
+      <a
+        href="{% url 'appointments:book_appointment' %}"
+        class="{% if request.resolver_match.url_name == 'book_appointment' %}active{% endif %}"
+      >
+        <i class="fas fa-calendar-plus"></i> Book Appointment
+      </a>
+    </li>
+    <li>
+      <a
+        href="{% url 'appointments:my_appointments' %}"
+        class="{% if request.resolver_match.url_name == 'my_appointments' %}active{% endif %}"
+      >
+        <i class="fas fa-calendar-check"></i> My Appointments
+      </a>
+    </li>
+    {% else %}
+    <!-- Admin/Staff can see all appointments -->
+    <li>
+      <a
+        href="{% url 'appointments:appointments' %}"
+        class="{% if request.resolver_match.app_name == 'appointments' %}active{% endif %}"
+      >
+        <i class="fas fa-calendar-alt"></i> All Appointments
+      </a>
+    </li>
+    {% endif %}
 
-                <!-- Pharmacy -->
-                {% if user.role == 'pharmacist' or user.role == 'admin' %}
-                <li>
-                        <a href="{% url 'pharmacy:pharmacy_dashboard' %}"
-                                class="{% if request.resolver_match.app_name == 'pharmacy' %}active{% endif %}">
-                                <i class="fas fa-pills"></i> Pharmacy
-                        </a>
-                </li>
-                {% endif %}
+    <!-- Pharmacy -->
+    {% if user.role == 'pharmacist' or user.role == 'administrator' %}
+    <li>
+      <a
+        href="{% url 'pharmacy:pharmacy_dashboard' %}"
+        class="{% if request.resolver_match.app_name == 'pharmacy' %}active{% endif %}"
+      >
+        <i class="fas fa-pills"></i> Pharmacy
+      </a>
+    </li>
+    {% endif %}
 
-                <!-- Billing -->
-                {% if user.role == 'billing_staff' or user.role == 'admin' %}
-                <li>
-                        <a href="{% url 'billing:billing_dashboard' %}"
-                                class="{% if request.resolver_match.app_name == 'billing' %}active{% endif %}">
-                                <i class="fas fa-file-invoice-dollar"></i> Billing
-                        </a>
-                </li>
-                {% endif %}
+    <!-- Billing -->
+    {% if user.role == 'billing_staff' or user.role == 'administrator' %}
+    <li>
+      <a
+        href="{% url 'billing:billing_dashboard' %}"
+        class="{% if request.resolver_match.app_name == 'billing' %}active{% endif %}"
+      >
+        <i class="fas fa-file-invoice-dollar"></i> Billing
+      </a>
+    </li>
+    {% endif %}
 
-                <!-- Reports -->
-                {% if user.role == 'admin' or user.role == 'doctor' %}
-                <li>
-                        <a href="#" class="{% if request.resolver_match.url_name == 'reports' %}active{% endif %}">
-                                <i class="fas fa-chart-bar"></i> Reports
-                        </a>
-                </li>
-                {% endif %}
+    <!-- Reports -->
+    {% if user.role == 'administrator' or user.role == 'doctor' %}
+    <li>
+      <a
+        href="#"
+        class="{% if request.resolver_match.url_name == 'reports' %}active{% endif %}"
+      >
+        <i class="fas fa-chart-bar"></i> Reports
+      </a>
+    </li>
+    {% endif %}
 
-                <!-- User Management -->
-                {% if user.role == 'admin' %}
-                <li>
-                        <a href="#"
-                                class="{% if request.resolver_match.url_name == 'user_management' %}active{% endif %}">
-                                <i class="fas fa-users-cog"></i> User Management
-                        </a>
-                </li>
-                <li>
-                        <a href="#" class="{% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
-                                <i class="fas fa-cog"></i> System Settings
-                        </a>
-                </li>
-                {% endif %}
+    <!-- Super Admin Section -->
+    {% if user.is_superuser or user.role == 'administrator' %}
+    <li class="sidebar-section-header">
+      <span class="section-title">System Administration</span>
+    </li>
+    <li>
+      <a
+        href="{% url 'dashboard:user_management' %}"
+        class="{% if request.resolver_match.url_name == 'user_management' %}active{% endif %}"
+      >
+        <i class="fas fa-users-cog"></i> User Management
+      </a>
+    </li>
+    <li>
+      <a
+        href="{% url 'dashboard:settings' %}"
+        class="{% if request.resolver_match.url_name == 'settings' %}active{% endif %}"
+      >
+        <i class="fas fa-cog"></i> System Settings
+      </a>
+    </li>
+    <li>
+      <a
+        href="{% url 'dashboard:system_reports' %}"
+        class="{% if request.resolver_match.url_name == 'system_reports' %}active{% endif %}"
+      >
+        <i class="fas fa-chart-line"></i> System Reports
+      </a>
+    </li>
+    <li>
+      <a
+        href="{% url 'dashboard:audit_logs' %}"
+        class="{% if request.resolver_match.url_name == 'audit_logs' %}active{% endif %}"
+      >
+        <i class="fas fa-clipboard-list"></i> Audit Logs
+      </a>
+    </li>
+    {% endif %}
 
-                <!-- Patient Portal -->
-                {% if user.role == 'patient' %}
-                <li>
-                        <a href="#" class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
-                                <i class="fas fa-user"></i> My Profile
-                        </a>
-                </li>
-                <li>
-                        <a href="{% url 'medical_records:patient_medical_history' user.patient.patient_id %}"
-                                class="{% if request.resolver_match.url_name == 'medical_history' %}active{% endif %}">
-                                <i class="fas fa-history"></i> Medical History
-                        </a>
-                </li>
-                {% endif %}
+    <!-- Patient Portal -->
+    {% if user.role == 'patient' %}
+    <li>
+      <a
+        href="{% url 'accounts:profile' %}"
+        class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}"
+      >
+        <i class="fas fa-user"></i> My Profile
+      </a>
+    </li>
+    <li>
+      <a
+        href="{% url 'medical_records:patient_medical_history' user.patient.patient_id %}"
+        class="{% if request.resolver_match.url_name == 'medical_history' %}active{% endif %}"
+      >
+        <i class="fas fa-history"></i> Medical History
+      </a>
+    </li>
+    {% endif %}
 
-                <!-- Notifications -->
-                <li>
-                        <a href="#"
-                                class="{% if request.resolver_match.app_name == 'notifications' %}active{% endif %}">
-                                <i class="fas fa-bell"></i> Notifications
-                                <span id="notification-badge" class="notification-badge" style="display: none;">0</span>
-                        </a>
-                </li>
+    <!-- Notifications -->
+    <li>
+      <a
+        href="#"
+        class="{% if request.resolver_match.app_name == 'notifications' %}active{% endif %}"
+      >
+        <i class="fas fa-bell"></i> Notifications
+        <span
+          id="notification-badge"
+          class="notification-badge"
+          style="display: none"
+          >0</span
+        >
+      </a>
+    </li>
 
-                <!-- Logout -->
-                <li>
-                        <a href="{% url 'accounts:logout' %}">
-                                <i class="fas fa-sign-out-alt"></i> Logout
-                        </a>
-                </li>
-        </ul>
+    <!-- Logout -->
+    <li>
+      <a href="{% url 'accounts:logout' %}">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </a>
+    </li>
+  </ul>
 </nav>

@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Appointments - KNH HMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Page Header -->
+            <div class="page-header mb-4">
+                <h2><i class="fas fa-calendar-check me-2"></i>My Appointments</h2>
+                <p class="text-muted">Manage and track your scheduled appointments</p>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <a href="{% url 'appointments:book_appointment' %}" class="btn btn-primary">
+                        <i class="fas fa-calendar-plus me-2"></i>Book New Appointment
+                    </a>
+                </div>
+                <div class="col-md-6 text-end">
+                    <span class="badge bg-primary fs-6">{{ appointments.count }} Total Appointments</span>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select name="status" id="status" class="form-select">
+                                <option value="">All Statuses</option>
+                                {% for value, label in status_choices %}
+                                    <option value="{{ value }}" {% if value == current_status %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="date_from" class="form-label">From Date</label>
+                            <input type="date" name="date_from" id="date_from" class="form-control" value="{{ date_from }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="date_to" class="form-label">To Date</label>
+                            <input type="date" name="date_to" id="date_to" class="form-control" value="{{ date_to }}">
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-outline-primary me-2">
+                                <i class="fas fa-filter me-2"></i>Filter
+                            </button>
+                            <a href="{% url 'appointments:my_appointments' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Clear
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Appointments List -->
+            {% if appointments %}
+                <div class="row">
+                    {% for appointment in appointments %}
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card appointment-card h-100">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <span class="badge status-{{ appointment.status }}">
+                                        {{ appointment.get_status_display }}
+                                    </span>
+                                    <small class="text-muted">
+                                        {{ appointment.appointment_date|date:"M d, Y" }}
+                                    </small>
+                                </div>
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <i class="fas fa-user-md me-2"></i>
+                                        Dr. {{ appointment.doctor.user.get_full_name }}
+                                    </h6>
+                                    <p class="card-text">
+                                        <i class="fas fa-clock me-2"></i>
+                                        {{ appointment.appointment_time|time:"H:i" }}
+                                    </p>
+                                    <p class="card-text">
+                                        <i class="fas fa-stethoscope me-2"></i>
+                                        {{ appointment.get_appointment_type_display }}
+                                    </p>
+                                    {% if appointment.notes %}
+                                        <p class="card-text">
+                                            <i class="fas fa-notes-medical me-2"></i>
+                                            <small class="text-muted">{{ appointment.notes|truncatechars:50 }}</small>
+                                        </p>
+                                    {% endif %}
+                                </div>
+                                <div class="card-footer">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <a href="{% url 'appointments:detail' appointment.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye me-1"></i>View Details
+                                        </a>
+                                        {% if appointment.status == 'scheduled' %}
+                                            <button class="btn btn-sm btn-outline-danger cancel-btn" 
+                                                    data-appointment-id="{{ appointment.id }}"
+                                                    data-appointment-date="{{ appointment.appointment_date|date:'M d, Y' }}">
+                                                <i class="fas fa-times me-1"></i>Cancel
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="empty-state">
+                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                        <h3 class="text-muted">No Appointments Found</h3>
+                        <p class="text-muted">You don't have any appointments matching your current filters.</p>
+                        <a href="{% url 'appointments:book_appointment' %}" class="btn btn-primary">
+                            <i class="fas fa-calendar-plus me-2"></i>Book Your First Appointment
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Appointment Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cancel Appointment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel your appointment on <span id="appointmentDate"></span>?</p>
+                <p class="text-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    This action cannot be undone.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keep Appointment</button>
+                <button type="button" class="btn btn-danger" id="confirmCancel">Cancel Appointment</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.page-header {
+    background: linear-gradient(135deg, var(--primary-light), var(--primary-medium));
+    padding: 2rem;
+    border-radius: 15px;
+    color: var(--primary-dark);
+}
+
+.page-header h2 {
+    margin: 0;
+    font-weight: 700;
+}
+
+.appointment-card {
+    border: none;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.appointment-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    background: var(--primary-light);
+    border-bottom: none;
+    border-radius: 12px 12px 0 0 !important;
+}
+
+.status-scheduled {
+    background-color: var(--info) !important;
+    color: white;
+}
+
+.status-confirmed {
+    background-color: var(--success) !important;
+    color: white;
+}
+
+.status-in_progress {
+    background-color: var(--warning) !important;
+    color: var(--primary-dark);
+}
+
+.status-completed {
+    background-color: var(--success) !important;
+    color: white;
+}
+
+.status-cancelled {
+    background-color: var(--danger) !important;
+    color: white;
+}
+
+.status-no_show {
+    background-color: var(--gray-medium) !important;
+    color: white;
+}
+
+.empty-state {
+    color: var(--gray-medium);
+}
+
+.empty-state i {
+    color: var(--primary-light);
+}
+
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+.form-select, .form-control {
+    border: 2px solid var(--primary-light);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.form-select:focus, .form-control:focus {
+    border-color: var(--primary-medium);
+    box-shadow: 0 0 0 3px rgba(78, 177, 186, 0.1);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Cancel appointment functionality
+    const cancelButtons = document.querySelectorAll('.cancel-btn');
+    const cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
+    const appointmentDateSpan = document.getElementById('appointmentDate');
+    const confirmCancelBtn = document.getElementById('confirmCancel');
+    
+    let currentAppointmentId = null;
+    
+    cancelButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            currentAppointmentId = this.dataset.appointmentId;
+            const date = this.dataset.appointmentDate;
+            appointmentDateSpan.textContent = date;
+            cancelModal.show();
+        });
+    });
+    
+    confirmCancelBtn.addEventListener('click', function() {
+        if (currentAppointmentId) {
+            // Send cancel request
+            fetch(`{% url 'appointments:update_status' 'appointment_id' 'cancelled' %}`.replace('appointment_id', currentAppointmentId), {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to cancel appointment: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while cancelling the appointment.');
+            });
+        }
+        cancelModal.hide();
+    });
+});
+</script>
+{% endblock %}

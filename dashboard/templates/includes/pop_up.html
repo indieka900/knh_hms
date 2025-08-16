@@ -1,154 +1,252 @@
-<!DOCTYPE html>
-<html>
+<!-- Modern Toast Notification System -->
+<div id="toast-container" class="toast-container">
+  <!-- Toast notifications will be dynamically inserted here -->
+</div>
 
-<head>
-    <style>
-        .notification-container {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 1000;
-        }
+<!-- Display Django Messages as Toasts -->
+{% if messages %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      {% for message in messages %}
+          showToast('{{ message|escapejs }}', '{{ message.tags }}', {% if message.tags == 'error' %}7000{% else %}5000{% endif %});
+      {% endfor %}
+  });
+</script>
+{% endif %}
 
-        .notification {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            min-width: 300px;
-            margin-top: 10px;
-            padding: 15px 20px;
-            border-radius: 4px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            animation: slideIn 0.5s ease-out;
-            transition: opacity 0.3s ease-out;
-        }
+<style>
+  .toast-container {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 1050;
+    max-width: 400px;
+  }
 
-        .notification.fade-out {
-            opacity: 0;
-        }
+  .toast {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    margin-bottom: 12px;
+    overflow: hidden;
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    border-left: 4px solid #007b83;
+    backdrop-filter: blur(10px);
+  }
 
-        .notification.success {
-            background-color: #4CAF50;
-            color: white;
-            border-left: 4px solid #45a049;
-        }
+  .toast.show {
+    transform: translateX(0);
+    opacity: 1;
+  }
 
-        .notification.error {
-            background-color: #f44336;
-            color: white;
-            border-left: 4px solid #da190b;
-        }
+  .toast.removing {
+    transform: translateX(100%);
+    opacity: 0;
+    margin-bottom: 0;
+    max-height: 0;
+    padding: 0;
+  }
 
-        .notification.info {
-            background-color: #2196F3;
-            color: white;
-            border-left: 4px solid #0b7dda;
-        }
+  .toast-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
 
-        .notification.warning {
-            background-color: #ff9800;
-            color: white;
-            border-left: 4px solid #e68900;
-        }
+  .toast-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: white;
+    margin-right: 8px;
+  }
 
-        .close-btn {
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-            font-size: 20px;
-            margin-left: 15px;
-            opacity: 0.8;
-            transition: opacity 0.2s;
-        }
+  .toast-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #2c3e50;
+    margin: 0;
+    flex: 1;
+  }
 
-        .close-btn:hover {
-            opacity: 1;
-        }
+  .toast-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #95a5a6;
+    cursor: pointer;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+  }
 
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
+  .toast-close:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #7f8c8d;
+  }
 
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-    </style>
-</head>
+  .toast-body {
+    padding: 8px 16px 16px;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #5a6c7d;
+  }
 
-<body>
+  .toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #007b83, #4eb1ba);
+    transition: width linear;
+    border-radius: 0 0 12px 12px;
+  }
 
-    <div id="notification-container" class="notification-container">
-        <!-- Notifications will be injected here -->
-    </div>
+  /* Toast Types */
+  .toast.success {
+    border-left-color: #27ae60;
+  }
 
-    <script>
-        class NotificationManager {
-            constructor() {
-                this.container = document.getElementById('notification-container');
-            }
+  .toast.success .toast-icon {
+    background: #27ae60;
+  }
 
-            show(message, type = 'info', duration = 5000) {
-                // Create notification element
-                const notification = document.createElement('div');
-                notification.className = `notification ${type}`;
+  .toast.success .toast-progress {
+    background: linear-gradient(90deg, #27ae60, #2ecc71);
+  }
 
-                // Create message text
-                const messageText = document.createElement('span');
-                messageText.textContent = message;
+  .toast.error {
+    border-left-color: #e74c3c;
+  }
 
-                // Create close button
-                const closeButton = document.createElement('button');
-                closeButton.className = 'close-btn';
-                closeButton.innerHTML = '×';
-                closeButton.onclick = () => this.remove(notification);
+  .toast.error .toast-icon {
+    background: #e74c3c;
+  }
 
-                // Assemble notification
-                notification.appendChild(messageText);
-                notification.appendChild(closeButton);
+  .toast.error .toast-progress {
+    background: linear-gradient(90deg, #e74c3c, #c0392b);
+  }
 
-                // Add to container
-                this.container.appendChild(notification);
+  .toast.warning {
+    border-left-color: #f39c12;
+  }
 
-                // Set auto-remove timer
-                if (duration > 0) {
-                    setTimeout(() => {
-                        if (notification.parentElement) {
-                            this.remove(notification);
-                        }
-                    }, duration);
-                }
-            }
+  .toast.warning .toast-icon {
+    background: #f39c12;
+  }
 
-            remove(notification) {
-                notification.classList.add('fade-out');
-                setTimeout(() => {
-                    if (notification.parentElement) {
-                        notification.parentElement.removeChild(notification);
-                    }
-                }, 300);
-            }
-        }
+  .toast.warning .toast-progress {
+    background: linear-gradient(90deg, #f39c12, #e67e22);
+  }
 
-        // Initialize notification manager
-        const notificationManager = new NotificationManager();
+  .toast.info {
+    border-left-color: #3498db;
+  }
 
-        // Django template integration
-        document.addEventListener('DOMContentLoaded', function () {
-            // Get Django messages from the template
-            const messages = JSON.parse('{{ messages|safe }}');
+  .toast.info .toast-icon {
+    background: #3498db;
+  }
 
-            // Show each message
-            messages.forEach(message => {
-                notificationManager.show(message.message, message.tags);
-            });
-        });
-    </script>
+  .toast.info .toast-progress {
+    background: linear-gradient(90deg, #3498db, #2980b9);
+  }
 
-</body>
+  /* Mobile Responsiveness */
+  @media (max-width: 768px) {
+    .toast-container {
+      top: 70px;
+      left: 20px;
+      right: 20px;
+      max-width: none;
+    }
 
-</html>
+    .toast {
+      transform: translateY(-100%);
+    }
+
+    .toast.show {
+      transform: translateY(0);
+    }
+
+    .toast.removing {
+      transform: translateY(-100%);
+    }
+  }
+</style>
+
+<script>
+  function showToast(message, type = "info", duration = 5000) {
+    const container = document.getElementById("toast-container");
+
+    // Create toast element
+    const toast = document.createElement("div");
+    toast.className = `toast ${type}`;
+
+    // Determine icon and title based on type
+    const config = {
+      success: { icon: "✓", title: "Success" },
+      error: { icon: "✕", title: "Error" },
+      warning: { icon: "⚠", title: "Warning" },
+      info: { icon: "ℹ", title: "Info" },
+    };
+
+    const { icon, title } = config[type] || config.info;
+
+    // Create toast HTML
+    toast.innerHTML = `
+        <div class="toast-header">
+            <div class="toast-icon">${icon}</div>
+            <h6 class="toast-title">${title}</h6>
+            <button class="toast-close" onclick="removeToast(this.closest('.toast'))">&times;</button>
+        </div>
+        <div class="toast-body">${message}</div>
+        <div class="toast-progress"></div>
+    `;
+
+    // Add to container
+    container.appendChild(toast);
+
+    // Trigger show animation
+    setTimeout(() => toast.classList.add("show"), 10);
+
+    // Start progress bar animation
+    const progressBar = toast.querySelector(".toast-progress");
+    progressBar.style.width = "100%";
+    progressBar.style.transition = `width ${duration}ms linear`;
+    setTimeout(() => {
+      progressBar.style.width = "0%";
+    }, 50);
+
+    // Auto remove
+    setTimeout(() => {
+      if (toast.parentElement) {
+        removeToast(toast);
+      }
+    }, duration);
+  }
+
+  function removeToast(toast) {
+    toast.classList.add("removing");
+    setTimeout(() => {
+      if (toast.parentElement) {
+        toast.parentElement.removeChild(toast);
+      }
+    }, 400);
+  }
+
+  // Global function for easy use
+  window.showToast = showToast;
+</script>

@@ -209,11 +209,11 @@ def create_appointment_view(request):
     # Get available options based on user role
     if user_is_doctor:
         # Doctor can select any patient
-        patients = Patient.objects.select_related('user').filter(user__is_active=True)
+        patients = Patient.objects.select_related('user').filter(user__is_active_user=True)
         doctors = Doctor.objects.filter(id=current_doctor.id)  # Only current doctor
     else:
         # Patient can select any doctor
-        doctors = Doctor.objects.select_related('user').filter(user__is_active=True)
+        doctors = Doctor.objects.select_related('user').filter(is_available=True)
         patients = Patient.objects.filter(patient_id=current_patient.patient_id)  # Only current patient
     
     if request.method == 'POST':
@@ -295,11 +295,11 @@ def edit_appointment_view(request, appointment_id):
     # Get available options based on user role and edit permissions
     if user_is_doctor or request.user.is_staff:
         # Doctor or admin can change patient
-        patients = Patient.objects.select_related('user').filter(user__is_active=True)
-        doctors = Doctor.objects.select_related('user').filter(user__is_active=True)
+        patients = Patient.objects.select_related('user').filter(user__is_active_user=True)
+        doctors = Doctor.objects.select_related('user').filter(is_available=True)
     else:
         # Patient can only change doctor
-        doctors = Doctor.objects.select_related('user').filter(user__is_active=True)
+        doctors = Doctor.objects.select_related('user').filter(is_available=True)
         patients = Patient.objects.filter(patient_id=appointment.patient.patient_id)
     
     if request.method == 'POST':
@@ -465,3 +465,73 @@ def patient_appointments_api(request, patient_id):
     }
 
     return JsonResponse(data)
+
+
+@login_required
+def book_appointment_view(request):
+    """View for patients to book new appointments"""
+    if request.user.role != 'patient':
+        messages.error(request, 'Only patients can book appointments.')
+        return redirect('appointments:appointments')
+    
+    if request.method == 'POST':
+        form = AppointmentForm(request.POST)
+        if form.is_valid():
+            appointment = form.save(commit=False)
+            # Set the patient to the current user's patient profile
+            if hasattr(request.user, 'patient'):
+                appointment.patient = request.user.patient
+            appointment.status = 'scheduled'
+            appointment.save()
+            messages.success(request, 'Appointment booked successfully!')
+            return redirect('appointments:my_appointments')
+    else:
+        form = AppointmentForm()
+    
+    # Get available doctors for the form
+    doctors = Doctor.objects.select_related('user').filter(is_available=True)
+    
+    context = {
+        'form': form,
+        'doctors': doctors,
+        'title': 'Book Appointment'
+    }
+    return render(request, 'book_appointment.html', context)
+
+
+@login_required
+def my_appointments_view(request):
+    """View for patients to see their own appointments"""
+    if request.user.role != 'patient':
+        messages.error(request, 'Access denied.')
+        return redirect('appointments:appointments')
+    
+    if not hasattr(request.user, 'patient'):
+        messages.error(request, 'Patient profile not found.')
+        return redirect('dashboard:dashboard')
+    
+    appointments = Appointment.objects.filter(
+        patient__user=request.user
+    ).select_related('doctor__user').order_by('-appointment_date', '-appointment_time')
+    
+    # Apply filters
+    status_filter = request.GET.get('status')
+    if status_filter:
+        appointments = appointments.filter(status=status_filter)
+    
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    if date_from:
+        appointments = appointments.filter(appointment_date__gte=date_from)
+    if date_to:
+        appointments = appointments.filter(appointment_date__lte=date_to)
+    
+    context = {
+        'appointments': appointments,
+        'title': 'My Appointments',
+        'status_choices': Appointment.STATUS_CHOICES,
+        'current_status': status_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+    }
+    return render(request, 'my_appointments.html', context)

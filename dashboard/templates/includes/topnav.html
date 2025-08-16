@@ -8,13 +8,64 @@
         </h1>
     </div>
     <div class="nav-right d-flex align-items-center">
-        <div class="user-info d-flex align-items-center gap-2">
-            <div class="user-avatar rounded-circle overflow-hidden">
-                <img src="" alt="User" class="img-fluid" />
+        <div class="user-info d-flex align-items-center gap-3">
+            <!-- Notifications Dropdown -->
+            <div class="dropdown">
+                <button class="btn btn-light btn-sm position-relative" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-bell"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
+                        3
+                        <span class="visually-hidden">unread messages</span>
+                    </span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><h6 class="dropdown-header">Notifications</h6></li>
+                    <li><a class="dropdown-item" href="#"><small class="text-muted">New appointment scheduled</small></a></li>
+                    <li><a class="dropdown-item" href="#"><small class="text-muted">Payment received</small></a></li>
+                    <li><a class="dropdown-item" href="#"><small class="text-muted">System maintenance</small></a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-center" href="#">View all notifications</a></li>
+                </ul>
             </div>
-            <div class="user-details">
-                <h4 class="m-0 fs-6">{{ user.first_name }} {{ user.last_name }}</h4>
-                <p class="m-0 small text-muted">{{ user.role|title }}</p>
+            
+            <!-- User Profile Dropdown -->
+            <div class="dropdown">
+                <button class="btn btn-light d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center" style="width: 35px; height: 35px; background: linear-gradient(135deg, #007B83, #4EB1BA); color: white;">
+                        {% if user.first_name %}
+                            {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                        {% else %}
+                            {{ user.email|first|upper }}
+                        {% endif %}
+                    </div>
+                    <div class="user-details d-none d-md-block text-start">
+                        <div class="fw-semibold" style="font-size: 0.9rem; color: white;">
+                            {% if user.first_name and user.last_name %}
+                                {{ user.first_name }} {{ user.last_name }}
+                            {% else %}
+                                {{ user.email }}
+                            {% endif %}
+                        </div>
+                        <small class="text-light opacity-75">{{ user.role|title }}</small>
+                    </div>
+                    <i class="fas fa-chevron-down text-light" style="font-size: 0.8rem;"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><h6 class="dropdown-header">
+                        {% if user.first_name and user.last_name %}
+                            {{ user.first_name }} {{ user.last_name }}
+                        {% else %}
+                            {{ user.email }}
+                        {% endif %}
+                    </h6></li>
+                    <li><a class="dropdown-item" href="{% url 'accounts:profile' %}"><i class="fas fa-user me-2"></i>My Profile</a></li>
+                    <li><a class="dropdown-item" href="{% url 'accounts:settings' %}"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                    {% if user.role == 'patient' %}
+                    <li><a class="dropdown-item" href="#"><i class="fas fa-file-medical me-2"></i>My Medical Records</a></li>
+                    {% endif %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                </ul>
             </div>
         </div>
     </div>

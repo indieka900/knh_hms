@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} - KNH HMS{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <!-- Profile Card -->
+            <div class="modern-card">
+                <div class="card-header text-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user-circle me-2"></i>Profile Information
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <!-- Profile Picture -->
+                    <div class="profile-avatar mb-3">
+                        {% if user.profile_picture %}
+                            <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="rounded-circle" width="120" height="120">
+                        {% else %}
+                            <div class="avatar-placeholder">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- User Name -->
+                    <h4 class="mb-1">
+                        {% if user.first_name and user.last_name %}
+                            {{ user.first_name }} {{ user.last_name }}
+                        {% else %}
+                            {{ user.email }}
+                        {% endif %}
+                    </h4>
+                    
+                    <!-- Role Badge -->
+                    <div class="mb-3">
+                        <span class="badge bg-primary fs-6">{{ user.get_role_display }}</span>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'accounts:profile_edit' %}" class="btn btn-primary">
+                            <i class="fas fa-edit me-2"></i>Edit Profile
+                        </a>
+                        <a href="{% url 'accounts:settings' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-cog me-2"></i>Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Stats Card -->
+            {% if user.role == 'patient' and role_profile %}
+            <div class="modern-card mt-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Quick Stats
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="stat-item">
+                                <h5 class="text-primary mb-0">{{ user.appointments.count|default:0 }}</h5>
+                                <small class="text-muted">Appointments</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-item">
+                                <h5 class="text-success mb-0">{{ user.patient.medical_records.count|default:0 }}</h5>
+                                <small class="text-muted">Records</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-lg-8">
+            <!-- Personal Information -->
+            <div class="modern-card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Personal Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Email Address</label>
+                            <p class="fw-semibold">{{ user.email }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Phone Number</label>
+                            <p class="fw-semibold">{{ user.phone_number|default:"Not provided" }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Date of Birth</label>
+                            <p class="fw-semibold">{{ user.date_of_birth|default:"Not provided" }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Member Since</label>
+                            <p class="fw-semibold">{{ user.created_at|date:"F d, Y" }}</p>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label text-muted">Address</label>
+                            <p class="fw-semibold">{{ user.address|default:"Not provided" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Role-Specific Information -->
+            {% if role_profile %}
+            <div class="modern-card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-briefcase me-2"></i>{{ user.get_role_display }} Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if user.role == 'patient' %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted">Patient ID</label>
+                                <p class="fw-semibold">{{ role_profile.patient_id }}</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted">Blood Group</label>
+                                <p class="fw-semibold">{{ role_profile.blood_group|default:"Not specified" }}</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted">Gender</label>
+                                <p class="fw-semibold">{{ role_profile.get_gender_display|default:"Not specified" }}</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted">Insurance Provider</label>
+                                <p class="fw-semibold">{{ role_profile.insurance_provider|default:"None" }}</p>
+                            </div>
+                            {% if role_profile.emergency_contact_name %}
+                            <div class="col-12">
+                                <h6 class="mt-3 mb-2">Emergency Contact</h6>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted">Name</label>
+                                        <p class="fw-semibold">{{ role_profile.emergency_contact_name }}</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted">Phone</label>
+                                        <p class="fw-semibold">{{ role_profile.emergency_contact_phone }}</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted">Relationship</label>
+                                        <p class="fw-semibold">{{ role_profile.emergency_contact_relationship }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    {% elif user.role == 'doctor' %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted">License Number</label>
+                                <p class="fw-semibold">{{ role_profile.license_number }}</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted">Specialization</label>
+                                <p class="fw-semibold">{{ role_profile.specialization }}</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted">Years of Experience</label>
+                                <p class="fw-semibold">{{ role_profile.years_of_experience }} years</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted">Consultation Fee</label>
+                                <p class="fw-semibold">KSh {{ role_profile.consultation_fee }}</p>
+                            </div>
+                        </div>
+                    {% elif user.role == 'pharmacist' %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted">Pharmacist ID</label>
+                                <p class="fw-semibold">{{ role_profile.pharmacist_id }}</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted">License Number</label>
+                                <p class="fw-semibold">{{ role_profile.license_number }}</p>
+                            </div>
+                        </div>
+                    {% elif user.role == 'billing_staff' %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted">Staff ID</label>
+                                <p class="fw-semibold">{{ role_profile.staff_id }}</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted">Department</label>
+                                <p class="fw-semibold">{{ role_profile.department }}</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Account Security -->
+            <div class="modern-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>Account Security
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Last Login</label>
+                            <p class="fw-semibold">{{ user.last_login|date:"M d, Y - H:i"|default:"Never" }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Account Status</label>
+                            <p class="fw-semibold">
+                                {% if user.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <a href="{% url 'accounts:settings' %}" class="btn btn-outline-warning">
+                            <i class="fas fa-key me-2"></i>Change Password
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.modern-card {
+    background: white;
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #007B83, #4EB1BA);
+    color: white;
+    padding: 1.5rem;
+    border: none;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 0;
+}
+
+.profile-avatar {
+    position: relative;
+    display: inline-block;
+}
+
+.avatar-placeholder {
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(135deg, #007B83, #4EB1BA);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    color: white;
+    font-size: 3rem;
+}
+
+.stat-item {
+    padding: 0.5rem;
+}
+
+.form-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.btn {
+    border-radius: 10px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 768px) {
+    .modern-card {
+        margin-bottom: 1rem;
+    }
+    
+    .card-header {
+        padding: 1rem;
+    }
+    
+    .avatar-placeholder {
+        width: 100px;
+        height: 100px;
+        font-size: 2.5rem;
+    }
+}
+</style>
+{% endblock %}

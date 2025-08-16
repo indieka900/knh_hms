@@ -1,0 +1,116 @@
+{% extends "base.html" %} {% load static %} {% block title %}System Settings -
+KNH HMS{% endblock %} {% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <div class="page-header mb-4">
+        <h2><i class="fas fa-cog me-2"></i>System Settings</h2>
+        <p class="text-muted">Configure system parameters and preferences</p>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              <h4><i class="fas fa-info-circle me-2"></i>System Information</h4>
+            </div>
+            <div class="card-body">
+              <table class="table table-borderless">
+                <tr>
+                  <td><strong>Django Version:</strong></td>
+                  <td>{{ system_info.django_version }}</td>
+                </tr>
+                <tr>
+                  <td><strong>Python Version:</strong></td>
+                  <td>{{ system_info.python_version }}</td>
+                </tr>
+                <tr>
+                  <td><strong>Database:</strong></td>
+                  <td>{{ system_info.database }}</td>
+                </tr>
+                <tr>
+                  <td><strong>Debug Mode:</strong></td>
+                  <td>
+                    {% if system_info.debug_mode %}
+                    <span class="badge bg-warning">Enabled</span>
+                    {% else %}
+                    <span class="badge bg-success">Disabled</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              <h4><i class="fas fa-shield-alt me-2"></i>Security Settings</h4>
+            </div>
+            <div class="card-body text-center py-4">
+              <i class="fas fa-shield-alt fa-3x text-muted mb-3"></i>
+              <h5 class="text-muted">Security Configuration Coming Soon</h5>
+              <p class="text-muted">
+                Advanced security settings will be implemented in the next
+                update.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .page-header {
+    background: linear-gradient(
+      135deg,
+      var(--primary-light),
+      var(--primary-medium)
+    );
+    padding: 2rem;
+    border-radius: 15px;
+    color: var(--primary-dark);
+  }
+
+  .page-header h2 {
+    margin: 0;
+    font-weight: 700;
+  }
+
+  .card {
+    border: none;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    border-radius: 15px;
+    margin-bottom: 1.5rem;
+  }
+
+  .card-header {
+    background: linear-gradient(
+      135deg,
+      var(--primary-light),
+      rgba(231, 193, 191, 0.3)
+    );
+    border-bottom: none;
+    border-radius: 15px 15px 0 0 !important;
+    padding: 1.5rem;
+  }
+
+  .card-header h4 {
+    margin: 0;
+    color: var(--primary-dark);
+    font-weight: 600;
+  }
+
+  .card-body {
+    padding: 2rem;
+  }
+
+  .table td {
+    padding: 0.75rem 0;
+    border: none;
+  }
+</style>
+{% endblock %}

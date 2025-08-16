@@ -1,0 +1,540 @@
+{% extends "base.html" %} {% load static %} {% block title %}{{ title }} - KNH
+HMS{% endblock %} {% block page_title %}{{ title }}{% endblock %} {% block
+content %}
+<div class="container-fluid">
+  <!-- Navigation Breadcrumb -->
+  <div class="row mb-3">
+    <div class="col-12">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item">
+            <a href="{% url 'dashboard:dashboard' %}">Dashboard</a>
+          </li>
+          <li class="breadcrumb-item">
+            <a href="{% url 'patients:patient_list' %}">Patients</a>
+          </li>
+          <li class="breadcrumb-item active">
+            {{ patient.user.get_full_name }}
+          </li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Page Header -->
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h1 class="page-title">
+        <i class="fas fa-user-injured me-3"></i>Patient Details
+      </h1>
+      <p class="page-subtitle mb-0">
+        Complete patient information and medical history
+      </p>
+    </div>
+    <div class="col-md-4 text-md-end">
+      <div class="d-flex gap-2 justify-content-md-end">
+        {% if user.role == 'doctor' or user.role == 'administrator' %}
+        <a
+          href="{% url 'patients:patient_edit' patient.patient_id %}"
+          class="btn btn-warning"
+        >
+          <i class="fas fa-edit me-2"></i>Edit Patient
+        </a>
+        {% endif %}
+        <a
+          href="{% url 'patients:patient_print' patient.patient_id %}"
+          class="btn btn-info"
+          target="_blank"
+        >
+          <i class="fas fa-print me-2"></i>Print
+        </a>
+        <a
+          href="{% url 'patients:patient_list' %}"
+          class="btn btn-outline-secondary"
+        >
+          <i class="fas fa-arrow-left me-2"></i>Back to List
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Patient Info Card -->
+    <div class="col-lg-4 mb-4">
+      <div class="modern-card">
+        <div class="card-header text-center">
+          <h5 class="card-title mb-0">
+            <i class="fas fa-user-circle me-2"></i>Patient Information
+          </h5>
+        </div>
+        <div class="card-body text-center">
+          <!-- Profile Picture -->
+          <div class="patient-avatar-large mb-3">
+            {% if patient.user.profile_picture %}
+            <img
+              src="{{ patient.user.profile_picture.url }}"
+              alt="Patient Photo"
+              class="rounded-circle"
+            />
+            {% else %}
+            <div class="avatar-placeholder-large">
+              {{ patient.user.first_name|first|upper }}{{
+              patient.user.last_name|first|upper }}
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Patient Name & Basic Info -->
+          <h3 class="mb-1">{{ patient.user.get_full_name }}</h3>
+          <p class="text-muted mb-2">
+            Patient ID: <strong>{{ patient.patient_id }}</strong>
+          </p>
+
+          <!-- Age & Gender -->
+          <div class="patient-basic-info mb-3">
+            {% if age %}
+            <span class="badge bg-primary me-2">
+              <i class="fas fa-birthday-cake me-1"></i>{{ age }} years old
+            </span>
+            {% endif %} {% if patient.gender %}
+            <span class="badge bg-info">
+              {% if patient.gender == 'M' %}
+              <i class="fas fa-mars me-1"></i>Male {% elif patient.gender == 'F'
+              %} <i class="fas fa-venus me-1"></i>Female {% else %}
+              <i class="fas fa-genderless me-1"></i>Other {% endif %}
+            </span>
+            {% endif %}
+          </div>
+
+          <!-- Blood Group -->
+          {% if patient.blood_group %}
+          <div class="mb-3">
+            <span class="badge bg-danger fs-6">
+              <i class="fas fa-tint me-1"></i>{{ patient.blood_group }}
+            </span>
+          </div>
+          {% endif %}
+
+          <!-- Quick Stats -->
+          <div class="row text-center mt-4">
+            <div class="col-4">
+              <div class="stat-item">
+                <h5 class="text-primary mb-0">
+                  {{ recent_appointments|length }}
+                </h5>
+                <small class="text-muted">Recent Appointments</small>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="stat-item">
+                <h5 class="text-success mb-0">
+                  {{ recent_medical_records|length }}
+                </h5>
+                <small class="text-muted">Medical Records</small>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="stat-item">
+                <h5 class="text-warning mb-0">
+                  {{ outstanding_bills|length }}
+                </h5>
+                <small class="text-muted">Pending Bills</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Emergency Contact -->
+      {% if patient.emergency_contact_name %}
+      <div class="modern-card mt-4">
+        <div class="card-header">
+          <h6 class="card-title mb-0">
+            <i class="fas fa-user-shield me-2"></i>Emergency Contact
+          </h6>
+        </div>
+        <div class="card-body">
+          <p class="mb-1">
+            <strong>{{ patient.emergency_contact_name }}</strong>
+          </p>
+          {% if patient.emergency_contact_relationship %}
+          <p class="text-muted mb-1">
+            {{ patient.emergency_contact_relationship }}
+          </p>
+          {% endif %} {% if patient.emergency_contact_phone %}
+          <p class="mb-0">
+            <i class="fas fa-phone text-primary me-2"></i>{{
+            patient.emergency_contact_phone }}
+          </p>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-lg-8">
+      <!-- Personal Information -->
+      <div class="modern-card mb-4">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="fas fa-info-circle me-2"></i>Personal Information
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label text-muted">Email Address</label>
+              <p class="fw-semibold">{{ patient.user.email }}</p>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label text-muted">Phone Number</label>
+              <p class="fw-semibold">
+                {{ patient.user.phone_number|default:"Not provided" }}
+              </p>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label text-muted">Date of Birth</label>
+              <p class="fw-semibold">
+                {{ patient.user.date_of_birth|default:"Not provided" }}
+              </p>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label text-muted">Registration Date</label>
+              <p class="fw-semibold">{{ patient.created_at|date:"F d, Y" }}</p>
+            </div>
+            <div class="col-12 mb-3">
+              <label class="form-label text-muted">Address</label>
+              <p class="fw-semibold">
+                {{ patient.user.address|default:"Not provided" }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Medical Information -->
+      <div class="modern-card mb-4">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="fas fa-heartbeat me-2"></i>Medical Information
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            {% if patient.insurance_provider %}
+            <div class="col-md-6 mb-3">
+              <label class="form-label text-muted">Insurance Provider</label>
+              <p class="fw-semibold">{{ patient.insurance_provider }}</p>
+            </div>
+            {% endif %} {% if patient.insurance_number %}
+            <div class="col-md-6 mb-3">
+              <label class="form-label text-muted">Insurance Number</label>
+              <p class="fw-semibold">{{ patient.insurance_number }}</p>
+            </div>
+            {% endif %} {% if patient.allergies %}
+            <div class="col-12 mb-3">
+              <label class="form-label text-muted">Allergies</label>
+              <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>{{
+                patient.allergies }}
+              </div>
+            </div>
+            {% endif %} {% if patient.chronic_conditions %}
+            <div class="col-12 mb-3">
+              <label class="form-label text-muted">Chronic Conditions</label>
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>{{
+                patient.chronic_conditions }}
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Appointments -->
+      <div class="modern-card mb-4">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="card-title mb-0">
+            <i class="fas fa-calendar-check me-2"></i>Recent Appointments
+          </h5>
+          <a href="#" class="btn btn-sm btn-primary">View All</a>
+        </div>
+        <div class="card-body">
+          {% if recent_appointments %}
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Date & Time</th>
+                  <th>Doctor</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for appointment in recent_appointments %}
+                <tr>
+                  <td>
+                    {{ appointment.appointment_date|date:"M d, Y" }}<br />
+                    <small class="text-muted"
+                      >{{ appointment.appointment_time }}</small
+                    >
+                  </td>
+                  <td>
+                    <strong>{{ appointment.doctor.user.get_full_name }}</strong
+                    ><br />
+                    <small class="text-muted"
+                      >{{ appointment.doctor.specialization }}</small
+                    >
+                  </td>
+                  <td>
+                    <span
+                      class="badge {% if appointment.status == 'completed' %}bg-success {% elif appointment.status == 'scheduled' %}bg-primary {% elif appointment.status == 'cancelled' %}bg-danger {% else %}bg-warning{% endif %}"
+                    >
+                      {{ appointment.get_status_display }}
+                    </span>
+                  </td>
+                  <td>
+                    <a href="#" class="btn btn-sm btn-outline-primary">View</a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="text-center py-4">
+            <i class="fas fa-calendar-times fa-2x text-muted mb-2"></i>
+            <p class="text-muted">No recent appointments found.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Medical Records -->
+      <div class="modern-card mb-4">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="card-title mb-0">
+            <i class="fas fa-file-medical me-2"></i>Recent Medical Records
+          </h5>
+          <a href="#" class="btn btn-sm btn-primary">View All</a>
+        </div>
+        <div class="card-body">
+          {% if recent_medical_records %}
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Doctor</th>
+                  <th>Type</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for record in recent_medical_records %}
+                <tr>
+                  <td>{{ record.created_at|date:"M d, Y" }}</td>
+                  <td>{{ record.doctor.user.get_full_name }}</td>
+                  <td>
+                    <span class="badge bg-info">Medical Record</span>
+                  </td>
+                  <td>
+                    <a href="#" class="btn btn-sm btn-outline-primary">View</a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="text-center py-4">
+            <i class="fas fa-file-medical fa-2x text-muted mb-2"></i>
+            <p class="text-muted">No medical records found.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Outstanding Bills -->
+      {% if outstanding_bills %}
+      <div class="modern-card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="fas fa-exclamation-triangle me-2"></i>Outstanding Bills
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Bill ID</th>
+                  <th>Date</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for bill in outstanding_bills %}
+                <tr>
+                  <td>{{ bill.bill_id }}</td>
+                  <td>{{ bill.created_at|date:"M d, Y" }}</td>
+                  <td><strong>KSh {{ bill.total_amount }}</strong></td>
+                  <td>
+                    <span
+                      class="badge {% if bill.status == 'pending' %}bg-warning {% elif bill.status == 'overdue' %}bg-danger {% else %}bg-success{% endif %}"
+                    >
+                      {{ bill.get_status_display }}
+                    </span>
+                  </td>
+                  <td>
+                    <a href="#" class="btn btn-sm btn-outline-primary">View</a>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<style>
+  .modern-card {
+    background: white;
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+
+  .card-header {
+    background: linear-gradient(135deg, #007b83, #4eb1ba);
+    color: white;
+    padding: 1.5rem;
+    border: none;
+  }
+
+  .card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 0;
+  }
+
+  .patient-avatar-large {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 1rem;
+  }
+
+  .patient-avatar-large img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border: 4px solid #e9ecef;
+  }
+
+  .avatar-placeholder-large {
+    width: 150px;
+    height: 150px;
+    background: linear-gradient(135deg, #007b83, #4eb1ba);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    color: white;
+    font-size: 3rem;
+    font-weight: 600;
+  }
+
+  .patient-basic-info .badge {
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .stat-item {
+    padding: 0.5rem;
+  }
+
+  .stat-item h5 {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  .form-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+  }
+
+  .breadcrumb {
+    background: transparent;
+    padding: 0;
+  }
+
+  .breadcrumb-item + .breadcrumb-item::before {
+    color: #6c757d;
+  }
+
+  .breadcrumb-item a {
+    color: #007b83;
+    text-decoration: none;
+  }
+
+  .breadcrumb-item a:hover {
+    color: #4eb1ba;
+  }
+
+  .table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+  }
+
+  .btn {
+    border-radius: 10px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
+
+  .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+
+  @media (max-width: 768px) {
+    .patient-avatar-large img,
+    .avatar-placeholder-large {
+      width: 120px;
+      height: 120px;
+    }
+
+    .avatar-placeholder-large {
+      font-size: 2.5rem;
+    }
+
+    .card-header {
+      padding: 1rem;
+    }
+
+    .stat-item h5 {
+      font-size: 1.2rem;
+    }
+  }
+</style>
+{% endblock %}

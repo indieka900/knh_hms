@@ -6,6 +6,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('dashboard.urls')),
+    path('dashboard/', include('dashboard.urls')),  # Add explicit dashboard path
     path('accounts/', include('accounts.urls')),
     path('patients/', include('patients.urls')),
     path('appointments/', include('appointments.urls')),
