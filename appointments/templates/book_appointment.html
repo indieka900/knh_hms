@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Book Appointment - KNH HMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-calendar-plus me-2"></i>Book New Appointment</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="appointment-form">
+                        {% csrf_token %}
+                        
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="{{ form.doctor.id_for_label }}">
+                                    <i class="fas fa-user-md me-2"></i>Select Doctor
+                                </label>
+                                {{ form.doctor }}
+                                {% if form.doctor.errors %}
+                                    <div class="text-danger">{{ form.doctor.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group col-md-6">
+                                <label for="{{ form.appointment_date.id_for_label }}">
+                                    <i class="fas fa-calendar me-2"></i>Appointment Date
+                                </label>
+                                {{ form.appointment_date }}
+                                {% if form.appointment_date.errors %}
+                                    <div class="text-danger">{{ form.appointment_date.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="{{ form.appointment_time.id_for_label }}">
+                                    <i class="fas fa-clock me-2"></i>Appointment Time
+                                </label>
+                                {{ form.appointment_time }}
+                                {% if form.appointment_time.errors %}
+                                    <div class="text-danger">{{ form.appointment_time.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group col-md-6">
+                                <label for="{{ form.appointment_type.id_for_label }}">
+                                    <i class="fas fa-stethoscope me-2"></i>Appointment Type
+                                </label>
+                                {{ form.appointment_type }}
+                                {% if form.appointment_type.errors %}
+                                    <div class="text-danger">{{ form.appointment_type.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.notes.id_for_label }}">
+                                <i class="fas fa-notes-medical me-2"></i>Additional Notes
+                            </label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="text-danger">{{ form.notes.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Please describe your symptoms or reason for the appointment
+                            </small>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-calendar-check me-2"></i>Book Appointment
+                            </button>
+                            <a href="{% url 'appointments:my_appointments' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to My Appointments
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: none;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    border-radius: 15px;
+}
+
+.card-header {
+    background: linear-gradient(135deg, var(--primary-light), var(--primary-medium));
+    color: var(--primary-dark);
+    border-bottom: none;
+    border-radius: 15px 15px 0 0 !important;
+    padding: 1.5rem;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.card-body {
+    padding: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-control {
+    border: 2px solid var(--primary-light);
+    border-radius: 8px;
+    padding: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: var(--primary-medium);
+    box-shadow: 0 0 0 3px rgba(78, 177, 186, 0.1);
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-start;
+    padding-top: 2rem;
+    border-top: 2px solid var(--primary-light);
+    margin-top: 2rem;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-dark), var(--secondary-dark));
+    border: none;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.btn-secondary {
+    background: var(--gray-medium);
+    border: none;
+    color: var(--white);
+}
+
+.btn-secondary:hover {
+    background: var(--gray-dark);
+    transform: translateY(-2px);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set minimum date to today
+    const dateInput = document.getElementById('{{ form.appointment_date.id_for_label }}');
+    if (dateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.setAttribute('min', today);
+    }
+    
+    // Auto-update available time slots when doctor or date changes
+    const doctorSelect = document.getElementById('{{ form.doctor.id_for_label }}');
+    const timeSelect = document.getElementById('{{ form.appointment_time.id_for_label }}');
+    
+    function updateTimeSlots() {
+        const doctorId = doctorSelect.value;
+        const date = dateInput.value;
+        
+        if (doctorId && date) {
+            fetch(`{% url 'appointments:available_slots' %}?doctor=${doctorId}&date=${date}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Clear existing options
+                    timeSelect.innerHTML = '<option value="">Select Time</option>';
+                    
+                    // Add available slots
+                    data.slots.forEach(slot => {
+                        const option = document.createElement('option');
+                        option.value = slot;
+                        option.textContent = slot;
+                        timeSelect.appendChild(option);
+                    });
+                });
+        }
+    }
+    
+    if (doctorSelect && dateInput) {
+        doctorSelect.addEventListener('change', updateTimeSlots);
+        dateInput.addEventListener('change', updateTimeSlots);
+    }
+});
+</script>
+{% endblock %}

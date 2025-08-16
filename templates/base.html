@@ -1,485 +1,858 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>{% block title %}KNH Hospital Management System{% endblock
-            %}</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}KNH Hospital Management System{% endblock %}</title>
 
-        <!-- Bootstrap 4 CSS -->
-        <link
-            href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"
-            rel="stylesheet">
+    <!-- Bootstrap 4 CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
 
-        <!-- Font Awesome Icons -->
-        <link
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-            rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
 
-        <!-- Google Fonts -->
-        <link
-            href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-            rel="stylesheet">
+    <!-- Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
 
-        <!-- Custom CSS -->
-        <style>
-        :root {
-            --primary-color: #2c5aa0;
-            --secondary-color: #1e4685;
-            --accent-color: #3fbbc0;
-            --light-blue: #e8f4f8;
-            --success-color: #28a745;
-            --warning-color: #ffc107;
-            --danger-color: #dc3545;
-            --dark-color: #2c3e50;
-            --light-gray: #f8f9fa;
-            --border-color: #e9ecef;
+    <!-- Custom CSS -->
+    <style>
+      :root {
+        --primary-color: #2c5aa0;
+        --secondary-color: #1e4685;
+        --accent-color: #3fbbc0;
+        --light-blue: #e8f4f8;
+        --success-color: #28a745;
+        --warning-color: #ffc107;
+        --danger-color: #dc3545;
+        --dark-color: #2c3e50;
+        --light-gray: #f8f9fa;
+        --border-color: #e9ecef;
+      }
+
+      body {
+        font-family: "Poppins", sans-serif;
+        line-height: 1.6;
+        color: #444;
+        background-color: #fff;
+      }
+
+      /* Header Styles */
+      .header {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color) 0%,
+          var(--secondary-color) 100%
+        );
+        color: white;
+        padding: 1rem 0;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .header .navbar-brand {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: white !important;
+      }
+
+      .header .navbar-nav .nav-link {
+        color: white !important;
+        font-weight: 500;
+        margin: 0 0.5rem;
+        transition: all 0.3s ease;
+      }
+
+      .header .navbar-nav .nav-link:hover {
+        color: var(--accent-color) !important;
+        transform: translateY(-2px);
+      }
+
+      /* Dropdown Styles */
+      .dropdown-menu {
+        background: white;
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+        margin-top: 0.5rem;
+        min-width: 200px;
+        padding: 0.5rem 0;
+      }
+
+      .dropdown-menu::before {
+        content: "";
+        position: absolute;
+        top: -8px;
+        right: 20px;
+        width: 0;
+        height: 0;
+        border-left: 8px solid transparent;
+        border-right: 8px solid transparent;
+        border-bottom: 8px solid white;
+      }
+
+      .dropdown-item {
+        color: var(--dark-color);
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        border: none;
+        background: transparent;
+      }
+
+      .dropdown-item:hover {
+        background: var(--light-blue);
+        color: var(--primary-color);
+        transform: translateX(5px);
+      }
+
+      .dropdown-item:active {
+        background: var(--primary-color);
+        color: white;
+      }
+
+      .dropdown-divider {
+        border-color: var(--border-color);
+        margin: 0.5rem 0;
+      }
+
+      .dropdown-toggle::after {
+        margin-left: 0.5rem;
+        vertical-align: middle;
+      }
+
+      /* Ensure dropdown is positioned correctly */
+      .dropdown {
+        position: relative;
+      }
+
+      .dropdown-menu.show {
+        display: block !important;
+        animation: dropdownFadeIn 0.3s ease-in-out;
+      }
+
+      @keyframes dropdownFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Mobile dropdown adjustments */
+      @media (max-width: 768px) {
+        .dropdown-menu {
+          position: static !important;
+          float: none;
+          width: 100%;
+          margin-top: 0;
+          box-shadow: none;
+          border: 1px solid var(--border-color);
         }
 
-        body {
-            font-family: 'Poppins', sans-serif;
-            line-height: 1.6;
-            color: #444;
-            background-color: #fff;
+        .dropdown-menu::before {
+          display: none;
         }
+      }
 
-        /* Header Styles */
-        .header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
-            padding: 1rem 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
+      /* Hero Section */
+      .hero-section {
+        background: linear-gradient(
+            rgba(44, 90, 160, 0.8),
+            rgba(30, 70, 133, 0.8)
+          ),
+          url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><rect fill="%23f0f8ff" width="1200" height="600"/><circle fill="%23e8f4f8" cx="200" cy="150" r="80"/><circle fill="%23d1ecf1" cx="800" cy="300" r="120"/><circle fill="%23b8e6ee" cx="1000" cy="100" r="60"/></svg>');
+        background-size: cover;
+        background-position: center;
+        color: white;
+        padding: 4rem 0;
+        text-align: center;
+      }
 
-        .header .navbar-brand {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: white !important;
-        }
+      .hero-section h1 {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+      }
 
-        .header .navbar-nav .nav-link {
-            color: white !important;
-            font-weight: 500;
-            margin: 0 0.5rem;
-            transition: all 0.3s ease;
-        }
+      .hero-section p {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+        opacity: 0.9;
+      }
 
-        .header .navbar-nav .nav-link:hover {
-            color: var(--accent-color) !important;
-            transform: translateY(-2px);
-        }
+      /* Card Styles */
+      .card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        overflow: hidden;
+      }
 
-        /* Hero Section */
-        .hero-section {
-            background: linear-gradient(rgba(44, 90, 160, 0.8), rgba(30, 70, 133, 0.8)), 
-                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><rect fill="%23f0f8ff" width="1200" height="600"/><circle fill="%23e8f4f8" cx="200" cy="150" r="80"/><circle fill="%23d1ecf1" cx="800" cy="300" r="120"/><circle fill="%23b8e6ee" cx="1000" cy="100" r="60"/></svg>');
-            background-size: cover;
-            background-position: center;
-            color: white;
-            padding: 4rem 0;
-            text-align: center;
-        }
+      .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      }
 
+      .card-header {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--accent-color)
+        );
+        color: white;
+        border: none;
+        font-weight: 600;
+      }
+
+      /* Button Styles */
+      .btn-primary {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--secondary-color)
+        );
+        border: none;
+        border-radius: 25px;
+        padding: 0.7rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(44, 90, 160, 0.4);
+      }
+
+      .btn-outline-primary {
+        border: 2px solid var(--primary-color);
+        color: var(--primary-color);
+        border-radius: 25px;
+        padding: 0.7rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .btn-outline-primary:hover {
+        background: var(--primary-color);
+        transform: translateY(-2px);
+      }
+
+      /* Sidebar */
+      .sidebar {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        height: fit-content;
+        position: sticky;
+        top: 1rem;
+      }
+
+      .sidebar h5 {
+        color: var(--primary-color);
+        font-weight: 600;
+        border-bottom: 2px solid var(--light-blue);
+        padding-bottom: 0.5rem;
+      }
+
+      .sidebar .nav-link {
+        color: #666;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+      }
+
+      .sidebar .nav-link:hover {
+        color: var(--primary-color);
+        background: var(--light-blue);
+        border-color: var(--primary-color);
+        transform: translateX(5px);
+      }
+
+      .sidebar .nav-link.active {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+      }
+
+      .sidebar .nav-link i {
+        width: 20px;
+        text-align: center;
+        margin-right: 0.5rem;
+      }
+
+      .sidebar-section-header {
+        border-top: 1px solid var(--border-color);
+        padding-top: 1rem;
+        margin-top: 1rem;
+      }
+
+      .section-title {
+        color: var(--dark-color);
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.75rem;
+      }
+
+      /* Content Area */
+      .content-area {
+        background: white;
+        border-radius: 10px;
+        padding: 2rem;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        min-height: 500px;
+      }
+
+      /* Medical Icons */
+      .medical-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(
+          135deg,
+          var(--accent-color),
+          var(--primary-color)
+        );
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        margin: 0 auto 1rem;
+      }
+
+      /* Alert Styles */
+      .alert {
+        border: none;
+        border-radius: 10px;
+        padding: 1rem 1.5rem;
+      }
+
+      .alert-info {
+        background: var(--light-blue);
+        color: var(--primary-color);
+        border-left: 4px solid var(--primary-color);
+      }
+
+      /* Form Styles */
+      .form-control {
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+      }
+
+      .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.25);
+      }
+
+      /* Dashboard Stats */
+      .stat-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-3px);
+      }
+
+      .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--primary-color);
+      }
+
+      .stat-label {
+        color: #666;
+        font-weight: 500;
+      }
+
+      /* Footer Styles */
+      .footer {
+        background: linear-gradient(135deg, var(--dark-color) 0%, #1a252f 100%);
+        color: white;
+        padding: 4rem 0 2rem;
+        margin-top: 4rem;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .footer::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(
+          90deg,
+          var(--primary-color),
+          var(--accent-color),
+          var(--primary-color)
+        );
+      }
+
+      .footer h5 {
+        color: var(--accent-color);
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+        font-size: 1.2rem;
+        position: relative;
+      }
+
+      .footer h5::after {
+        content: "";
+        position: absolute;
+        bottom: -8px;
+        left: 0;
+        width: 40px;
+        height: 3px;
+        background: var(--accent-color);
+        border-radius: 2px;
+      }
+
+      .footer p {
+        color: #bdc3c7;
+        line-height: 1.8;
+        margin-bottom: 1rem;
+      }
+
+      .footer a {
+        color: #bdc3c7;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: inline-block;
+        margin-bottom: 0.5rem;
+      }
+
+      .footer a:hover {
+        color: var(--accent-color);
+        transform: translateX(5px);
+      }
+
+      .footer ul.list-unstyled li {
+        margin-bottom: 0.5rem;
+      }
+
+      .footer .fas {
+        color: var(--accent-color);
+        margin-right: 0.5rem;
+        width: 16px;
+        text-align: center;
+      }
+
+      .footer hr {
+        border-color: #34495e;
+        margin: 2rem 0;
+      }
+
+      .footer .copyright {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 1.5rem 0;
+        margin-top: 2rem;
+        border-radius: 10px;
+      }
+
+      .footer .copyright p {
+        margin: 0;
+        color: #95a5a6;
+        font-size: 0.9rem;
+      }
+
+      .footer .social-links {
+        margin-top: 1.5rem;
+      }
+
+      .footer .social-links a {
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        text-align: center;
+        line-height: 40px;
+        margin-right: 0.5rem;
+        transition: all 0.3s ease;
+      }
+
+      .footer .social-links a:hover {
+        background: var(--accent-color);
+        transform: translateY(-3px);
+        color: white;
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 768px) {
         .hero-section h1 {
-            font-size: 3rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
+          font-size: 2rem;
         }
 
         .hero-section p {
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-            opacity: 0.9;
+          font-size: 1rem;
         }
 
-        /* Card Styles */
-        .card {
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
-            overflow: hidden;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-        }
-
-        .card-header {
-            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
-            color: white;
-            border: none;
-            font-weight: 600;
-        }
-
-        /* Button Styles */
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            border: none;
-            border-radius: 25px;
-            padding: 0.7rem 2rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(44, 90, 160, 0.4);
-        }
-
-        .btn-outline-primary {
-            border: 2px solid var(--primary-color);
-            color: var(--primary-color);
-            border-radius: 25px;
-            padding: 0.7rem 2rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .btn-outline-primary:hover {
-            background: var(--primary-color);
-            transform: translateY(-2px);
-        }
-
-        /* Sidebar */
         .sidebar {
-            background: var(--light-gray);
-            min-height: calc(100vh - 200px);
-            padding: 2rem 1rem;
-            border-radius: 10px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+          margin-bottom: 2rem;
         }
 
-        .sidebar .nav-link {
-            color: var(--dark-color);
-            padding: 0.8rem 1rem;
-            border-radius: 8px;
-            margin-bottom: 0.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .sidebar .nav-link:hover, .sidebar .nav-link.active {
-            background: var(--primary-color);
-            color: white;
-            transform: translateX(5px);
-        }
-
-        /* Content Area */
-        .content-area {
-            background: white;
-            border-radius: 10px;
-            padding: 2rem;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-            min-height: 500px;
-        }
-
-        /* Footer */
         .footer {
-            background: var(--dark-color);
-            color: white;
-            padding: 3rem 0 1rem;
-            margin-top: 4rem;
+          padding: 3rem 0 1.5rem;
+          text-align: center;
         }
 
-        .footer h5 {
-            color: var(--accent-color);
-            margin-bottom: 1rem;
+        .footer h5::after {
+          left: 50%;
+          transform: translateX(-50%);
         }
 
-        .footer a {
-            color: #ccc;
-            text-decoration: none;
-            transition: color 0.3s ease;
+        .footer .social-links {
+          justify-content: center;
         }
-
-        .footer a:hover {
-            color: var(--accent-color);
-        }
-
-        /* Medical Icons */
-        .medical-icon {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, var(--accent-color), var(--primary-color));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.5rem;
-            margin: 0 auto 1rem;
-        }
-
-        /* Alert Styles */
-        .alert {
-            border: none;
-            border-radius: 10px;
-            padding: 1rem 1.5rem;
-        }
-
-        .alert-info {
-            background: var(--light-blue);
-            color: var(--primary-color);
-            border-left: 4px solid var(--primary-color);
-        }
-
-        /* Form Styles */
-        .form-control {
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            padding: 0.75rem 1rem;
-            transition: all 0.3s ease;
-        }
-
-        .form-control:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.25);
-        }
-
-        /* Dashboard Stats */
-        .stat-card {
-            background: white;
-            border-radius: 10px;
-            padding: 1.5rem;
-            text-align: center;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-3px);
-        }
-
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--primary-color);
-        }
-
-        .stat-label {
-            color: #666;
-            font-weight: 500;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            .hero-section h1 {
-                font-size: 2rem;
-            }
-            
-            .hero-section p {
-                font-size: 1rem;
-            }
-            
-            .sidebar {
-                margin-bottom: 2rem;
-            }
-        }
+      }
     </style>
 
-        {% block extra_css %}{% endblock %}
-    </head>
-    <body>
-        <!-- Header -->
-        <header class="header">
-            <nav class="navbar navbar-expand-lg navbar-dark">
-                <div class="container">
-                    <a class="navbar-brand" href="{% url 'home' %}">
-                        <i class="fas fa-hospital-alt me-2"></i>
-                        KNH HMS
-                    </a>
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body>
+    <!-- Header -->
+    <header class="header">
+      <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+          <a class="navbar-brand" href="{% url 'dashboard:home' %}">
+            <i class="fas fa-hospital-alt me-2"></i>
+            KNH HMS
+          </a>
 
-                    <button class="navbar-toggler" type="button"
-                        data-toggle="collapse" data-target="#navbarNav">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
+          <button
+            class="navbar-toggler"
+            type="button"
+            data-toggle="collapse"
+            data-target="#navbarNav"
+            aria-controls="navbarNav"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+          >
+            <span class="navbar-toggler-icon"></span>
+          </button>
 
-                    <div class="collapse navbar-collapse" id="navbarNav">
-                        <ul class="navbar-nav ml-auto">
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'home' %}">
-                                    <i class="fas fa-home me-1"></i>Home
-                                </a>
-                            </li>
-                            {% if user.is_authenticated %}
-                            <li class="nav-item">
-                                <a class="nav-link"
-                                    href="{% url 'dashboard' %}">
-                                    <i
-                                        class="fas fa-tachometer-alt me-1"></i>Dashboard
-                                </a>
-                            </li>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#"
-                                    id="navbarDropdown" role="button"
-                                    data-toggle="dropdown">
-                                    <i class="fas fa-user me-1"></i>{{
-                                    user.username }}
-                                </a>
-                                <div class="dropdown-menu">
-                                    <a class="dropdown-item"
-                                        href="{% url 'profile' %}">
-                                        <i
-                                            class="fas fa-user-circle me-1"></i>Profile
-                                    </a>
-                                    <div class="dropdown-divider"></div>
-                                    <a class="dropdown-item"
-                                        href="{% url 'logout' %}">
-                                        <i
-                                            class="fas fa-sign-out-alt me-1"></i>Logout
-                                    </a>
-                                </div>
-                            </li>
-                            {% else %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'login' %}">
-                                    <i class="fas fa-sign-in-alt me-1"></i>Login
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'register' %}">
-                                    <i
-                                        class="fas fa-user-plus me-1"></i>Register
-                                </a>
-                            </li>
-                            {% endif %}
-                        </ul>
-                    </div>
+          <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'dashboard:home' %}">
+                  <i class="fas fa-home me-1"></i>Home
+                </a>
+              </li>
+
+              {% if user.is_authenticated %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'dashboard:dashboard' %}">
+                  <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                </a>
+              </li>
+              <li class="nav-item dropdown">
+                <a
+                  class="nav-link dropdown-toggle"
+                  href="#"
+                  id="navbarDropdown"
+                  role="button"
+                  data-toggle="dropdown"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                >
+                  <i class="fas fa-user me-1"></i>
+                  {% if user.first_name and user.last_name %} {{ user.first_name }} {{ user.last_name }} {% else %} {{ user.email }} {% endif %}
+                </a>
+                <div class="dropdown-menu">
+                  <a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                    <i class="fas fa-user-circle me-1"></i>Profile
+                  </a>
+                  <div class="dropdown-divider"></div>
+                  <a class="dropdown-item" href="{% url 'accounts:logout' %}">
+                    <i class="fas fa-sign-out-alt me-1"></i>Logout
+                  </a>
                 </div>
-            </nav>
-        </header>
-
-        <!-- Hero Section (only on home page) -->
-        {% block hero %}{% endblock %}
-
-        <!-- Messages -->
-        {% if messages %}
-        <div class="container mt-3">
-            {% for message in messages %}
-            <div
-                class="alert alert-{{ message.tags }} alert-dismissible fade show"
-                role="alert">
-                {{ message }}
-                <button type="button" class="close" data-dismiss="alert">
-                    <span>&times;</span>
-                </button>
-            </div>
-            {% endfor %}
+              </li>
+              {% endif %} {% if not user.is_authenticated %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'accounts:login' %}">
+                  <i class="fas fa-sign-in-alt me-1"></i>Login
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'accounts:register' %}">
+                  <i class="fas fa-user-plus me-1"></i>Register
+                </a>
+              </li>
+              {% endif %}
+            </ul>
+          </div>
         </div>
-        {% endif %}
+      </nav>
+    </header>
 
-        <!-- Main Content -->
-        <main class="container-fluid mt-4">
-            <div class="row">
-                <!-- Sidebar -->
-                {% block sidebar %}
-                {% if user.is_authenticated %}
-                <div class="col-md-3 col-lg-2">
-                    <div class="sidebar">
-                        <h5 class="mb-3">
-                            <i class="fas fa-bars me-2"></i>Menu
-                        </h5>
-                        <nav class="nav flex-column">
-                            <a class="nav-link" href="{% url 'dashboard' %}">
-                                <i
-                                    class="fas fa-tachometer-alt me-2"></i>Dashboard
-                            </a>
-                            <a class="nav-link" href="#">
-                                <i class="fas fa-users me-2"></i>Patients
-                            </a>
-                            <a class="nav-link" href="#">
-                                <i class="fas fa-user-md me-2"></i>Doctors
-                            </a>
-                            <a class="nav-link" href="#">
-                                <i
-                                    class="fas fa-calendar-alt me-2"></i>Appointments
-                            </a>
-                            <a class="nav-link" href="#">
-                                <i class="fas fa-pills me-2"></i>Prescriptions
-                            </a>
-                            <a class="nav-link" href="#">
-                                <i class="fas fa-bed me-2"></i>Wards
-                            </a>
-                            <a class="nav-link" href="#">
-                                <i class="fas fa-file-medical me-2"></i>Medical
-                                Records
-                            </a>
-                            <a class="nav-link" href="#">
-                                <i class="fas fa-chart-bar me-2"></i>Reports
-                            </a>
-                        </nav>
-                    </div>
-                </div>
-                {% endif %}
-                {% endblock %}
+    <!-- Hero Section -->
+    {% block hero %}{% endblock %}
 
-                <!-- Content Area -->
-                <div
-                    class="{% if user.is_authenticated %}col-md-9 col-lg-10{% else %}col-12{% endif %}">
-                    <div class="content-area">
-                        {% block content %}
-                        <div class="text-center py-5">
-                            <div class="medical-icon">
-                                <i class="fas fa-hospital-alt"></i>
-                            </div>
-                            <h2>Welcome to KNH Hospital Management System</h2>
-                            <p class="lead">Comprehensive healthcare management
-                                solution</p>
-                        </div>
-                        {% endblock %}
-                    </div>
-                </div>
+    <!-- Messages -->
+    {% if messages %}
+    <div class="container mt-3">
+      {% for message in messages %}
+      <div
+        class="alert alert-{{ message.tags }} alert-dismissible fade show"
+        role="alert"
+      >
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert">
+          <span>&times;</span>
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="container-fluid mt-4">
+      <div class="row">
+        <!-- Sidebar -->
+        {% block sidebar %}
+        <div class="col-md-3 col-lg-2">
+          <div class="sidebar">
+            <h5 class="mb-3"><i class="fas fa-bars me-2"></i>Menu</h5>
+            <nav class="nav flex-column">
+              <a class="nav-link" href="{% url 'dashboard:dashboard' %}">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+              </a>
+
+              {% if user.role in 'doctor,nurse,administrator,billing_staff' %}
+              <a class="nav-link" href="{% url 'patients:patient_list' %}">
+                <i class="fas fa-users me-2"></i>All Patients
+              </a>
+              {% endif %} {% if user.role in 'doctor,administrator' %}
+              <a class="nav-link" href="#">
+                <i class="fas fa-user-md me-2"></i>Doctors
+              </a>
+              {% endif %} {% if user.role == 'patient' %}
+              <a
+                class="nav-link"
+                href="{% url 'appointments:book_appointment' %}"
+              >
+                <i class="fas fa-calendar-plus me-2"></i>Book Appointment
+              </a>
+              <a
+                class="nav-link"
+                href="{% url 'appointments:my_appointments' %}"
+              >
+                <i class="fas fa-calendar-check me-2"></i>My Appointments
+              </a>
+              {% elif user.role in 'doctor,nurse,administrator,billing_staff' %}
+              <a class="nav-link" href="{% url 'appointments:appointments' %}">
+                <i class="fas fa-calendar-alt me-2"></i>All Appointments
+              </a>
+              {% endif %} {% if user.role in 'pharmacist,administrator' %}
+              <a class="nav-link" href="#">
+                <i class="fas fa-pills me-2"></i>Prescriptions
+              </a>
+              {% endif %} {% if user.role in 'administrator,doctor,nurse,billing_staff' %}
+              <a class="nav-link" href="#">
+                <i class="fas fa-bed me-2"></i>Wards
+              </a>
+              {% endif %} {% if user.role in 'doctor,nurse,administrator,billing_staff' %}
+              <a
+                class="nav-link"
+                href="{% url 'medical_records:medical_records_dashboard' %}"
+              >
+                <i class="fas fa-file-medical me-2"></i>Medical Records
+              </a>
+              {% endif %} {% if user.role in 'administrator,doctor' %}
+              <a class="nav-link" href="#">
+                <i class="fas fa-chart-bar me-2"></i>Reports
+              </a>
+              {% endif %} {% if user.is_superuser or user.role == 'administrator' %}
+              <div class="sidebar-section-header mt-4">
+                <h6
+                  class="section-title text-muted text-uppercase small font-weight-bold"
+                >
+                  <i class="fas fa-shield-alt me-2"></i>System Administration
+                </h6>
+              </div>
+              <a class="nav-link" href="{% url 'dashboard:user_management' %}">
+                <i class="fas fa-users-cog me-2"></i>User Management
+              </a>
+              <a class="nav-link" href="{% url 'dashboard:settings' %}">
+                <i class="fas fa-cog me-2"></i>System Settings
+              </a>
+              <a class="nav-link" href="{% url 'dashboard:system_reports' %}">
+                <i class="fas fa-chart-line me-2"></i>System Reports
+              </a>
+              <a class="nav-link" href="{% url 'dashboard:audit_logs' %}">
+                <i class="fas fa-history me-2"></i>Audit Logs
+              </a>
+              {% endif %}
+            </nav>
+          </div>
+        </div>
+        {% endblock sidebar %}
+
+        <!-- Content Area -->
+        <div
+          class="{% if user.is_authenticated %}col-md-9 col-lg-10{% else %}col-12{% endif %}"
+        >
+          <div class="content-area">
+            {% block content %}
+            <div class="text-center py-5">
+              <div class="medical-icon">
+                <i class="fas fa-hospital-alt"></i>
+              </div>
+              <h2>Welcome to KNH Hospital Management System</h2>
+              <p class="lead">Comprehensive healthcare management solution</p>
             </div>
-        </main>
+            {% endblock %}
+          </div>
+        </div>
+      </div>
+    </main>
 
-        <!-- Footer -->
-        <footer class="footer">
-            <div class="container">
-                <div class="row">
-                    <div class="col-md-4">
-                        <h5>KNH Hospital Management System</h5>
-                        <p>Providing comprehensive healthcare management
-                            solutions for modern hospitals.</p>
-                    </div>
-                    <div class="col-md-4">
-                        <h5>Quick Links</h5>
-                        <ul class="list-unstyled">
-                            <li><a href="{% url 'home' %}">Home</a></li>
-                            <li><a href="#">About</a></li>
-                            <li><a href="#">Services</a></li>
-                            <li><a href="#">Contact</a></li>
-                        </ul>
-                    </div>
-                    <div class="col-md-4">
-                        <h5>Contact Info</h5>
-                        <p>
-                            <i class="fas fa-map-marker-alt me-2"></i>
-                            Kenyatta National Hospital<br>
-                            P.O. Box 20723 - 00202, Nairobi
-                        </p>
-                        <p>
-                            <i class="fas fa-phone me-2"></i>
-                            +254 20 2726300
-                        </p>
-                    </div>
-                </div>
-                <hr class="my-4">
-                <div class="row">
-                    <div class="col-md-12 text-center">
-                        <p>&copy; {% now "Y" %} KNH Hospital Management System.
-                            All rights reserved.</p>
-                    </div>
-                </div>
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-4 col-md-6 mb-4">
+            <h5><i class="fas fa-hospital-alt me-2"></i>KNH HMS</h5>
+            <p>
+              Providing comprehensive healthcare management solutions for modern
+              hospitals. Our system streamlines patient care, appointment
+              scheduling, and medical record management.
+            </p>
+            <div class="social-links">
+              <a href="#" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+              <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+              <a href="#" title="LinkedIn"
+                ><i class="fab fa-linkedin-in"></i
+              ></a>
+              <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
             </div>
-        </footer>
+          </div>
 
-        <!-- Bootstrap 4 JS -->
-        <script
-            src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"></script>
-        <script
-            src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+          <div class="col-lg-2 col-md-6 mb-4">
+            <h5><i class="fas fa-link me-2"></i>Quick Links</h5>
+            <ul class="list-unstyled">
+              <li>
+                <a href="{% url 'dashboard:home' %}"
+                  ><i class="fas fa-home me-1"></i>Home</a
+                >
+              </li>
+              <li>
+                <a href="#"><i class="fas fa-info-circle me-1"></i>About</a>
+              </li>
+              <li>
+                <a href="#"><i class="fas fa-cogs me-1"></i>Services</a>
+              </li>
+              <li>
+                <a href="#"><i class="fas fa-envelope me-1"></i>Contact</a>
+              </li>
+              <li>
+                <a href="#"><i class="fas fa-question-circle me-1"></i>Help</a>
+              </li>
+            </ul>
+          </div>
 
-        {% block extra_js %}{% endblock %}
-    </body>
+          <div class="col-lg-3 col-md-6 mb-4">
+            <h5><i class="fas fa-user-md me-2"></i>Services</h5>
+            <ul class="list-unstyled">
+              <li>
+                <a href="#"
+                  ><i class="fas fa-calendar-check me-1"></i>Appointments</a
+                >
+              </li>
+              <li>
+                <a href="#"
+                  ><i class="fas fa-file-medical me-1"></i>Medical Records</a
+                >
+              </li>
+              <li>
+                <a href="#"><i class="fas fa-pills me-1"></i>Pharmacy</a>
+              </li>
+              <li>
+                <a href="#"><i class="fas fa-chart-line me-1"></i>Reports</a>
+              </li>
+              <li>
+                <a href="#"><i class="fas fa-users me-1"></i>Patient Portal</a>
+              </li>
+            </ul>
+          </div>
+
+          <div class="col-lg-3 col-md-6 mb-4">
+            <h5><i class="fas fa-address-card me-2"></i>Contact Info</h5>
+            <p>
+              <i class="fas fa-map-marker-alt me-2"></i>
+              <strong>Kenyatta National Hospital</strong><br />
+              P.O. Box 20723 - 00202<br />
+              Nairobi, Kenya
+            </p>
+            <p>
+              <i class="fas fa-phone me-2"></i>
+              <strong>Phone:</strong> +254 20 2726300
+            </p>
+            <p>
+              <i class="fas fa-envelope me-2"></i>
+              <strong>Email:</strong> info@knh.or.ke
+            </p>
+            <p>
+              <i class="fas fa-clock me-2"></i>
+              <strong>Hours:</strong> 24/7 Emergency Care
+            </p>
+          </div>
+        </div>
+
+        <hr class="my-4" />
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="copyright">
+              <p>
+                <i class="fas fa-shield-alt me-2"></i>
+                &copy; {% now "Y" %} KNH Hospital Management System. All rights
+                reserved.
+              </p>
+            </div>
+          </div>
+          <div class="col-md-6 text-md-end">
+            <div class="copyright">
+              <p>
+                <i class="fas fa-heart me-2" style="color: #e74c3c"></i>
+                Built with care for better healthcare
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- jQuery (Full version for Bootstrap dropdowns) -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+    <!-- Bootstrap 4 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    {% block extra_js %}{% endblock %}
+  </body>
 </html>

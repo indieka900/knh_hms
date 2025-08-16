@@ -17,11 +17,11 @@ media
 staticfiles/
 
 # Environments
+temp_auto_push.bat
 .env
 .venv/
 
 # VSCode
-.vscode/
 
 # PyCharm
 .idea/
@@ -38,3 +38,5 @@ migrations/
 
 # JetBrains IDEs
 .idea/
+.gitignore
+branch_structure.json

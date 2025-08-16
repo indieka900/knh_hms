@@ -1,53 +1,384 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
+  <head>
     {% include "includes/head.html" %}
 
-    {% block extrahead %}
+    <!-- DataTables CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css"
+    />
 
-    {% endblock extrahead %}
+    {% block extrahead %} {% endblock extrahead %}
+  </head>
 
-</head>
-
-<body>
+  <body>
     {% include "includes/loading.html" %}
 
     <div class="d-flex">
-        {% include "includes/sidebar.html" %}
-        <main class="main-content flex-grow-1" id="mainContent">
-            {% include "includes/topnav.html" %}
+      {% include "includes/sidebar.html" %}
 
-            <div class="dashboard-content p-3">
-                {% block content %}{% endblock %}
-            </div>
-        </main>
+      <main class="main-content flex-grow-1" id="mainContent">
+        {% include "includes/topnav.html" %}
+
+        <div class="dashboard-content p-3">
+          {% block content %} {% endblock content %}
+        </div>
+      </main>
     </div>
 
-    {% if messages %}
-    {% include 'includes/pop_up.html' %}
-    {% endif %}
+    <!-- Messages Pop-up -->
+    {% if messages %} {% include 'includes/pop_up.html' %} {% endif %}
 
-    <script src="https://code.jquery.com/jquery-3.7.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    
-    
+    <!-- Core JavaScript Libraries -->
+    <script
+      src="https://code.jquery.com/jquery-3.7.1.min.js"
+      integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- DataTables JavaScript -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+
+    <!-- Conditional JavaScript Loading -->
     {% if request.resolver_match.app_name == 'pharmacy' %}
     <script src="{% static 'pharmacy/js/script.js' %}"></script>
-    {% endif %}
-
-    {% if request.resolver_match.app_name == 'patients' %}
+    {% endif %} {% if request.resolver_match.app_name == 'patients' %}
     <script src="{% static 'patients/js/scripts.js' %}"></script>
-    {% endif %}
-    
-    {% block extrajs %}
-    {% endblock %}
-
-
-    {% if request.resolver_match.app_name == 'medical_records' %}
+    {% endif %} {% if request.resolver_match.app_name == 'medical_records' %}
     <script src="{% static 'js/medical_records.js' %}"></script>
+    {% endif %} {% if request.resolver_match.app_name == 'dashboard' %}
+    <script src="{% static 'dashboard/js/dashboard.js' %}"></script>
+    {% endif %} {% if request.resolver_match.app_name == 'appointments' %}
+    <script src="{% static 'appointments/js/appointments.js' %}"></script>
+    {% endif %} {% if request.resolver_match.app_name == 'inventory' %}
+    <script src="{% static 'inventory/js/inventory.js' %}"></script>
+    {% endif %} {% if request.resolver_match.app_name == 'billing' %}
+    <script src="{% static 'billing/js/billing.js' %}"></script>
+    {% endif %} {% if request.resolver_match.app_name == 'reports' %}
+    <script src="{% static 'reports/js/reports.js' %}"></script>
+    {% endif %} {% if request.resolver_match.app_name == 'users' %}
+    <script src="{% static 'users/js/users.js' %}"></script>
+    {% endif %} {% if request.resolver_match.app_name == 'settings' %}
+    <script src="{% static 'settings/js/settings.js' %}"></script>
     {% endif %}
-</body>
 
+    <!-- Global JavaScript Functions -->
+    <script>
+      // Global functions for all pages
+      $(document).ready(function () {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(
+          document.querySelectorAll('[data-bs-toggle="tooltip"]')
+        );
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+          return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Initialize popovers
+        var popoverTriggerList = [].slice.call(
+          document.querySelectorAll('[data-bs-toggle="popover"]')
+        );
+        var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+          return new bootstrap.Popover(popoverTriggerEl);
+        });
+
+        // Auto-hide alerts after 5 seconds
+        $(".alert").delay(5000).fadeOut("slow");
+
+        // Initialize DataTables with common configuration
+        if ($.fn.DataTable) {
+          $(".data-table").DataTable({
+            responsive: true,
+            pageLength: 25,
+            dom: "Bfrtip",
+            buttons: ["copy", "csv", "excel", "pdf", "print"],
+            language: {
+              search: "Search records:",
+              lengthMenu: "Show _MENU_ entries per page",
+              info: "Showing _START_ to _END_ of _TOTAL_ entries",
+              paginate: {
+                first: "First",
+                last: "Last",
+                next: "Next",
+                previous: "Previous",
+              },
+            },
+          });
+        }
+
+        // Global CSRF token setup for AJAX requests
+        function getCookie(name) {
+          let cookieValue = null;
+          if (document.cookie && document.cookie !== "") {
+            const cookies = document.cookie.split(";");
+            for (let i = 0; i < cookies.length; i++) {
+              const cookie = cookies[i].trim();
+              if (cookie.substring(0, name.length + 1) === name + "=") {
+                cookieValue = decodeURIComponent(
+                  cookie.substring(name.length + 1)
+                );
+                break;
+              }
+            }
+          }
+          return cookieValue;
+        }
+
+        const csrftoken = getCookie("csrftoken");
+
+        // Set up CSRF token for all AJAX requests
+        $.ajaxSetup({
+          beforeSend: function (xhr, settings) {
+            if (
+              !(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))
+            ) {
+              xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            }
+          },
+        });
+
+        // Sidebar toggle functionality
+        $("#sidebarToggle").on("click", function () {
+          $("#sidebar").toggleClass("collapsed");
+          $("#mainContent").toggleClass("expanded");
+        });
+
+        // Loading screen handler
+        $(window).on("load", function () {
+          $("#loadingScreen").fadeOut("slow");
+        });
+
+        // Confirmation dialogs for delete actions
+        $(".delete-btn").on("click", function (e) {
+          e.preventDefault();
+          const url = $(this).attr("href");
+          const itemName = $(this).data("item-name") || "this item";
+
+          if (
+            confirm(
+              `Are you sure you want to delete ${itemName}? This action cannot be undone.`
+            )
+          ) {
+            window.location.href = url;
+          }
+        });
+
+        // Form validation helper
+        $(".needs-validation").on("submit", function (event) {
+          if (this.checkValidity() === false) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+          $(this).addClass("was-validated");
+        });
+
+        // Auto-resize textareas
+        $("textarea[data-auto-resize]")
+          .each(function () {
+            this.style.height = "auto";
+            this.style.height = this.scrollHeight + "px";
+          })
+          .on("input", function () {
+            this.style.height = "auto";
+            this.style.height = this.scrollHeight + "px";
+          });
+
+        // Number formatting for currency fields
+        $(".currency-input").on("blur", function () {
+          const value = parseFloat($(this).val());
+          if (!isNaN(value)) {
+            $(this).val(value.toFixed(2));
+          }
+        });
+
+        // Real-time search functionality
+        $(".search-input").on("keyup", function () {
+          const searchTerm = $(this).val().toLowerCase();
+          const targetTable = $(this).data("target");
+
+          $(`${targetTable} tbody tr`).each(function () {
+            const rowText = $(this).text().toLowerCase();
+            $(this).toggle(rowText.indexOf(searchTerm) > -1);
+          });
+        });
+
+        // Print functionality
+        $(".print-btn").on("click", function () {
+          const printContent = $(this).data("print-target");
+          const originalContent = document.body.innerHTML;
+          const printArea = document.querySelector(printContent).innerHTML;
+
+          document.body.innerHTML = printArea;
+          window.print();
+          document.body.innerHTML = originalContent;
+          location.reload();
+        });
+
+        // Export functionality
+        $(".export-btn").on("click", function () {
+          const exportType = $(this).data("export-type");
+          const tableId = $(this).data("table-id");
+
+          if ($.fn.DataTable && $.fn.DataTable.isDataTable(`#${tableId}`)) {
+            const table = $(`#${tableId}`).DataTable();
+
+            switch (exportType) {
+              case "excel":
+                table.button(".buttons-excel").trigger();
+                break;
+              case "pdf":
+                table.button(".buttons-pdf").trigger();
+                break;
+              case "csv":
+                table.button(".buttons-csv").trigger();
+                break;
+              case "print":
+                table.button(".buttons-print").trigger();
+                break;
+            }
+          }
+        });
+
+        // Dynamic form fields
+        $(".add-field-btn").on("click", function () {
+          const template = $(this).data("template");
+          const container = $(this).data("container");
+          const newField = $(template).clone().removeClass("d-none");
+          $(container).append(newField);
+        });
+
+        $(document).on("click", ".remove-field-btn", function () {
+          $(this).closest(".dynamic-field").remove();
+        });
+
+        // Auto-save functionality for forms
+        $(
+          ".auto-save-form input, .auto-save-form select, .auto-save-form textarea"
+        ).on("change", function () {
+          const form = $(this).closest("form");
+          const formData = form.serialize();
+          const saveUrl = form.data("auto-save-url");
+
+          if (saveUrl) {
+            $.post(saveUrl, formData)
+              .done(function () {
+                $(".save-indicator")
+                  .html('<i class="fas fa-check text-success"></i> Saved')
+                  .fadeIn()
+                  .delay(2000)
+                  .fadeOut();
+              })
+              .fail(function () {
+                $(".save-indicator")
+                  .html('<i class="fas fa-times text-danger"></i> Save failed')
+                  .fadeIn()
+                  .delay(2000)
+                  .fadeOut();
+              });
+          }
+        });
+
+        // Notification handling
+        function showNotification(message, type = "info") {
+          const notification = $(`
+                    <div class="alert alert-${type} alert-dismissible fade show notification" role="alert">
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `);
+
+          $("#notificationContainer").append(notification);
+          setTimeout(() => {
+            notification.fadeOut(() => notification.remove());
+          }, 5000);
+        }
+
+        // Make showNotification globally available
+        window.showNotification = showNotification;
+
+        // Handle AJAX errors globally
+        $(document).ajaxError(function (event, xhr, settings, thrownError) {
+          if (xhr.status === 403) {
+            showNotification(
+              "You do not have permission to perform this action.",
+              "danger"
+            );
+          } else if (xhr.status === 404) {
+            showNotification(
+              "The requested resource was not found.",
+              "warning"
+            );
+          } else if (xhr.status >= 500) {
+            showNotification(
+              "A server error occurred. Please try again later.",
+              "danger"
+            );
+          } else if (xhr.status !== 0) {
+            // Ignore aborted requests
+            showNotification("An unexpected error occurred.", "danger");
+          }
+        });
+      });
+
+      // Global utility functions
+      function formatCurrency(amount) {
+        return new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+        }).format(amount);
+      }
+
+      function formatDate(date) {
+        return new Intl.DateTimeFormat("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }).format(new Date(date));
+      }
+
+      function formatDateTime(datetime) {
+        return new Intl.DateTimeFormat("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }).format(new Date(datetime));
+      }
+
+      // Make utility functions globally available
+      window.formatCurrency = formatCurrency;
+      window.formatDate = formatDate;
+      window.formatDateTime = formatDateTime;
+    </script>
+
+    <!-- Extra JavaScript Block -->
+    {% block extrajs %} {% endblock extrajs %}
+  </body>
 </html>

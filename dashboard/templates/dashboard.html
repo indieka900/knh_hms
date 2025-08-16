@@ -1,1019 +1,1799 @@
-{% extends "base.html" %}
-{% load static %}
-
-{% block title %}Dashboard - KNH HMS{% endblock %}
-
-{% block page_title %}
-{% if user.role == 'patient' %}
-Welcome, {{ user.get_full_name|default:user.email }}
-{% elif user.role == 'doctor' %}
-Doctor Dashboard
-{% elif user.role == 'pharmacist' %}
-Pharmacy Dashboard
-{% elif user.role == 'billing_staff' %}
-Billing Dashboard
-{% elif user.role == 'administrator' %}
-Administrator Dashboard
-{% else %}
-Dashboard Overview
-{% endif %}
-{% endblock %}
-
-{% block content %}
-<div class="container-fluid">
-    <!-- Statistics Cards -->
-    <div class="row mb-4">
-        {% if user.role == 'administrator' %}
-        <!-- Administrator Stats -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Patients</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_patients|default:"1,247" }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-users fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Staff</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_staff|default:"85" }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-user-md fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Today's Appointments
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ todays_appointments|default:"145" }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-calendar-check fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Monthly Revenue</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                KSh {{monthly_revenue|default:"2,450,000" }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {% elif user.role == 'doctor' %}
-        <!-- Doctor Stats -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">My Patients</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ my_patients|default:"127" }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-user-injured fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Today's Appointments
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ doctor_appointments|default:"12" }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Pending Consultations
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pending_consultations|default:"8" }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-stethoscope fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Prescriptions Today
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ prescriptions_today|default:"15" }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-prescription-bottle fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {% elif user.role == 'pharmacist' %}
-        <!-- Pharmacist Stats -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Medications
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_medications|default:"856" }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-pills fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-danger shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Low Stock Items</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ low_stock_items|default:"7" }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Dispensed Today</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ dispensed_today|default:"42" }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-hand-holding-medical fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Expiring Soon</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ expiring_soon|default:"13" }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-clock fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {% elif user.role == 'billing_staff' %}
-        <!-- Billing Staff Stats -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Today's Revenue</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                KSh {{ daily_revenue|default:"125,500" }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-danger shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Pending Payments</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                KSh {{ pending_payments|default:"89,500" }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-money-bill-wave fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Invoices Generated
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ invoices_generated|default:"67" }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-file-invoice fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Insurance Claims</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ insurance_claims|default:"23" }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-shield-alt fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {% elif user.role == 'patient' %}
-        <!-- Patient Stats -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">My Appointments</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ patient_appointments|default:"0" }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-calendar-check fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Next Appointment</div>
-                            <div class="h6 mb-0 font-weight-bold text-gray-800">
-                                {{ next_appointment|default:"Dec 15,2024" }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-clock fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Active Prescriptions
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_prescriptions|default:"2" }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-prescription-bottle-alt fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Outstanding Balance
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                KSh {{outstanding_balance|default:"5,200" }}
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-credit-card fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Quick Actions Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        {% if user.role == 'administrator' %}
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="{% url 'patients:create_patient' %}" class="btn btn-primary btn-block">
-                                <i class="fas fa-user-plus"></i><br>Add Patient
-                            </a>
-                        </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="#" class="btn btn-success btn-block">
-                                <i class="fas fa-user-md"></i><br>Manage Staff
-                            </a>
-                        </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="#" class="btn btn-info btn-block">
-                                <i class="fas fa-chart-line"></i><br>View Reports
-                            </a>
-                        </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="#" class="btn btn-warning btn-block">
-                                <i class="fas fa-cog"></i><br>System Settings
-                            </a>
-                        </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="#" class="btn btn-secondary btn-block">
-                                <i class="fas fa-database"></i><br>Backup Data
-                            </a>
-                        </div>
-
-                        {% elif user.role == 'doctor' %}
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="{% url 'patients:create_patient' %}" class="btn btn-primary btn-block">
-                                <i class="fas fa-user-plus"></i><br>Add Patient
-                            </a>
-                        </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="{% url 'appointments:appointment_create' %}" class="btn btn-success btn-block">
-                                <i class="fas fa-calendar-plus"></i><br>Schedule Appointment
-                            </a>
-                        </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="#" class="btn btn-info btn-block">
-                                <i class="fas fa-file-medical"></i><br>View Medical Records
-                            </a>
-                        </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="#" class="btn btn-warning btn-block">
-                                <i class="fas fa-prescription"></i><br>Write Prescription
-                            </a>
-                        </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="#" class="btn btn-secondary btn-block">
-                                <i class="fas fa-chart-line"></i><br>Patient Reports
-                            </a>
-                        </div>
-
-                        {% elif user.role == 'pharmacist' %}
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="#" class="btn btn-primary btn-block">
-                                <i class="fas fa-pills"></i><br>Update Inventory
-                            </a>
-                        </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="#" class="btn btn-success btn-block">
-                                <i class="fas fa-hand-holding-medical"></i><br>Dispense Medication
-                            </a>
-                        </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="#" class="btn btn-danger btn-block">
-                                <i class="fas fa-exclamation-triangle"></i><br>Low Stock Alert
-                            </a>
-                        </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="#" class="btn btn-warning btn-block">
-                                <i class="fas fa-clock"></i><br>Expiry Management
-                            </a>
-                        </div>
-                        
-
-                        {% elif user.role == 'billing_staff' %}
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="#" class="btn btn-primary btn-block">
-                                <i class="fas fa-file-invoice"></i><br>Generate Invoice
-                            </a>
-                        </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="#" class="btn btn-success btn-block">
-                                <i class="fas fa-money-bill-wave"></i><br>Process Payment
-                            </a>
-                        </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="#" class="btn btn-warning btn-block">
-                                <i class="fas fa-shield-alt"></i><br>Insurance Claims
-                            </a>
-                        </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="#" class="btn btn-info btn-block">
-                                <i class="fas fa-chart-pie"></i><br>Financial Reports
-                            </a>
-                        </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="#" class="btn btn-secondary btn-block">
-                                <i class="fas fa-credit-card"></i><br>Payment History
-                            </a>
-                        </div>
-
-                        {% elif user.role == 'patient' %}
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="{% url 'appointments:appointment_create' %}" class="btn btn-primary btn-block">
-                                <i class="fas fa-calendar-plus"></i><br>Book Appointment
-                            </a>
-                        </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="#" class="btn btn-info btn-block">
-                                <i class="fas fa-file-medical-alt"></i><br>View Medical History
-                            </a>
-                        </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="#" class="btn btn-success btn-block">
-                                <i class="fas fa-prescription-bottle-alt"></i><br>My Prescriptions
-                            </a>
-                        </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
-                            <a href="#" class="btn btn-warning btn-block">
-                                <i class="fas fa-credit-card"></i><br>Make Payment
-                            </a>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Recent Activity / Context-specific content -->
-    <div class="row">
-        {% if user.role == 'patient' %}
-        <!-- Patient-specific content -->
-        <div class="col-lg-12 mb-4">
-            <div class="card shadow">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">My Upcoming Appointments</h6>
-                    <a href="#" class="btn btn-sm btn-primary">View All</a>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive w-100">
-                        <table class="table table-borderless w-100">
-                            <thead>
-                                <tr>
-                                    <th>Date & Time</th>
-                                    <th>Doctor</th>
-                                    <th>Department</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% if user.role == 'administrator' %}
-                                <tr>
-                                    <td>11:45 AM</td>
-                                    <td>New staff member registered</td>
-                                    <td>Admin System</td>
-                                    <td><span class="badge badge-success">Completed</span></td>
-                                </tr>
-                                <tr>
-                                    <td>11:30 AM</td>
-                                    <td>System backup completed</td>
-                                    <td>Auto System</td>
-                                    <td><span class="badge badge-success">Completed</span></td>
-                                </tr>
-                                <tr>
-                                    <td>10:15 AM</td>
-                                    <td>Monthly report generated</td>
-                                    <td>Dr. Sarah Kimani</td>
-                                    <td><span class="badge badge-info">Active</span></td>
-                                </tr>
-                                <tr>
-                                    <td>09:45 AM</td>
-                                    <td>User permissions updated</td>
-                                    <td>Admin Panel</td>
-                                    <td><span class="badge badge-success">Completed</span></td>
-                                </tr>
-                                {% elif user.role == 'doctor' %}
-                                <tr>
-                                    <td>11:30 AM</td>
-                                    <td>Patient consultation completed</td>
-                                    <td>{{ user.get_full_name }}</td>
-                                    <td><span class="badge badge-success">Completed</span></td>
-                                </tr>
-                                <tr>
-                                    <td>10:45 AM</td>
-                                    <td>Prescription written</td>
-                                    <td>{{ user.get_full_name }}</td>
-                                    <td><span class="badge badge-success">Completed</span></td>
-                                </tr>
-                                <tr>
-                                    <td>10:15 AM</td>
-                                    <td>Appointment scheduled</td>
-                                    <td>{{ user.get_full_name }}</td>
-                                    <td><span class="badge badge-info">Active</span></td>
-                                </tr>
-                                <tr>
-                                    <td>09:30 AM</td>
-                                    <td>Medical record updated</td>
-                                    <td>{{ user.get_full_name }}</td>
-                                    <td><span class="badge badge-success">Completed</span></td>
-                                </tr>
-                                {% elif user.role == 'pharmacist' %}
-                                <tr>
-                                    <td>11:45 AM</td>
-                                    <td>Medication dispensed</td>
-                                    <td>{{ user.get_full_name }}</td>
-                                    <td><span class="badge badge-success">Completed</span></td>
-                                </tr>
-                                <tr>
-                                    <td>11:15 AM</td>
-                                    <td>Inventory updated</td>
-                                    <td>{{ user.get_full_name }}</td>
-                                    <td><span class="badge badge-success">Completed</span></td>
-                                </tr>
-                                <tr>
-                                    <td>10:30 AM</td>
-                                    <td>Low stock alert triggered</td>
-                                    <td>System Alert</td>
-                                    <td><span class="badge badge-warning">Attention Required</span></td>
-                                </tr>
-                                <tr>
-                                    <td>09:45 AM</td>
-                                    <td>Prescription verified</td>
-                                    <td>{{ user.get_full_name }}</td>
-                                    <td><span class="badge badge-success">Completed</span></td>
-                                </tr>
-                                {% elif user.role == 'billing_staff' %}
-                                <tr>
-                                    <td>11:30 AM</td>
-                                    <td>Invoice generated</td>
-                                    <td>{{ user.get_full_name }}</td>
-                                    <td><span class="badge badge-success">Completed</span></td>
-                                </tr>
-                                <tr>
-                                    <td>11:00 AM</td>
-                                    <td>Payment processed</td>
-                                    <td>{{ user.get_full_name }}</td>
-                                    <td><span class="badge badge-success">Completed</span></td>
-                                </tr>
-                                <tr>
-                                    <td>10:15 AM</td>
-                                    <td>Insurance claim submitted</td>
-                                    <td>{{ user.get_full_name }}</td>
-                                    <td><span class="badge badge-warning">Pending Review</span></td>
-                                </tr>
-                                <tr>
-                                    <td>09:30 AM</td>
-                                    <td>Payment reminder sent</td>
-                                    <td>Auto System</td>
-                                    <td><span class="badge badge-info">Sent</span></td>
-                                </tr>
-                                {% endif %}
-                                {% if user.role == 'patient' %}
-                                {% for appointment in upcoming_appointments %}
-                                    <tr>
-                                        <td>{{appointment.appointment_date}} {{appointment.appointment_time}}</td>
-                                        <td>{{appointment.doctor.user.get_full_name}}</td>
-                                        <td>---</td>
-                                        <td>{{appointment.status}}</td>
-                                    </tr>
-                                {% endfor %}
-                                {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-    </div>
-
+{% extends "base.html" %} {% load static %} {% block title %}Dashboard - KNH
+HMS{% endblock %} {% block page_title %} {% if user.role == 'patient' %}
+Welcome, {{ user.get_full_name|default:user.email }} {% elif user.role ==
+'doctor' %} Doctor Dashboard {% elif user.role == 'pharmacist' %} Pharmacy
+Dashboard {% elif user.role == 'billing_staff' %} Billing Dashboard {%
+elifuser.role == 'administrator' %} Administrator Dashboard {% else %} Dashboard
+Overview {% endif %} {% endblock %} {% block content %}
+<div class="dashboard-container">
+  <!-- Statistics Cards -->
+  <div class="row g-4 mb-4">
     {% if user.role == 'administrator' %}
-    <!-- Administrator-specific widgets -->
-    <div class="row mt-4">
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">System Status</h6>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-6">
-                            <div class="text-center">
-                                <div class="h5 font-weight-bold text-success">99.8%</div>
-                                <div class="small text-gray-500">System Uptime</div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="text-center">
-                                <div class="h5 font-weight-bold text-info">2.3GB</div>
-                                <div class="small text-gray-500">Database Size</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- Administrator Stats -->
+    <div class="col-xl-3 col-md-6">
+      <div
+        class="stat-card modern-card"
+        data-aos="fade-up"
+        data-aos-delay="100"
+      >
+        <div class="stat-card-body">
+          <div class="stat-header">
+            <div class="stat-info">
+              <h6 class="stat-label">Total Patients</h6>
+              <h3
+                class="stat-number counter"
+                data-target="{{ total_patients|default:1247 }}"
+              >
+                0
+              </h3>
+              <div class="stat-trend">
+                <span class="badge bg-success"
+                  ><i class="fas fa-arrow-up"></i> +12%</span
+                >
+                <span class="text-muted small">vs last month</span>
+              </div>
             </div>
+            <div class="stat-icon bg-primary">
+              <i class="fas fa-users"></i>
+            </div>
+          </div>
+          <div class="progress" style="height: 4px">
+            <div class="progress-bar bg-primary" style="width: 75%"></div>
+          </div>
         </div>
+      </div>
+    </div>
 
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Staff Performance</h6>
-                </div>
-                <div class="card-body">
-                    <div class="small mb-2">
-                        <strong>Doctors:</strong> 15 active
-                        <div class="progress mt-1">
-                            <div class="progress-bar bg-success" style="width: 85%"></div>
-                        </div>
-                    </div>
-                    <div class="small mb-2">
-                        <strong>Nurses:</strong> 45 active
-                        <div class="progress mt-1">
-                            <div class="progress-bar bg-info" style="width: 92%"></div>
-                        </div>
-                    </div>
-                    <div class="small">
-                        <strong>Support Staff:</strong> 25 active
-                        <div class="progress mt-1">
-                            <div class="progress-bar bg-warning" style="width: 78%"></div>
-                        </div>
-                    </div>
-                </div>
+    <div class="col-xl-3 col-md-6">
+      <div
+        class="stat-card modern-card"
+        data-aos="fade-up"
+        data-aos-delay="200"
+      >
+        <div class="stat-card-body">
+          <div class="stat-header">
+            <div class="stat-info">
+              <h6 class="stat-label">Total Staff</h6>
+              <h3
+                class="stat-number counter"
+                data-target="{{ total_staff|default:85 }}"
+              >
+                0
+              </h3>
+              <div class="stat-trend">
+                <span class="badge bg-info"
+                  ><i class="fas fa-arrow-up"></i> +5%</span
+                >
+                <span class="text-muted small">new hires</span>
+              </div>
             </div>
+            <div class="stat-icon bg-success">
+              <i class="fas fa-user-md"></i>
+            </div>
+          </div>
+          <div class="progress" style="height: 4px">
+            <div class="progress-bar bg-success" style="width: 88%"></div>
+          </div>
         </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div
+        class="stat-card modern-card"
+        data-aos="fade-up"
+        data-aos-delay="300"
+      >
+        <div class="stat-card-body">
+          <div class="stat-header">
+            <div class="stat-info">
+              <h6 class="stat-label">Today's Appointments</h6>
+              <h3
+                class="stat-number counter"
+                data-target="{{ todays_appointments|default:145 }}"
+              >
+                0
+              </h3>
+              <div class="stat-trend">
+                <span class="badge bg-warning"
+                  ><i class="fas fa-clock"></i> 23 pending</span
+                >
+                <span class="text-muted small">review needed</span>
+              </div>
+            </div>
+            <div class="stat-icon bg-info">
+              <i class="fas fa-calendar-check"></i>
+            </div>
+          </div>
+          <div class="progress" style="height: 4px">
+            <div class="progress-bar bg-info" style="width: 92%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div
+        class="stat-card modern-card"
+        data-aos="fade-up"
+        data-aos-delay="400"
+      >
+        <div class="stat-card-body">
+          <div class="stat-header">
+            <div class="stat-info">
+              <h6 class="stat-label">Monthly Revenue</h6>
+              <h3 class="stat-number">
+                KSh
+                <span
+                  class="counter"
+                  data-target="{{ monthly_revenue|default:2450000 }}"
+                  >0</span
+                >
+              </h3>
+              <div class="stat-trend">
+                <span class="badge bg-success"
+                  ><i class="fas fa-arrow-up"></i> +18%</span
+                >
+                <span class="text-muted small">vs last month</span>
+              </div>
+            </div>
+            <div class="stat-icon bg-warning">
+              <i class="fas fa-dollar-sign"></i>
+            </div>
+          </div>
+          <div class="progress" style="height: 4px">
+            <div class="progress-bar bg-warning" style="width: 85%"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     {% elif user.role == 'doctor' %}
-    <!-- Doctor-specific widgets -->
-    <div class="row mt-4">
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Today's Schedule</h6>
-                </div>
-                <div class="card-body">
-                    <div class="timeline">
-                        <div class="timeline-item">
-                            <div class="timeline-time">9:00 AM</div>
-                            <div class="timeline-content">
-                                <strong>John Doe</strong><br>
-                                <small class="text-muted">General Checkup</small>
-                            </div>
-                        </div>
-                        <div class="timeline-item">
-                            <div class="timeline-time">10:30 AM</div>
-                            <div class="timeline-content">
-                                <strong>Mary Smith</strong><br>
-                                <small class="text-muted">Follow-up Visit</small>
-                            </div>
-                        </div>
-                        <div class="timeline-item">
-                            <div class="timeline-time">2:00 PM</div>
-                            <div class="timeline-content">
-                                <strong>Peter Johnson</strong><br>
-                                <small class="text-muted">Consultation</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- Doctor Stats -->
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-primary text-uppercase mb-1"
+              >
+                My Patients
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ my_patients|default:"127" }}
+              </div>
             </div>
+            <div class="col-auto">
+              <i class="fas fa-user-injured fa-2x text-gray-300"></i>
+            </div>
+          </div>
         </div>
+      </div>
+    </div>
 
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Patient Statistics</h6>
-                </div>
-                <div class="card-body">
-                    <canvas id="patientChart" width="100" height="50"></canvas>
-                </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-success text-uppercase mb-1"
+              >
+                Today's Appointments
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ doctor_appointments|default:"12" }}
+              </div>
             </div>
+            <div class="col-auto">
+              <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
+            </div>
+          </div>
         </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-info shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-info text-uppercase mb-1"
+              >
+                Pending Consultations
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ pending_consultations|default:"8" }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-stethoscope fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-warning shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-warning text-uppercase mb-1"
+              >
+                Prescriptions Today
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ prescriptions_today|default:"15" }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-prescription-bottle fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     {% elif user.role == 'pharmacist' %}
-    <!-- Pharmacist-specific widgets -->
-    <div class="row mt-4">
-        <div class="col-lg-8 mb-4">
-            <div class="card shadow">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Critical Stock Alerts</h6>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Medication</th>
-                                    <th>Current Stock</th>
-                                    <th>Minimum Required</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Paracetamol 500mg</td>
-                                    <td>25</td>
-                                    <td>100</td>
-                                    <td><span class="badge badge-danger">Critical</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Amoxicillin 250mg</td>
-                                    <td>45</td>
-                                    <td>50</td>
-                                    <td><span class="badge badge-warning">Low</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Metformin 500mg</td>
-                                    <td>15</td>
-                                    <td>75</td>
-                                    <td><span class="badge badge-danger">Critical</span></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+    <!-- Pharmacist Stats -->
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-primary text-uppercase mb-1"
+              >
+                Total Medications
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ total_medications|default:"856" }}
+              </div>
             </div>
+            <div class="col-auto">
+              <i class="fas fa-pills fa-2x text-gray-300"></i>
+            </div>
+          </div>
         </div>
+      </div>
+    </div>
 
-        <div class="col-lg-4 mb-4">
-            <div class="card shadow">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Pending Prescriptions</h6>
-                </div>
-                <div class="card-body">
-                    <div class="small mb-3">
-                        <strong>Patient: Jane Doe</strong><br>
-                        <span class="text-muted">Dr. Smith - Cardiology</span><br>
-                        <span class="badge badge-warning">Pending</span>
-                    </div>
-                    <div class="small mb-3">
-                        <strong>Patient: John Mwangi</strong><br>
-                        <span class="text-muted">Dr. Kimani - General</span><br>
-                        <span class="badge badge-warning">Pending</span>
-                    </div>
-                    <div class="small">
-                        <strong>Patient: Mary Wanjiku</strong><br>
-                        <span class="text-muted">Dr. Ochieng - Pediatrics</span><br>
-                        <span class="badge badge-warning">Pending</span>
-                    </div>
-                </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-danger shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-danger text-uppercase mb-1"
+              >
+                Low Stock Items
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ low_stock_items|default:"7" }}
+              </div>
             </div>
+            <div class="col-auto">
+              <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+            </div>
+          </div>
         </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-success text-uppercase mb-1"
+              >
+                Dispensed Today
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ dispensed_today|default:"42" }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-hand-holding-medical fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-warning shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-warning text-uppercase mb-1"
+              >
+                Expiring Soon
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ expiring_soon|default:"13" }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-clock fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     {% elif user.role == 'billing_staff' %}
-    <!-- Billing Staff-specific widgets -->
-    <div class="row mt-4">
-        <div class="col-lg-8 mb-4">
-            <div class="card shadow">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Outstanding Payments</h6>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Patient</th>
-                                    <th>Invoice #</th>
-                                    <th>Amount</th>
-                                    <th>Due Date</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>John Kamau</td>
-                                    <td>#INV-2024-001</td>
-                                    <td>KSh 15,000</td>
-                                    <td>Dec 15, 2024</td>
-                                    <td><button class="btn btn-sm btn-warning">Send Reminder</button></td>
-                                </tr>
-                                <tr>
-                                    <td>Mary Njeri</td>
-                                    <td>#INV-2024-002</td>
-                                    <td>KSh 8,500</td>
-                                    <td>Dec 10, 2024</td>
-                                    <td><button class="btn btn-sm btn-danger">Overdue</button></td>
-                                </tr>
-                                <tr>
-                                    <td>Peter Ochieng</td>
-                                    <td>#INV-2024-003</td>
-                                    <td>KSh 22,000</td>
-                                    <td>Dec 18, 2024</td>
-                                    <td><button class="btn btn-sm btn-info">Follow Up</button></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+    <!-- Billing Staff Stats -->
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-success text-uppercase mb-1"
+              >
+                Today's Revenue
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                KSh {{ daily_revenue|default:"125,500" }}
+              </div>
             </div>
+            <div class="col-auto">
+              <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+            </div>
+          </div>
         </div>
+      </div>
+    </div>
 
-        <div class="col-lg-4 mb-4">
-            <div class="card shadow">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Payment Summary</h6>
-                </div>
-                <div class="card-body">
-                    <div class="text-center mb-3">
-                        <div class="h4 font-weight-bold text-success">KSh 125,500</div>
-                        <div class="small text-gray-500">Collected Today</div>
-                    </div>
-                    <hr>
-                    <div class="row text-center">
-                        <div class="col-6">
-                            <div class="font-weight-bold text-info">67</div>
-                            <div class="small text-gray-500">Invoices</div>
-                        </div>
-                        <div class="col-6">
-                            <div class="font-weight-bold text-warning">23</div>
-                            <div class="small text-gray-500">Pending</div>
-                        </div>
-                    </div>
-                </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-danger shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-danger text-uppercase mb-1"
+              >
+                Pending Payments
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                KSh {{ pending_payments|default:"89,500" }}
+              </div>
             </div>
+            <div class="col-auto">
+              <i class="fas fa-money-bill-wave fa-2x text-gray-300"></i>
+            </div>
+          </div>
         </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-primary text-uppercase mb-1"
+              >
+                Invoices Generated
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ invoices_generated|default:"67" }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-file-invoice fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-info shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-info text-uppercase mb-1"
+              >
+                Insurance Claims
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ insurance_claims|default:"23" }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-shield-alt fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% elif user.role == 'patient' %}
+    <!-- Patient Stats -->
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-primary text-uppercase mb-1"
+              >
+                My Appointments
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ patient_appointments|default:"0" }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-calendar-check fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-info shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-info text-uppercase mb-1"
+              >
+                Next Appointment
+              </div>
+              <div class="h6 mb-0 font-weight-bold text-gray-800">
+                {{ next_appointment|default:"Dec 15,2024" }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-clock fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-success shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-success text-uppercase mb-1"
+              >
+                Active Prescriptions
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                {{ active_prescriptions|default:"2" }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-prescription-bottle-alt fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+      <div class="card border-left-warning shadow h-100 py-2">
+        <div class="card-body">
+          <div class="row no-gutters align-items-center">
+            <div class="col mr-2">
+              <div
+                class="text-xs font-weight-bold text-warning text-uppercase mb-1"
+              >
+                Outstanding Balance
+              </div>
+              <div class="h5 mb-0 font-weight-bold text-gray-800">
+                KSh {{outstanding_balance|default:"5,200" }}
+              </div>
+            </div>
+            <div class="col-auto">
+              <i class="fas fa-credit-card fa-2x text-gray-300"></i>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     {% endif %}
+  </div>
+
+  <!-- Quick Actions Section -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="modern-card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="fas fa-bolt me-2"></i>Quick Actions
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="actions-grid">
+            {% if user.role == 'administrator' %}
+            <a
+              href="{% url 'patients:create_patient' %}"
+              class="btn btn-primary btn-block action-card"
+            >
+              <div class="action-icon">
+                <i class="fas fa-user-plus"></i>
+              </div>
+              <div class="action-text">Add Patient</div>
+            </a>
+            <a href="#" class="btn btn-success btn-block action-card">
+              <div class="action-icon">
+                <i class="fas fa-user-md"></i>
+              </div>
+              <div class="action-text">Manage Staff</div>
+            </a>
+            <a href="#" class="btn btn-info btn-block action-card">
+              <div class="action-icon">
+                <i class="fas fa-chart-line"></i>
+              </div>
+              <div class="action-text">View Reports</div>
+            </a>
+            <a href="#" class="btn btn-warning btn-block action-card">
+              <div class="action-icon">
+                <i class="fas fa-cog"></i>
+              </div>
+              <div class="action-text">System Settings</div>
+            </a>
+            <a href="#" class="btn btn-secondary btn-block action-card">
+              <div class="action-icon">
+                <i class="fas fa-database"></i>
+              </div>
+              <div class="action-text">Backup Data</div>
+            </a>
+
+            {% elif user.role == 'doctor' %}
+            <a
+              href="{% url 'patients:create_patient' %}"
+              class="btn btn-primary btn-block action-card"
+            >
+              <div class="action-icon">
+                <i class="fas fa-user-plus"></i>
+              </div>
+              <div class="action-text">Add Patient</div>
+            </a>
+            <a
+              href="{% url 'appointments:appointment_create' %}"
+              class="btn btn-success btn-block action-card"
+            >
+              <div class="action-icon">
+                <i class="fas fa-calendar-plus"></i>
+              </div>
+              <div class="action-text">Schedule Appointment</div>
+            </a>
+            <a href="#" class="btn btn-info btn-block action-card">
+              <div class="action-icon">
+                <i class="fas fa-file-medical"></i>
+              </div>
+              <div class="action-text">View Medical Records</div>
+            </a>
+            <a href="#" class="btn btn-warning btn-block action-card">
+              <div class="action-icon">
+                <i class="fas fa-prescription"></i>
+              </div>
+              <div class="action-text">Write Prescription</div>
+            </a>
+            <a href="#" class="btn btn-secondary btn-block action-card">
+              <div class="action-icon">
+                <i class="fas fa-chart-line"></i>
+              </div>
+              <div class="action-text">Patient Reports</div>
+            </a>
+
+            {% elif user.role == 'pharmacist' %}
+            <a href="#" class="btn btn-primary btn-block action-card">
+              <div class="action-icon">
+                <i class="fas fa-pills"></i>
+              </div>
+              <div class="action-text">Update Inventory</div>
+            </a>
+            <a href="#" class="btn btn-success btn-block action-card">
+              <div class="action-icon">
+                <i class="fas fa-hand-holding-medical"></i>
+              </div>
+              <div class="action-text">Dispense Medication</div>
+            </a>
+            <a href="#" class="btn btn-danger btn-block action-card">
+              <div class="action-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+              </div>
+              <div class="action-text">Low Stock Alert</div>
+            </a>
+            <a href="#" class="btn btn-warning btn-block action-card">
+              <div class="action-icon">
+                <i class="fas fa-clock"></i>
+              </div>
+              <div class="action-text">Expiry Management</div>
+            </a>
+
+            {% elif user.role == 'billing_staff' %}
+            <a href="#" class="btn btn-primary btn-block action-card">
+              <div class="action-icon">
+                <i class="fas fa-file-invoice"></i>
+              </div>
+              <div class="action-text">Generate Invoice</div>
+            </a>
+            <a href="#" class="btn btn-success btn-block action-card">
+              <div class="action-icon">
+                <i class="fas fa-money-bill-wave"></i>
+              </div>
+              <div class="action-text">Process Payment</div>
+            </a>
+            <a href="#" class="btn btn-warning btn-block action-card">
+              <div class="action-icon">
+                <i class="fas fa-shield-alt"></i>
+              </div>
+              <div class="action-text">Insurance Claims</div>
+            </a>
+            <a href="#" class="btn btn-info btn-block action-card">
+              <div class="action-icon">
+                <i class="fas fa-chart-pie"></i>
+              </div>
+              <div class="action-text">Financial Reports</div>
+            </a>
+            <a href="#" class="btn btn-secondary btn-block action-card">
+              <div class="action-icon">
+                <i class="fas fa-credit-card"></i>
+              </div>
+              <div class="action-text">Payment History</div>
+            </a>
+
+            {% elif user.role == 'patient' %}
+            <a
+              href="{% url 'appointments:appointment_create' %}"
+              class="btn btn-primary btn-block action-card"
+            >
+              <div class="action-icon">
+                <i class="fas fa-calendar-plus"></i>
+              </div>
+              <div class="action-text">Book Appointment</div>
+            </a>
+            <a href="#" class="btn btn-info btn-block action-card">
+              <div class="action-icon">
+                <i class="fas fa-file-medical-alt"></i>
+              </div>
+              <div class="action-text">View Medical History</div>
+            </a>
+            <a href="#" class="btn btn-success btn-block action-card">
+              <div class="action-icon">
+                <i class="fas fa-prescription-bottle-alt"></i>
+              </div>
+              <div class="action-text">My Prescriptions</div>
+            </a>
+            <a href="#" class="btn btn-warning btn-block action-card">
+              <div class="action-icon">
+                <i class="fas fa-credit-card"></i>
+              </div>
+              <div class="action-text">Make Payment</div>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Activity / Context-specific content -->
+  <div class="row">
+    {% if user.role == 'patient' %}
+    <!-- Patient-specific content -->
+    <div class="col-lg-12 mb-4">
+      <div class="card shadow">
+        <div
+          class="card-header py-3 d-flex flex-row align-items-center justify-content-between"
+        >
+          <h6 class="m-0 font-weight-bold text-primary">
+            My Upcoming Appointments
+          </h6>
+          <a href="#" class="btn btn-sm btn-primary">View All</a>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table
+              id="appointmentsTable"
+              class="table table-striped table-hover"
+              style="width: 100%"
+            >
+              <thead>
+                <tr>
+                  <th>Date & Time</th>
+                  <th>Doctor</th>
+                  <th>Department</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if user.role == 'patient' %}
+                <tr>
+                  <td>Dec 20, 2024 10:30 AM</td>
+                  <td>Dr. Sarah Kimani</td>
+                  <td>Cardiology</td>
+                  <td><span class="badge bg-warning">Scheduled</span></td>
+                  <td>
+                    <button class="btn btn-sm btn-primary">View</button>
+                    <button class="btn btn-sm btn-danger">Cancel</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Dec 22, 2024 2:15 PM</td>
+                  <td>Dr. John Mwangi</td>
+                  <td>General Medicine</td>
+                  <td><span class="badge bg-success">Confirmed</span></td>
+                  <td>
+                    <button class="btn btn-sm btn-primary">View</button>
+                    <button class="btn btn-sm btn-secondary">Reschedule</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Dec 25, 2024 9:00 AM</td>
+                  <td>Dr. Mary Wanjiku</td>
+                  <td>Pediatrics</td>
+                  <td><span class="badge bg-info">Pending</span></td>
+                  <td>
+                    <button class="btn btn-sm btn-primary">View</button>
+                    <button class="btn btn-sm btn-warning">Contact</button>
+                  </td>
+                </tr>
+                {% elif user.role == 'doctor' %}
+                <tr>
+                  <td>11:30 AM</td>
+                  <td>Patient consultation completed</td>
+                  <td>{{ user.get_full_name }}</td>
+                  <td><span class="badge badge-success">Completed</span></td>
+                </tr>
+                <tr>
+                  <td>10:45 AM</td>
+                  <td>Prescription written</td>
+                  <td>{{ user.get_full_name }}</td>
+                  <td><span class="badge badge-success">Completed</span></td>
+                </tr>
+                <tr>
+                  <td>10:15 AM</td>
+                  <td>Appointment scheduled</td>
+                  <td>{{ user.get_full_name }}</td>
+                  <td><span class="badge badge-info">Active</span></td>
+                </tr>
+                <tr>
+                  <td>09:30 AM</td>
+                  <td>Medical record updated</td>
+                  <td>{{ user.get_full_name }}</td>
+                  <td><span class="badge badge-success">Completed</span></td>
+                </tr>
+                {% elif user.role == 'pharmacist' %}
+                <tr>
+                  <td>11:45 AM</td>
+                  <td>Medication dispensed</td>
+                  <td>{{ user.get_full_name }}</td>
+                  <td><span class="badge badge-success">Completed</span></td>
+                </tr>
+                <tr>
+                  <td>11:15 AM</td>
+                  <td>Inventory updated</td>
+                  <td>{{ user.get_full_name }}</td>
+                  <td><span class="badge badge-success">Completed</span></td>
+                </tr>
+                <tr>
+                  <td>10:30 AM</td>
+                  <td>Low stock alert triggered</td>
+                  <td>System Alert</td>
+                  <td>
+                    <span class="badge badge-warning">Attention Required</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>09:45 AM</td>
+                  <td>Prescription verified</td>
+                  <td>{{ user.get_full_name }}</td>
+                  <td><span class="badge badge-success">Completed</span></td>
+                </tr>
+                {% elif user.role == 'billing_staff' %}
+                <tr>
+                  <td>11:30 AM</td>
+                  <td>Invoice generated</td>
+                  <td>{{ user.get_full_name }}</td>
+                  <td><span class="badge badge-success">Completed</span></td>
+                </tr>
+                <tr>
+                  <td>11:00 AM</td>
+                  <td>Payment processed</td>
+                  <td>{{ user.get_full_name }}</td>
+                  <td><span class="badge badge-success">Completed</span></td>
+                </tr>
+                <tr>
+                  <td>10:15 AM</td>
+                  <td>Insurance claim submitted</td>
+                  <td>{{ user.get_full_name }}</td>
+                  <td>
+                    <span class="badge badge-warning">Pending Review</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>09:30 AM</td>
+                  <td>Payment reminder sent</td>
+                  <td>Auto System</td>
+                  <td><span class="badge badge-info">Sent</span></td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="5" class="text-center text-muted">
+                    No appointments found
+                  </td>
+                </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if user.role == 'administrator' %}
+  <!-- Administrator-specific widgets -->
+  <div class="row mt-4">
+    <div class="col-lg-6 mb-4">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">System Status</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-6">
+              <div class="text-center">
+                <div class="h5 font-weight-bold text-success">99.8%</div>
+                <div class="small text-gray-500">System Uptime</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="text-center">
+                <div class="h5 font-weight-bold text-info">2.3GB</div>
+                <div class="small text-gray-500">Database Size</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Staff Performance</h6>
+        </div>
+        <div class="card-body">
+          <div class="small mb-2">
+            <strong>Doctors:</strong> 15 active
+            <div class="progress mt-1">
+              <div class="progress-bar bg-success" style="width: 85%"></div>
+            </div>
+          </div>
+          <div class="small mb-2">
+            <strong>Nurses:</strong> 45 active
+            <div class="progress mt-1">
+              <div class="progress-bar bg-info" style="width: 92%"></div>
+            </div>
+          </div>
+          <div class="small">
+            <strong>Support Staff:</strong> 25 active
+            <div class="progress mt-1">
+              <div class="progress-bar bg-warning" style="width: 78%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% elif user.role == 'doctor' %}
+  <!-- Doctor-specific widgets -->
+  <div class="row mt-4">
+    <div class="col-lg-6 mb-4">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Today's Schedule</h6>
+        </div>
+        <div class="card-body">
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-time">9:00 AM</div>
+              <div class="timeline-content">
+                <strong>John Doe</strong><br />
+                <small class="text-muted">General Checkup</small>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-time">10:30 AM</div>
+              <div class="timeline-content">
+                <strong>Mary Smith</strong><br />
+                <small class="text-muted">Follow-up Visit</small>
+              </div>
+            </div>
+            <div class="timeline-item">
+              <div class="timeline-time">2:00 PM</div>
+              <div class="timeline-content">
+                <strong>Peter Johnson</strong><br />
+                <small class="text-muted">Consultation</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Patient Statistics</h6>
+        </div>
+        <div class="card-body">
+          <canvas id="patientChart" width="100" height="50"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% elif user.role == 'pharmacist' %}
+  <!-- Pharmacist-specific widgets -->
+  <div class="row mt-4">
+    <div class="col-lg-8 mb-4">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            Critical Stock Alerts
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Medication</th>
+                  <th>Current Stock</th>
+                  <th>Minimum Required</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Paracetamol 500mg</td>
+                  <td>25</td>
+                  <td>100</td>
+                  <td><span class="badge badge-danger">Critical</span></td>
+                </tr>
+                <tr>
+                  <td>Amoxicillin 250mg</td>
+                  <td>45</td>
+                  <td>50</td>
+                  <td><span class="badge badge-warning">Low</span></td>
+                </tr>
+                <tr>
+                  <td>Metformin 500mg</td>
+                  <td>15</td>
+                  <td>75</td>
+                  <td><span class="badge badge-danger">Critical</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4 mb-4">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            Pending Prescriptions
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="small mb-3">
+            <strong>Patient: Jane Doe</strong><br />
+            <span class="text-muted">Dr. Smith - Cardiology</span><br />
+            <span class="badge badge-warning">Pending</span>
+          </div>
+          <div class="small mb-3">
+            <strong>Patient: John Mwangi</strong><br />
+            <span class="text-muted">Dr. Kimani - General</span><br />
+            <span class="badge badge-warning">Pending</span>
+          </div>
+          <div class="small">
+            <strong>Patient: Mary Wanjiku</strong><br />
+            <span class="text-muted">Dr. Ochieng - Pediatrics</span><br />
+            <span class="badge badge-warning">Pending</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% elif user.role == 'billing_staff' %}
+  <!-- Billing Staff-specific widgets -->
+  <div class="row mt-4">
+    <div class="col-lg-8 mb-4">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">
+            Outstanding Payments
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table
+              id="paymentsTable"
+              class="table table-striped table-hover"
+              style="width: 100%"
+            >
+              <thead>
+                <tr>
+                  <th>Patient</th>
+                  <th>Invoice #</th>
+                  <th>Amount</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>John Kamau</td>
+                  <td>#INV-2024-001</td>
+                  <td>KSh 15,000</td>
+                  <td>Dec 15, 2024</td>
+                  <td><span class="badge bg-warning">Due</span></td>
+                  <td>
+                    <button class="btn btn-sm btn-warning">
+                      Send Reminder
+                    </button>
+                    <button class="btn btn-sm btn-primary">View</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Mary Njeri</td>
+                  <td>#INV-2024-002</td>
+                  <td>KSh 8,500</td>
+                  <td>Dec 10, 2024</td>
+                  <td><span class="badge bg-danger">Overdue</span></td>
+                  <td>
+                    <button class="btn btn-sm btn-danger">Escalate</button>
+                    <button class="btn btn-sm btn-info">Contact</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>Peter Ochieng</td>
+                  <td>#INV-2024-003</td>
+                  <td>KSh 22,000</td>
+                  <td>Dec 18, 2024</td>
+                  <td><span class="badge bg-info">Upcoming</span></td>
+                  <td>
+                    <button class="btn btn-sm btn-info">Follow Up</button>
+                    <button class="btn btn-sm btn-secondary">Schedule</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4 mb-4">
+      <div class="card shadow">
+        <div class="card-header py-3">
+          <h6 class="m-0 font-weight-bold text-primary">Payment Summary</h6>
+        </div>
+        <div class="card-body">
+          <div class="text-center mb-3">
+            <div class="h4 font-weight-bold text-success">KSh 125,500</div>
+            <div class="small text-gray-500">Collected Today</div>
+          </div>
+          <hr />
+          <div class="row text-center">
+            <div class="col-6">
+              <div class="font-weight-bold text-info">67</div>
+              <div class="small text-gray-500">Invoices</div>
+            </div>
+            <div class="col-6">
+              <div class="font-weight-bold text-warning">23</div>
+              <div class="small text-gray-500">Pending</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 </div>
 
 <style>
-    .timeline {
-        position: relative;
-        padding-left: 20px;
-    }
+  .timeline {
+    position: relative;
+    padding-left: 20px;
+  }
 
-    .timeline-item {
-        position: relative;
-        padding-bottom: 20px;
-    }
+  .timeline-item {
+    position: relative;
+    padding-bottom: 20px;
+  }
 
-    .timeline-item:before {
-        content: '';
-        position: absolute;
-        left: -25px;
-        top: 5px;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background-color: #007bff;
-    }
+  .timeline-item:before {
+    content: "";
+    position: absolute;
+    left: -25px;
+    top: 5px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #007bff;
+  }
 
-    .timeline-time {
-        font-weight: bold;
-        color: #007bff;
-        font-size: 0.9rem;
-    }
+  .timeline-time {
+    font-weight: bold;
+    color: #007bff;
+    font-size: 0.9rem;
+  }
 
-    .timeline-content {
-        margin-top: 5px;
-    }
+  .timeline-content {
+    margin-top: 5px;
+  }
 
-    .border-left-primary {
-        border-left: 0.25rem solid #4e73df !important;
-    }
+  .border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+  }
 
-    .border-left-success {
-        border-left: 0.25rem solid #1cc88a !important;
-    }
+  .border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+  }
 
-    .border-left-info {
-        border-left: 0.25rem solid #36b9cc !important;
-    }
+  .border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+  }
 
-    .border-left-warning {
-        border-left: 0.25rem solid #f6c23e !important;
-    }
+  .border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+  }
 
-    .border-left-danger {
-        border-left: 0.25rem solid #e74a3b !important;
-    }
+  .border-left-danger {
+    border-left: 0.25rem solid #e74a3b !important;
+  }
 
-    .text-gray-300 {
-        color: #dddfeb !important;
-    }
+  .text-gray-300 {
+    color: #dddfeb !important;
+  }
 
-    .text-gray-500 {
-        color: #858796 !important;
-    }
+  .text-gray-500 {
+    color: #858796 !important;
+  }
 
-    .text-gray-800 {
-        color: #5a5c69 !important;
-    }
+  .text-gray-800 {
+    color: #5a5c69 !important;
+  }
 
-    .shadow {
-        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
-    }
+  .shadow {
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
+  }
 </style>
 
+{% if user.role == 'doctor' %}
 <script>
-    // Chart.js integration for doctor dashboard
-    {% if user.role == 'doctor' %}
-    document.addEventListener('DOMContentLoaded', function () {
-        const ctx = document.getElementById('patientChart');
-        if (ctx) {
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['New Patients', 'Follow-ups', 'Consultations'],
-                    datasets: [{
-                        data: [30, 45, 25],
-                        backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc'],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'bottom'
-                        }
-                    }
-                }
-            });
-        }
-    });
-    {% endif %}
+  // Chart.js integration for doctor dashboard
+  document.addEventListener("DOMContentLoaded", function () {
+    const ctx = document.getElementById("patientChart");
+    if (ctx) {
+      new Chart(ctx, {
+        type: "doughnut",
+        data: {
+          labels: ["New Patients", "Follow-ups", "Consultations"],
+          datasets: [
+            {
+              data: [30, 45, 25],
+              backgroundColor: ["#4e73df", "#1cc88a", "#36b9cc"],
+              borderWidth: 0,
+            },
+          ],
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: "bottom",
+            },
+          },
+        },
+      });
+    }
+  });
 </script>
+{% endif %}
+
+<!-- Modern Dashboard Enhancements -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Animate counters
+    const counters = document.querySelectorAll(".counter");
+    const observerOptions = {
+      threshold: 0.1,
+    };
+
+    const counterObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const counter = entry.target;
+          const target = parseInt(counter.getAttribute("data-target"));
+          animateCounter(counter, 0, target, 2000);
+          counterObserver.unobserve(counter);
+        }
+      });
+    }, observerOptions);
+
+    counters.forEach((counter) => {
+      counterObserver.observe(counter);
+    });
+
+    function animateCounter(element, start, end, duration) {
+      const range = end - start;
+      const increment = end > start ? 1 : -1;
+      const steps = Math.abs(Math.floor(duration / (range || 1)));
+      const stepTime = Math.max(duration / Math.abs(range), 1);
+
+      let current = start;
+      const timer = setInterval(() => {
+        current += increment;
+        element.textContent = current.toLocaleString();
+
+        if (current === end) {
+          clearInterval(timer);
+        }
+      }, stepTime);
+    }
+
+    // Add hover effects to action buttons
+    const actionButtons = document.querySelectorAll(".btn");
+    actionButtons.forEach((btn) => {
+      btn.addEventListener("mouseenter", function () {
+        this.style.transform = "translateY(-2px)";
+      });
+
+      btn.addEventListener("mouseleave", function () {
+        this.style.transform = "translateY(0)";
+      });
+    });
+
+    // Add click ripple effect to cards
+    const cards = document.querySelectorAll(".modern-card");
+    cards.forEach((card) => {
+      card.addEventListener("click", function (e) {
+        const ripple = document.createElement("span");
+        const rect = this.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        const x = e.clientX - rect.left - size / 2;
+        const y = e.clientY - rect.top - size / 2;
+
+        ripple.style.cssText = `
+                position: absolute;
+                width: ${size}px;
+                height: ${size}px;
+                left: ${x}px;
+                top: ${y}px;
+                background: rgba(255, 255, 255, 0.3);
+                border-radius: 50%;
+                transform: scale(0);
+                animation: ripple 0.6s ease-out;
+                pointer-events: none;
+            `;
+
+        this.style.position = "relative";
+        this.style.overflow = "hidden";
+        this.appendChild(ripple);
+
+        setTimeout(() => {
+          ripple.remove();
+        }, 600);
+      });
+    });
+
+    // Add smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+      anchor.addEventListener("click", function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute("href"));
+        if (target) {
+          target.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+      });
+    });
+
+    // Initialize tooltips
+    if (typeof bootstrap !== "undefined" && bootstrap.Tooltip) {
+      const tooltipTriggerList = [].slice.call(
+        document.querySelectorAll('[data-bs-toggle="tooltip"]')
+      );
+      tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+      });
+    }
+
+    // Initialize DataTables
+    if ($.fn.DataTable) {
+      // Appointments Table
+      $("#appointmentsTable").DataTable({
+        responsive: true,
+        pageLength: 10,
+        lengthMenu: [
+          [5, 10, 25, 50, -1],
+          [5, 10, 25, 50, "All"],
+        ],
+        dom:
+          '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+          '<"row"<"col-sm-12"tr>>' +
+          '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+        language: {
+          search: "",
+          searchPlaceholder: "Search appointments...",
+          lengthMenu: "Show _MENU_ entries",
+          info: "Showing _START_ to _END_ of _TOTAL_ appointments",
+          infoEmpty: "No appointments available",
+          infoFiltered: "(filtered from _MAX_ total appointments)",
+        },
+        columnDefs: [
+          { orderable: false, targets: [4] }, // Disable sorting on Actions column
+          { className: "text-center", targets: [3, 4] }, // Center align Status and Actions
+        ],
+        order: [[0, "desc"]], // Sort by Date & Time descending
+      });
+
+      // Payments Table
+      $("#paymentsTable").DataTable({
+        responsive: true,
+        pageLength: 10,
+        lengthMenu: [
+          [5, 10, 25, 50, -1],
+          [5, 10, 25, 50, "All"],
+        ],
+        dom:
+          '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+          '<"row"<"col-sm-12"tr>>' +
+          '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>' +
+          '<"row"<"col-sm-12"B>>',
+        buttons: [
+          {
+            extend: "excel",
+            text: '<i class="fas fa-file-excel"></i> Excel',
+            className: "btn btn-success btn-sm",
+          },
+          {
+            extend: "pdf",
+            text: '<i class="fas fa-file-pdf"></i> PDF',
+            className: "btn btn-danger btn-sm",
+          },
+          {
+            extend: "print",
+            text: '<i class="fas fa-print"></i> Print',
+            className: "btn btn-info btn-sm",
+          },
+        ],
+        language: {
+          search: "",
+          searchPlaceholder: "Search payments...",
+          lengthMenu: "Show _MENU_ entries",
+          info: "Showing _START_ to _END_ of _TOTAL_ payments",
+          infoEmpty: "No payments available",
+          infoFiltered: "(filtered from _MAX_ total payments)",
+        },
+        columnDefs: [
+          { orderable: false, targets: [5] }, // Disable sorting on Actions column
+          { className: "text-center", targets: [4, 5] }, // Center align Status and Actions
+          {
+            targets: [2], // Amount column
+            render: function (data, type, row) {
+              if (type === "display") {
+                return '<span class="fw-bold text-success">' + data + "</span>";
+              }
+              return data;
+            },
+          },
+        ],
+        order: [[3, "asc"]], // Sort by Due Date ascending
+      });
+
+      // Style DataTables buttons
+      $(".dt-buttons").addClass("mb-3");
+      $(".dt-button").removeClass("dt-button");
+    }
+  });
+</script>
+
+<style>
+  /* Dashboard Container */
+  .dashboard-container {
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    min-height: calc(100vh - 64px);
+  }
+
+  /* Modern Statistics Cards */
+  .stat-card {
+    background: white;
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+  }
+
+  .stat-card-body {
+    padding: 1.5rem;
+  }
+
+  .stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+  }
+
+  .stat-info {
+    flex: 1;
+  }
+
+  .stat-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-number {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #007b83;
+    margin-bottom: 0.5rem;
+    line-height: 1;
+  }
+
+  .stat-trend {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  /* Modern Card */
+  .modern-card {
+    background: white;
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+
+  .modern-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  .card-header {
+    background: linear-gradient(135deg, #007b83, #4eb1ba);
+    color: white;
+    padding: 1.5rem;
+    border: none;
+    font-weight: 600;
+  }
+
+  .card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+  }
+
+  .card-body {
+    padding: 1.5rem;
+  }
+
+  /* Actions Grid */
+  .actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  .actions-grid .btn {
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 15px;
+    border: none;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .actions-grid .btn i {
+    font-size: 1.8rem;
+  }
+
+  .actions-grid .btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Background gradients */
+  .bg-primary {
+    background: linear-gradient(135deg, #007b83, #4eb1ba) !important;
+  }
+
+  .bg-success {
+    background: linear-gradient(135deg, #27ae60, #2ecc71) !important;
+  }
+
+  .bg-info {
+    background: linear-gradient(135deg, #3498db, #2980b9) !important;
+  }
+
+  .bg-warning {
+    background: linear-gradient(135deg, #f39c12, #e67e22) !important;
+  }
+
+  .bg-danger {
+    background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+  }
+
+  /* DataTables Styling */
+  .dataTables_wrapper .dataTables_length,
+  .dataTables_wrapper .dataTables_filter,
+  .dataTables_wrapper .dataTables_info,
+  .dataTables_wrapper .dataTables_paginate {
+    margin-bottom: 1rem;
+  }
+
+  .dataTables_wrapper .dataTables_filter input {
+    border-radius: 10px;
+    border: 2px solid #e9ecef;
+    padding: 0.5rem 1rem;
+    margin-left: 0.5rem;
+  }
+
+  .dataTables_wrapper .dataTables_length select {
+    border-radius: 10px;
+    border: 2px solid #e9ecef;
+    padding: 0.25rem 0.5rem;
+    margin: 0 0.5rem;
+  }
+
+  .table thead th {
+    background: linear-gradient(135deg, #007b83, #4eb1ba);
+    color: white;
+    border: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.85rem;
+    padding: 1rem;
+  }
+
+  .table tbody td {
+    border-color: rgba(0, 0, 0, 0.05);
+    vertical-align: middle;
+    padding: 1rem;
+  }
+
+  .table tbody tr:hover {
+    background-color: rgba(0, 123, 131, 0.05);
+  }
+
+  .table-responsive {
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .dashboard-container {
+      padding: 1rem;
+    }
+
+    .stat-number {
+      font-size: 1.8rem;
+    }
+
+    .actions-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .actions-grid .btn {
+      min-height: 80px;
+    }
+
+    .stat-icon {
+      width: 50px;
+      height: 50px;
+      font-size: 1.2rem;
+    }
+  }
+
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+  }
+
+  .bg-primary {
+    background: linear-gradient(135deg, #007b83, #4eb1ba) !important;
+  }
+
+  .bg-success {
+    background: linear-gradient(135deg, #27ae60, #2ecc71) !important;
+  }
+
+  .bg-info {
+    background: linear-gradient(135deg, #3498db, #2980b9) !important;
+  }
+
+  .bg-warning {
+    background: linear-gradient(135deg, #f39c12, #e67e22) !important;
+  }
+
+  .bg-danger {
+    background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+  }
+
+  .progress-bar {
+    transition: width 1.5s ease-in-out;
+  }
+
+  .badge {
+    font-size: 0.7rem;
+    padding: 0.3rem 0.5rem;
+  }
+
+  /* Ripple animation */
+  @keyframes ripple {
+    to {
+      transform: scale(2);
+      opacity: 0;
+    }
+  }
+
+  /* Smooth transitions for buttons */
+  .btn {
+    transition: all 0.3s ease;
+  }
+
+  /* Loading states */
+  .loading-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+  }
+
+  @keyframes loading {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  /* Enhanced chart container */
+  .chart-container {
+    position: relative;
+    padding: 20px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    margin-bottom: 25px;
+  }
+
+  /* Action button grid improvements */
+  .actions-grid .btn {
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .actions-grid .btn i {
+    font-size: 1.5rem;
+    margin-bottom: 0;
+  }
+
+  .actions-grid .btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Timeline improvements */
+  .timeline-item::before {
+    background: linear-gradient(135deg, #007b83, #4eb1ba);
+    box-shadow: 0 2px 8px rgba(0, 123, 131, 0.3);
+  }
+
+  /* Table enhancements */
+  .table-responsive {
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  }
+
+  .table th {
+    background: linear-gradient(135deg, #007b83, #4eb1ba);
+    color: white;
+    border: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.8rem;
+  }
+
+  .table td {
+    border-color: rgba(0, 0, 0, 0.05);
+    vertical-align: middle;
+  }
+
+  .table tbody tr:hover {
+    background-color: rgba(0, 123, 131, 0.05);
+  }
+</style>
 {% endblock %}

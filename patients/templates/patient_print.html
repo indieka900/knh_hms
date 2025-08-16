@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Information - {{ patient.user.get_full_name }} - KNH HMS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: white;
+        }
+
+        .print-container {
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20mm;
+            background: white;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #007B83;
+            padding-bottom: 20px;
+        }
+
+        .hospital-logo {
+            font-size: 2.5rem;
+            color: #007B83;
+            margin-bottom: 10px;
+        }
+
+        .hospital-name {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #007B83;
+            margin-bottom: 5px;
+        }
+
+        .hospital-tagline {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .document-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+            margin-top: 15px;
+        }
+
+        .patient-header {
+            background: linear-gradient(135deg, #007B83, #4EB1BA);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .patient-info {
+            flex: 1;
+        }
+
+        .patient-name {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .patient-id {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .patient-stats {
+            text-align: right;
+        }
+
+        .stat-item {
+            margin-bottom: 5px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            break-inside: avoid;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #007B83;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            margin-bottom: 15px;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #666;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+        }
+
+        .info-value {
+            font-size: 1rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .badges {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .badge-primary { background: #007B83; }
+        .badge-danger { background: #dc3545; }
+        .badge-info { background: #17a2b8; }
+        .badge-warning { background: #ffc107; color: #333; }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+
+        .emergency-contact {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e9ecef;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .print-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            
+            .print-container {
+                margin: 0;
+                padding: 15mm;
+                box-shadow: none;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+            
+            .section {
+                page-break-inside: avoid;
+            }
+            
+            .patient-header {
+                color: #333 !important;
+                background: #f8f9fa !important;
+                border: 2px solid #007B83;
+            }
+        }
+
+        .print-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #007B83;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .print-btn:hover {
+            background: #4EB1BA;
+        }
+    </style>
+</head>
+<body>
+    <div class="print-container">
+        <!-- Print Button -->
+        <button class="print-btn no-print" onclick="window.print()">
+            <i class="fas fa-print"></i> Print Document
+        </button>
+
+        <!-- Header -->
+        <div class="header">
+            <div class="hospital-logo">🏥</div>
+            <div class="hospital-name">Kenyatta National Hospital</div>
+            <div class="hospital-tagline">Excellence in Healthcare</div>
+            <div class="document-title">PATIENT INFORMATION RECORD</div>
+        </div>
+
+        <!-- Patient Header -->
+        <div class="patient-header">
+            <div class="patient-info">
+                <div class="patient-name">{{ patient.user.get_full_name }}</div>
+                <div class="patient-id">Patient ID: {{ patient.patient_id }}</div>
+                {% if age %}
+                <div>Age: {{ age }} years old</div>
+                {% endif %}
+            </div>
+            <div class="patient-stats">
+                <div class="stat-item">Registration Date</div>
+                <div class="stat-item"><strong>{{ patient.created_at|date:"F d, Y" }}</strong></div>
+            </div>
+        </div>
+
+        <!-- Personal Information -->
+        <div class="section">
+            <h2 class="section-title">Personal Information</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Full Name</div>
+                    <div class="info-value">{{ patient.user.get_full_name }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Email Address</div>
+                    <div class="info-value">{{ patient.user.email }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Phone Number</div>
+                    <div class="info-value">{{ patient.user.phone_number|default:"Not provided" }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Date of Birth</div>
+                    <div class="info-value">{{ patient.user.date_of_birth|default:"Not provided" }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Gender</div>
+                    <div class="info-value">
+                        {% if patient.gender == 'M' %}Male
+                        {% elif patient.gender == 'F' %}Female
+                        {% elif patient.gender == 'O' %}Other
+                        {% else %}Not specified{% endif %}
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Blood Group</div>
+                    <div class="info-value">{{ patient.blood_group|default:"Not specified" }}</div>
+                </div>
+            </div>
+            
+            {% if patient.user.address %}
+            <div class="info-item">
+                <div class="info-label">Address</div>
+                <div class="info-value">{{ patient.user.address }}</div>
+            </div>
+            {% endif %}
+
+            <!-- Medical Badges -->
+            <div class="badges">
+                {% if patient.gender %}
+                <span class="badge badge-info">
+                    {% if patient.gender == 'M' %}Male
+                    {% elif patient.gender == 'F' %}Female
+                    {% else %}Other{% endif %}
+                </span>
+                {% endif %}
+                {% if patient.blood_group %}
+                <span class="badge badge-danger">{{ patient.blood_group }}</span>
+                {% endif %}
+                {% if age %}
+                <span class="badge badge-primary">{{ age }} years old</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Medical Information -->
+        <div class="section">
+            <h2 class="section-title">Medical Information</h2>
+            
+            {% if patient.insurance_provider or patient.insurance_number %}
+            <div class="info-grid">
+                {% if patient.insurance_provider %}
+                <div class="info-item">
+                    <div class="info-label">Insurance Provider</div>
+                    <div class="info-value">{{ patient.insurance_provider }}</div>
+                </div>
+                {% endif %}
+                {% if patient.insurance_number %}
+                <div class="info-item">
+                    <div class="info-label">Insurance Number</div>
+                    <div class="info-value">{{ patient.insurance_number }}</div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if patient.allergies %}
+            <div class="alert alert-warning">
+                <div class="info-label">⚠️ ALLERGIES</div>
+                <div class="info-value">{{ patient.allergies }}</div>
+            </div>
+            {% endif %}
+
+            {% if patient.chronic_conditions %}
+            <div class="alert alert-info">
+                <div class="info-label">📋 CHRONIC CONDITIONS</div>
+                <div class="info-value">{{ patient.chronic_conditions }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Emergency Contact -->
+        {% if patient.emergency_contact_name %}
+        <div class="section">
+            <h2 class="section-title">Emergency Contact</h2>
+            <div class="emergency-contact">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Contact Name</div>
+                        <div class="info-value">{{ patient.emergency_contact_name }}</div>
+                    </div>
+                    {% if patient.emergency_contact_phone %}
+                    <div class="info-item">
+                        <div class="info-label">Contact Phone</div>
+                        <div class="info-value">{{ patient.emergency_contact_phone }}</div>
+                    </div>
+                    {% endif %}
+                    {% if patient.emergency_contact_relationship %}
+                    <div class="info-item">
+                        <div class="info-label">Relationship</div>
+                        <div class="info-value">{{ patient.emergency_contact_relationship|title }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- System Information -->
+        <div class="section">
+            <h2 class="section-title">System Information</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Patient ID</div>
+                    <div class="info-value">{{ patient.patient_id }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Registration Date</div>
+                    <div class="info-value">{{ patient.created_at|date:"F d, Y" }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Last Updated</div>
+                    <div class="info-value">{{ patient.updated_at|date:"F d, Y" }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Account Status</div>
+                    <div class="info-value">
+                        {% if patient.user.is_active %}
+                            <span class="badge badge-primary">Active</span>
+                        {% else %}
+                            <span class="badge badge-warning">Inactive</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="print-info">
+                <div>
+                    <strong>Document printed on:</strong> {{ print_date|date:"F d, Y \a\t H:i" }}<br>
+                    <strong>Printed by:</strong> {{ printed_by }}
+                </div>
+                <div>
+                    <strong>Kenyatta National Hospital</strong><br>
+                    Hospital Road, Nairobi, Kenya<br>
+                    Tel: +254 20 2726300
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 20px; font-size: 0.8rem; color: #999;">
+                This document contains confidential patient information. Handle with care and in accordance with HIPAA guidelines.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-print when page loads if called from print link
+        if (window.location.search.includes('auto_print=true')) {
+            window.onload = function() {
+                window.print();
+            }
+        }
+
+        // Handle print styling
+        window.addEventListener('beforeprint', function() {
+            document.body.style.background = 'white';
+        });
+
+        window.addEventListener('afterprint', function() {
+            document.body.style.background = '';
+        });
+    </script>
+</body>
+</html>
