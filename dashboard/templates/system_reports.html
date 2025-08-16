@@ -1,0 +1,315 @@
+{% extends "base.html" %} {% load static %} {% block title %}System Reports -
+KNH HMS{% endblock %} {% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <!-- Page Header -->
+      <div class="page-header mb-4">
+        <h2><i class="fas fa-chart-line me-2"></i>System Reports</h2>
+        <p class="text-muted">
+          Comprehensive system analytics and performance metrics
+        </p>
+      </div>
+
+      <!-- Statistics Cards -->
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <h3>Total Patients</h3>
+              <div class="stat-icon bg-primary">
+                <i class="fas fa-users"></i>
+              </div>
+            </div>
+            <div class="stat-number">{{ total_patients }}</div>
+            <div class="stat-change positive">
+              <i class="fas fa-arrow-up"></i>
+              <span>Active</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <h3>Total Appointments</h3>
+              <div class="stat-icon bg-success">
+                <i class="fas fa-calendar-check"></i>
+              </div>
+            </div>
+            <div class="stat-number">{{ total_appointments }}</div>
+            <div class="stat-change positive">
+              <i class="fas fa-arrow-up"></i>
+              <span>Scheduled</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <h3>Total Doctors</h3>
+              <div class="stat-icon bg-info">
+                <i class="fas fa-user-md"></i>
+              </div>
+            </div>
+            <div class="stat-number">{{ total_doctors }}</div>
+            <div class="stat-change positive">
+              <i class="fas fa-arrow-up"></i>
+              <span>Available</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <h3>Total Bills</h3>
+              <div class="stat-icon bg-warning">
+                <i class="fas fa-file-invoice-dollar"></i>
+              </div>
+            </div>
+            <div class="stat-number">{{ total_bills }}</div>
+            <div class="stat-change positive">
+              <i class="fas fa-arrow-up"></i>
+              <span>Generated</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="row">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              <h4>
+                <i class="fas fa-chart-pie me-2"></i>Appointment Status
+                Distribution
+              </h4>
+            </div>
+            <div class="card-body">
+              <canvas id="appointmentChart" width="400" height="200"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              <h4>
+                <i class="fas fa-chart-bar me-2"></i>Monthly Patient
+                Registration
+              </h4>
+            </div>
+            <div class="card-body">
+              <canvas id="patientChart" width="400" height="200"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h4><i class="fas fa-history me-2"></i>Recent System Activity</h4>
+            </div>
+            <div class="card-body">
+              <div class="text-center py-4">
+                <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Activity Logs Coming Soon</h5>
+                <p class="text-muted">
+                  Detailed system activity tracking will be implemented in the
+                  next update.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .page-header {
+    background: linear-gradient(
+      135deg,
+      var(--primary-light),
+      var(--primary-medium)
+    );
+    padding: 2rem;
+    border-radius: 15px;
+    color: var(--primary-dark);
+  }
+
+  .page-header h2 {
+    margin: 0;
+    font-weight: 700;
+  }
+
+  .stat-card {
+    background: var(--white);
+    padding: 1.5rem;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border-left: 5px solid var(--primary-medium);
+  }
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  }
+
+  .stat-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .stat-card h3 {
+    color: var(--primary-medium);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+  }
+
+  .stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: var(--white);
+  }
+
+  .stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-change {
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--success);
+  }
+
+  .card {
+    border: none;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    border-radius: 15px;
+    margin-bottom: 1.5rem;
+  }
+
+  .card-header {
+    background: linear-gradient(
+      135deg,
+      var(--primary-light),
+      rgba(231, 193, 191, 0.3)
+    );
+    border-bottom: none;
+    border-radius: 15px 15px 0 0 !important;
+    padding: 1.5rem;
+  }
+
+  .card-header h4 {
+    margin: 0;
+    color: var(--primary-dark);
+    font-weight: 600;
+  }
+
+  .card-body {
+    padding: 2rem;
+  }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Appointment Status Chart
+    const appointmentCtx = document
+      .getElementById("appointmentChart")
+      .getContext("2d");
+    new Chart(appointmentCtx, {
+      type: "doughnut",
+      data: {
+        labels: [
+          "Scheduled",
+          "Confirmed",
+          "In Progress",
+          "Completed",
+          "Cancelled",
+        ],
+        datasets: [
+          {
+            data: [30, 25, 15, 20, 10],
+            backgroundColor: [
+              "#17a2b8",
+              "#28a745",
+              "#ffc107",
+              "#20c997",
+              "#dc3545",
+            ],
+            borderWidth: 2,
+            borderColor: "#fff",
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: "bottom",
+          },
+        },
+      },
+    });
+
+    // Patient Registration Chart
+    const patientCtx = document.getElementById("patientChart").getContext("2d");
+    new Chart(patientCtx, {
+      type: "line",
+      data: {
+        labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+        datasets: [
+          {
+            label: "New Patients",
+            data: [65, 59, 80, 81, 56, 55],
+            borderColor: "#007b83",
+            backgroundColor: "rgba(0, 123, 131, 0.1)",
+            tension: 0.4,
+            fill: true,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false,
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+          },
+        },
+      },
+    });
+  });
+</script>
+{% endblock %}

@@ -95,3 +95,48 @@ class RegisterForm(forms.ModelForm):
         if commit:
             user.save()
         return user
+
+
+class ProfileEditForm(forms.ModelForm):
+    """Form for editing user profile"""
+    
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'phone_number', 'date_of_birth', 'address', 'profile_picture']
+        
+        widgets = {
+            'first_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter your first name'
+            }),
+            'last_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter your last name'
+            }),
+            'phone_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '+254XXXXXXXXX'
+            }),
+            'date_of_birth': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'address': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Enter your full address'
+            }),
+            'profile_picture': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*'
+            })
+        }
+    
+    def clean_profile_picture(self):
+        picture = self.cleaned_data.get('profile_picture')
+        if picture:
+            if picture.size > 5 * 1024 * 1024:  # 5MB limit
+                raise forms.ValidationError('Image file too large ( > 5MB )')
+            if not picture.content_type.startswith('image/'):
+                raise forms.ValidationError('File is not an image')
+        return picture

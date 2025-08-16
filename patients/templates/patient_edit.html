@@ -1,0 +1,381 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} - KNH HMS{% endblock %}
+
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Navigation Breadcrumb -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'dashboard:dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'patients:patient_list' %}">Patients</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'patients:patient_detail' patient.patient_id %}">{{ patient.user.get_full_name }}</a></li>
+                    <li class="breadcrumb-item active">Edit</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="page-title">
+                <i class="fas fa-edit me-3"></i>Edit Patient
+            </h1>
+            <p class="page-subtitle mb-0">Update patient information and medical details</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="d-flex gap-2 justify-content-md-end">
+                <a href="{% url 'patients:patient_detail' patient.patient_id %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <form method="post">
+                {% csrf_token %}
+                
+                <!-- Personal Information -->
+                <div class="modern-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-user me-2"></i>Personal Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="first_name" class="form-label">First Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" 
+                                       value="{{ patient.user.first_name }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="last_name" class="form-label">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" 
+                                       value="{{ patient.user.last_name }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ patient.user.email }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="phone_number" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone_number" name="phone_number" 
+                                       value="{{ patient.user.phone_number }}" placeholder="+254XXXXXXXXX">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="date_of_birth" class="form-label">Date of Birth</label>
+                                <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
+                                       value="{{ patient.user.date_of_birth|date:'Y-m-d' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="gender" class="form-label">Gender</label>
+                                <select class="form-select" id="gender" name="gender">
+                                    <option value="">Select Gender</option>
+                                    {% for value, label in gender_choices %}
+                                        <option value="{{ value }}" {% if patient.gender == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address</label>
+                            <textarea class="form-control" id="address" name="address" rows="3" 
+                                      placeholder="Enter complete address">{{ patient.user.address }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Medical Information -->
+                <div class="modern-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-heartbeat me-2"></i>Medical Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="blood_group" class="form-label">Blood Group</label>
+                                <select class="form-select" id="blood_group" name="blood_group">
+                                    <option value="">Select Blood Group</option>
+                                    {% for blood_group in blood_groups %}
+                                        <option value="{{ blood_group }}" {% if patient.blood_group == blood_group %}selected{% endif %}>{{ blood_group }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="insurance_provider" class="form-label">Insurance Provider</label>
+                                <input type="text" class="form-control" id="insurance_provider" name="insurance_provider" 
+                                       value="{{ patient.insurance_provider }}" placeholder="e.g., NHIF, AAR">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="insurance_number" class="form-label">Insurance Number</label>
+                                <input type="text" class="form-control" id="insurance_number" name="insurance_number" 
+                                       value="{{ patient.insurance_number }}" placeholder="Insurance policy number">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="allergies" class="form-label">Allergies</label>
+                                <textarea class="form-control" id="allergies" name="allergies" rows="3" 
+                                          placeholder="List any known allergies (drugs, food, environmental)">{{ patient.allergies }}</textarea>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="chronic_conditions" class="form-label">Chronic Conditions</label>
+                                <textarea class="form-control" id="chronic_conditions" name="chronic_conditions" rows="3" 
+                                          placeholder="List any chronic medical conditions">{{ patient.chronic_conditions }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emergency Contact -->
+                <div class="modern-card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-user-shield me-2"></i>Emergency Contact
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="emergency_contact_name" class="form-label">Contact Name</label>
+                                <input type="text" class="form-control" id="emergency_contact_name" 
+                                       name="emergency_contact_name" value="{{ patient.emergency_contact_name }}" 
+                                       placeholder="Full name of emergency contact">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="emergency_contact_phone" class="form-label">Contact Phone</label>
+                                <input type="tel" class="form-control" id="emergency_contact_phone" 
+                                       name="emergency_contact_phone" value="{{ patient.emergency_contact_phone }}" 
+                                       placeholder="+254XXXXXXXXX">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="emergency_contact_relationship" class="form-label">Relationship</label>
+                                <select class="form-select" id="emergency_contact_relationship" name="emergency_contact_relationship">
+                                    <option value="">Select Relationship</option>
+                                    <option value="spouse" {% if patient.emergency_contact_relationship == 'spouse' %}selected{% endif %}>Spouse</option>
+                                    <option value="parent" {% if patient.emergency_contact_relationship == 'parent' %}selected{% endif %}>Parent</option>
+                                    <option value="child" {% if patient.emergency_contact_relationship == 'child' %}selected{% endif %}>Child</option>
+                                    <option value="sibling" {% if patient.emergency_contact_relationship == 'sibling' %}selected{% endif %}>Sibling</option>
+                                    <option value="friend" {% if patient.emergency_contact_relationship == 'friend' %}selected{% endif %}>Friend</option>
+                                    <option value="other" {% if patient.emergency_contact_relationship == 'other' %}selected{% endif %}>Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="modern-card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex gap-3 justify-content-end">
+                                    <a href="{% url 'patients:patient_detail' patient.patient_id %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-2"></i>Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>Save Changes
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.modern-card {
+    background: white;
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #007B83, #4EB1BA);
+    color: white;
+    padding: 1.5rem;
+    border: none;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 0;
+}
+
+.form-control, .form-select {
+    border-radius: 10px;
+    border: 2px solid #e9ecef;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #007B83;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 131, 0.25);
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.btn {
+    border-radius: 10px;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #007B83, #4EB1BA);
+    border: none;
+}
+
+.breadcrumb {
+    background: transparent;
+    padding: 0;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    color: #6c757d;
+}
+
+.breadcrumb-item a {
+    color: #007B83;
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    color: #4EB1BA;
+}
+
+@media (max-width: 768px) {
+    .card-header {
+        padding: 1rem;
+    }
+    
+    .d-flex.gap-3 {
+        flex-direction: column;
+    }
+    
+    .d-flex.gap-3 .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
+</style>
+
+<script>
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const firstName = document.getElementById('first_name').value.trim();
+    const lastName = document.getElementById('last_name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    
+    if (!firstName || !lastName || !email) {
+        e.preventDefault();
+        alert('Please fill in all required fields (First Name, Last Name, Email).');
+        return false;
+    }
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        e.preventDefault();
+        alert('Please enter a valid email address.');
+        return false;
+    }
+    
+    // Phone number validation (if provided)
+    const phone = document.getElementById('phone_number').value.trim();
+    if (phone && !/^\+?[\d\s\-\(\)]+$/.test(phone)) {
+        e.preventDefault();
+        alert('Please enter a valid phone number.');
+        return false;
+    }
+    
+    // Show loading state
+    const submitBtn = document.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+    submitBtn.disabled = true;
+    
+    // Re-enable after 5 seconds in case of error
+    setTimeout(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }, 5000);
+});
+
+// Auto-capitalize names
+document.getElementById('first_name').addEventListener('input', function() {
+    this.value = this.value.replace(/\b\w/g, l => l.toUpperCase());
+});
+
+document.getElementById('last_name').addEventListener('input', function() {
+    this.value = this.value.replace(/\b\w/g, l => l.toUpperCase());
+});
+
+document.getElementById('emergency_contact_name').addEventListener('input', function() {
+    this.value = this.value.replace(/\b\w/g, l => l.toUpperCase());
+});
+
+// Format phone numbers
+function formatPhoneNumber(input) {
+    let value = input.value.replace(/\D/g, '');
+    if (value.startsWith('254')) {
+        value = '+' + value;
+    } else if (value.startsWith('0') && value.length === 10) {
+        value = '+254' + value.substring(1);
+    }
+    input.value = value;
+}
+
+document.getElementById('phone_number').addEventListener('blur', function() {
+    formatPhoneNumber(this);
+});
+
+document.getElementById('emergency_contact_phone').addEventListener('blur', function() {
+    formatPhoneNumber(this);
+});
+</script>
+{% endblock %}

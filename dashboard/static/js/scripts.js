@@ -3,18 +3,79 @@ document.getElementById('menuToggle').addEventListener('click', function () {
     const mainContent = document.getElementById('mainContent');
     if (window.innerWidth <= 768) {
         sidebar.classList.toggle('active');
+        // Add or remove backdrop
+        toggleMobileBackdrop(sidebar.classList.contains('active'));
     } else {
         sidebar.classList.toggle('collapsed');
         mainContent.classList.toggle('expanded');
     }
 });
 
+// Improved mobile interaction
 document.addEventListener('click', function (event) {
     const sidebar = document.getElementById('sidebar');
     const menuToggle = document.getElementById('menuToggle');
-    if (window.innerWidth <= 768 && !sidebar.contains(event.target) && !menuToggle.contains(event.target)) {
-        sidebar.classList.remove('active');
+    const backdrop = document.getElementById('mobile-backdrop');
+    
+    if (window.innerWidth <= 768 && sidebar.classList.contains('active')) {
+        // Close sidebar if clicking on backdrop or outside sidebar
+        if (backdrop && event.target === backdrop) {
+            closeMobileSidebar();
+        } else if (!sidebar.contains(event.target) && !menuToggle.contains(event.target)) {
+            closeMobileSidebar();
+        }
     }
+});
+
+// Function to toggle mobile backdrop
+function toggleMobileBackdrop(show) {
+    let backdrop = document.getElementById('mobile-backdrop');
+    
+    if (show && !backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = 'mobile-backdrop';
+        backdrop.className = 'mobile-backdrop';
+        backdrop.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1040;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        `;
+        document.body.appendChild(backdrop);
+        // Trigger opacity transition
+        setTimeout(() => backdrop.style.opacity = '1', 10);
+    } else if (!show && backdrop) {
+        backdrop.style.opacity = '0';
+        setTimeout(() => {
+            if (backdrop.parentNode) {
+                backdrop.parentNode.removeChild(backdrop);
+            }
+        }, 300);
+    }
+}
+
+// Function to close mobile sidebar
+function closeMobileSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.remove('active');
+    toggleMobileBackdrop(false);
+}
+
+// Auto-close sidebar when clicking on navigation links on mobile
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebarLinks = document.querySelectorAll('#sidebar a[href]:not([href="#"])');
+    sidebarLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            if (window.innerWidth <= 768) {
+                closeMobileSidebar();
+            }
+        });
+    });
 });
 
 window.addEventListener('resize', function () {

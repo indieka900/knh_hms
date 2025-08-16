@@ -5,6 +5,8 @@ app_name = 'appointments'
 
 urlpatterns = [
     path('', views.appointment_list, name='appointments'),
+    path('book/', views.book_appointment_view, name='book_appointment'),
+    path('my-appointments/', views.my_appointments_view, name='my_appointments'),
     path('create/', views.create_appointment_view, name='appointment_create'),
     path('check-conflicts/', views.check_appointment_conflicts, name='check_conflicts'),
     path('available-slots/', views.get_available_slots, name='available_slots'),
