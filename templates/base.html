@@ -648,7 +648,7 @@
                 <i class="fas fa-users me-2"></i>All Patients
               </a>
               {% endif %} {% if user.role in 'doctor,administrator' %}
-              <a class="nav-link" href="#">
+              <a class="nav-link" href="{% url 'appointments:doctor-list' %}">
                 <i class="fas fa-user-md me-2"></i>Doctors
               </a>
               {% endif %} {% if user.role == 'patient' %}

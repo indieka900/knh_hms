@@ -1,5 +1,5 @@
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Avg
 from django.utils.timezone import localdate
 from datetime import datetime
 from datetime import timedelta, timezone, date
@@ -46,6 +46,114 @@ def appointment_detail_view(request, appointment_id):
     }
     
     return render(request, 'appointment_detail.html', context)
+
+@login_required
+def doctor_list(request):
+    """Enhanced doctor list with search, filter, sorting and pagination"""
+
+    if not request.user.role in ['administrator', 'billing_staff']:
+        messages.error(request, "You don't have permission to view doctors.")
+        return redirect('/')
+
+    # Base queryset with schedules
+    doctors = Doctor.objects.select_related('user').prefetch_related('schedules')
+
+    # --- Search ---
+    search_query = request.GET.get('search', '')
+    if search_query:
+        doctors = doctors.filter(
+            Q(user__first_name__icontains=search_query) |
+            Q(user__last_name__icontains=search_query) |
+            Q(user__email__icontains=search_query) |
+            Q(user__phone_number__icontains=search_query) |
+            Q(license_number__icontains=search_query) |
+            Q(specialization__icontains=search_query)
+        )
+
+    # --- Filters ---
+    specialization_filter = request.GET.get('specialization', '')
+    if specialization_filter:
+        doctors = doctors.filter(specialization__iexact=specialization_filter)
+
+    availability_filter = request.GET.get('availability', '')
+    if availability_filter == 'available':
+        doctors = doctors.filter(is_available=True)
+    elif availability_filter == 'unavailable':
+        doctors = doctors.filter(is_available=False)
+
+    experience_filter = request.GET.get('experience', '')
+    if experience_filter:
+        try:
+            years = int(experience_filter)
+            doctors = doctors.filter(years_of_experience__gte=years)
+        except ValueError:
+            pass
+
+    # Filter by registration date
+    date_filter = request.GET.get('date_filter', '')
+    if date_filter:
+        today = timezone.now().date()
+        if date_filter == 'today':
+            doctors = doctors.filter(created_at__date=today)
+        elif date_filter == 'week':
+            doctors = doctors.filter(created_at__date__gte=today - timedelta(days=7))
+        elif date_filter == 'month':
+            doctors = doctors.filter(created_at__date__gte=today - timedelta(days=30))
+
+    # --- Sorting ---
+    sort_by = request.GET.get('sort', 'name')
+    if sort_by == 'name':
+        doctors = doctors.order_by('user__last_name', 'user__first_name')
+    elif sort_by == 'date':
+        doctors = doctors.order_by('-created_at')
+    elif sort_by == 'experience':
+        doctors = doctors.order_by('-years_of_experience')
+    elif sort_by == 'fee':
+        doctors = doctors.order_by('-consultation_fee')
+
+    # --- Pagination ---
+    page_size = request.GET.get('per_page', 25)
+    try:
+        page_size = int(page_size)
+        if page_size not in [10, 25, 50, 100]:
+            page_size = 25
+    except (ValueError, TypeError):
+        page_size = 25
+
+    paginator = Paginator(doctors, page_size)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # --- Statistics ---
+    total_doctors = Doctor.objects.count()
+    available_doctors = Doctor.objects.filter(is_available=True).count()
+    avg_experience = Doctor.objects.aggregate(avg_exp=Avg('years_of_experience'))['avg_exp'] or 0
+    new_this_month = Doctor.objects.filter(
+        created_at__gte=datetime.now().replace(day=1)
+    ).count()
+
+    context = {
+        'page_obj': page_obj,
+        'doctors': page_obj.object_list,
+        'title': 'Doctor Management',
+        'search_query': search_query,
+        'specialization_filter': specialization_filter,
+        'availability_filter': availability_filter,
+        'experience_filter': experience_filter,
+        'date_filter': date_filter,
+        'sort_by': sort_by,
+        'per_page': page_size,
+        'total_doctors': total_doctors,
+        'available_doctors': available_doctors,
+        'avg_experience': round(avg_experience, 1),
+        'new_this_month': new_this_month,
+        # For filters
+        'availability_choices': [('available', 'Available'), ('unavailable', 'Unavailable')],
+        'specializations': Doctor.objects.values_list('specialization', flat=True).distinct(),
+    }
+
+    return render(request, 'doctor_list.html', context)
+
 
 @login_required
 def appointment_list(request):

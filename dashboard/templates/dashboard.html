@@ -1,9 +1,9 @@
 {% extends "base.html" %} {% load static %} {% block title %}Dashboard - KNH
 HMS{% endblock %} {% block page_title %} {% if user.role == 'patient' %}
-Welcome, {{ user.get_full_name|default:user.email }} {% elif user.role ==
-'doctor' %} Doctor Dashboard {% elif user.role == 'pharmacist' %} Pharmacy
-Dashboard {% elif user.role == 'billing_staff' %} Billing Dashboard {%
-elifuser.role == 'administrator' %} Administrator Dashboard {% else %} Dashboard
+Welcome, {{ user.get_full_name|default:user.email }} 
+{% elif user.role ==  'doctor' %} Doctor Dashboard {% elif user.role == 'pharmacist' %} Pharmacy
+Dashboard {% elif user.role == 'billing_staff' %} Billing Dashboard 
+{% elif user.role == 'administrator' %} Administrator Dashboard {% else %} Dashboard
 Overview {% endif %} {% endblock %} {% block content %}
 <div class="dashboard-container">
   <!-- Statistics Cards -->
@@ -125,7 +125,7 @@ Overview {% endif %} {% endblock %} {% block content %}
               <h3 class="stat-number">
                 KSh
                 <span
-                  class="counter"
+                  class=""
                   data-target="{{ monthly_revenue|default:2450000 }}"
                   >0</span
                 >

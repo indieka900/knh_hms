@@ -68,7 +68,7 @@ def get_administrator_data(today, current_month):
     """Get data specific to administrators"""
     try:
         # Total patients
-        total_patients = Patient.objects.filter(is_active=True).count()
+        total_patients = Patient.objects.filter(user__is_active=True).count()
         
         # Total staff
         total_staff = User.objects.filter(

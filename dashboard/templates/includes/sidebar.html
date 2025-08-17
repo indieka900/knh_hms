@@ -14,8 +14,7 @@
     </li>
 
     <!-- Patient Management - Only for Admin/Staff/Doctors -->
-    {% if user.role == 'doctor' or user.role == 'nurse' or user.role ==
-    'administrator' or user.role == 'billing_staff' %}
+    {% if user.role == 'doctor' or user.role == 'nurse' or user.role == 'administrator' or user.role == 'billing_staff' %}
     <li>
       <a
         href="{% url 'patients:patient_list' %}"
@@ -27,8 +26,7 @@
     {% endif %}
 
     <!-- Medical Records -->
-    {% if user.role == 'doctor' or user.role == 'nurse' or user.role ==
-    'administrator' %}
+    {% if user.role == 'doctor' or user.role == 'nurse' or user.role == 'administrator' %}
     <li>
       <a
         href="{% url 'medical_records:medical_records_dashboard' %}"
