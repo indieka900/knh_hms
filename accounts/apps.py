@@ -7,3 +7,4 @@ class AccountsConfig(AppConfig):
     
     def ready(self):
         import accounts.signals
+        # (Defaults are ensured on first visit to the Role Permissions admin page)

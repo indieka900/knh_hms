@@ -95,3 +95,45 @@ class RegisterForm(forms.ModelForm):
         if commit:
             user.save()
         return user
+
+
+class UserProfileForm(forms.ModelForm):
+    """Form for users to edit their own profile information (changeable personal data only)."""
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'phone_number', 'date_of_birth', 'address', 'profile_picture']
+        widgets = {
+            'first_name': forms.TextInput(attrs={
+                'class': 'w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal/60',
+                'placeholder': 'First name'
+            }),
+            'last_name': forms.TextInput(attrs={
+                'class': 'w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal/60',
+                'placeholder': 'Last name'
+            }),
+            'phone_number': forms.TextInput(attrs={
+                'class': 'w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal/60',
+                'placeholder': '+1234567890'
+            }),
+            'date_of_birth': forms.DateInput(attrs={
+                'class': 'w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal/60',
+                'type': 'date'
+            }),
+            'address': forms.Textarea(attrs={
+                'class': 'w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal/60',
+                'rows': 3,
+                'placeholder': 'Your full address'
+            }),
+            'profile_picture': forms.ClearableFileInput(attrs={
+                'class': 'block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-navy file:text-white hover:file:bg-navy-mid'
+            }),
+        }
+
+    def clean_phone_number(self):
+        phone = self.cleaned_data.get('phone_number')
+        if phone:
+            # Basic length/validation can be expanded; regex validator is already on the model
+            if len(phone) < 7:
+                raise forms.ValidationError('Phone number seems too short.')
+        return phone

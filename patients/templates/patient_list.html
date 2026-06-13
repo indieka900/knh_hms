@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Patients — KNH HMS{% endblock %}
+{% block page_title %}Patients{% endblock %}
+
+{% block content %}
+<div class="flex items-start justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-semibold tracking-tight text-navy">Patients</h1>
+        <p class="text-sm text-slate-500">Registered patients in the system</p>
+    </div>
+    <div>
+        {% if user.role in 'administrator,doctor,billing_staff' %}
+        <a href="{% url 'patients:create_patient' %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-navy text-white text-sm font-semibold hover:bg-navy-mid shadow-sm transition">
+            <i class="fas fa-user-plus"></i> Add Patient
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="bg-white border border-slate-200 rounded-2xl p-4 mb-4">
+    <form method="GET" class="flex flex-wrap gap-3 items-end">
+        <div class="flex-1 min-w-[220px]">
+            <label class="block text-xs font-medium text-slate-500 mb-1">Search</label>
+            <input type="text" name="q" value="{{ q }}" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal/60" placeholder="Name, email, ID or insurance...">
+        </div>
+        <button type="submit" class="px-5 py-2 rounded-xl bg-teal text-white text-sm font-semibold hover:bg-teal-light transition">Search</button>
+        {% if q %}
+        <a href="{% url 'patients:patient_list' %}" class="px-4 py-2 rounded-xl border text-sm hover:bg-slate-50">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+<div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+    <div class="px-5 py-3 border-b flex items-center justify-between text-sm">
+        <span class="font-semibold text-navy">All Patients</span>
+        <span class="text-slate-500">{{ page_obj.paginator.count|default:0 }} total</span>
+    </div>
+    <div class="overflow-x-auto">
+        {% if page_obj %}
+        <table class="w-full text-sm">
+            <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider">
+                <tr>
+                    <th class="px-4 py-3 text-left">ID</th>
+                    <th class="px-4 py-3 text-left">Name</th>
+                    <th class="px-4 py-3 text-left">Email / Phone</th>
+                    <th class="px-4 py-3 text-left">Gender</th>
+                    <th class="px-4 py-3 text-left">Blood Group</th>
+                    <th class="px-4 py-3 text-left">Insurance</th>
+                    <th class="px-4 py-3"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% for p in page_obj %}
+                <tr class="hover:bg-slate-50">
+                    <td class="px-4 py-3 font-medium text-navy"><strong>{{ p.patient_id }}</strong></td>
+                    <td class="px-4 py-3 font-medium">{{ p.user.get_full_name }}</td>
+                    <td class="px-4 py-3 text-sm">
+                        {{ p.user.email }}<br>
+                        <span class="text-xs text-slate-500">{{ p.user.phone_number|default:"-" }}</span>
+                    </td>
+                    <td class="px-4 py-3 text-sm">{{ p.get_gender_display }}</td>
+                    <td class="px-4 py-3 text-sm">{{ p.blood_group|default:"-" }}</td>
+                    <td class="px-4 py-3 text-sm">
+                        {% if p.insurance_provider %}{{ p.insurance_provider }}<br><span class="text-xs">{{ p.insurance_number|default:"" }}</span>{% else %}-{% endif %}
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex gap-1">
+                            <a href="{% url 'medical_records:patient_medical_history' p.patient_id %}" class="px-2 py-1 text-xs rounded-lg bg-slate-100 hover:bg-slate-200" title="Medical History">
+                                <i class="fas fa-history"></i>
+                            </a>
+                            <a href="{% url 'appointments:appointment_create' %}" class="px-2 py-1 text-xs rounded-lg bg-teal/10 text-teal hover:bg-teal/20" title="Schedule">
+                                <i class="fas fa-calendar-plus"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-12 text-center text-slate-500">
+            <i class="fas fa-user-injured text-4xl mb-3 opacity-40"></i>
+            <h3 class="font-semibold">No patients found</h3>
+            <p class="text-sm">{% if q %}Try a different search term.{% else %}No patients have been registered yet.{% endif %}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="flex justify-center gap-1 py-4">
+    {% if page_obj.has_previous %}
+    <a href="?q={{ q }}&amp;page={{ page_obj.previous_page_number }}" class="px-3 py-1 rounded-lg border text-sm hover:bg-white">←</a>
+    {% endif %}
+    <span class="px-3 py-1 rounded-lg bg-navy text-white text-sm">{{ page_obj.number }}</span>
+    {% if page_obj.has_next %}
+    <a href="?q={{ q }}&amp;page={{ page_obj.next_page_number }}" class="px-3 py-1 rounded-lg border text-sm hover:bg-white">→</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

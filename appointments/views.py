@@ -106,7 +106,7 @@ def appointment_list(request):
 @login_required
 def confirm_appointment_view(request, appointment_id):
     """Confirm an appointment"""
-    appointment = get_object_or_404(Appointment, appointment_id=appointment_id)
+    appointment = get_object_or_404(Appointment, id=appointment_id)
     
     # Check permissions (only doctor can confirm)
     if not (hasattr(request.user, 'doctor') and appointment.doctor.user == request.user):
@@ -126,7 +126,7 @@ def confirm_appointment_view(request, appointment_id):
 @login_required
 def cancel_appointment_view(request, appointment_id):
     """Cancel an appointment"""
-    appointment = get_object_or_404(Appointment, appointment_id=appointment_id)
+    appointment = get_object_or_404(Appointment, id=appointment_id)
     
     # Check permissions
     user_is_doctor = hasattr(request.user, 'doctor')
@@ -160,7 +160,7 @@ def cancel_appointment_view(request, appointment_id):
     
     context = {
         'appointment': appointment,
-        'title': f'Cancel Appointment - {appointment.appointment_id}',
+        'title': f'Cancel Appointment - {appointment.id}',
     }
     
     return render(request, 'appointment_cancel.html', context)
@@ -168,7 +168,7 @@ def cancel_appointment_view(request, appointment_id):
 @login_required
 def delete_appointment_view(request, appointment_id):
     """Delete an appointment (admin only or specific conditions)"""
-    appointment = get_object_or_404(Appointment, appointment_id=appointment_id)
+    appointment = get_object_or_404(Appointment, id=appointment_id)
     
     # Only staff or specific conditions can delete
     if not request.user.is_staff:
@@ -182,7 +182,7 @@ def delete_appointment_view(request, appointment_id):
     
     context = {
         'appointment': appointment,
-        'title': f'Delete Appointment - {appointment.appointment_id}',
+        'title': f'Delete Appointment - {appointment.id}',
     }
     
     return render(request, 'appointment_delete.html', context)
@@ -416,7 +416,7 @@ def get_available_slots(request):
     
     # Exclude current appointment if editing
     if appointment_id:
-        booked_appointments = booked_appointments.exclude(appointment_id=appointment_id)
+        booked_appointments = booked_appointments.exclude(id=appointment_id)
     
     booked_slots = list(booked_appointments.values_list('appointment_time', flat=True))
     booked_slots = [slot.strftime('%H:%M') if hasattr(slot, 'strftime') else str(slot) for slot in booked_slots]

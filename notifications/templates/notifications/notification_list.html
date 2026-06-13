@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Notifications — KNH HMS{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Notifications</h1>
+        <p>
+            {% if unread_count %}
+                <span class="status-badge status-pending">{{ unread_count }} unread</span>
+            {% else %}
+                All caught up
+            {% endif %}
+        </p>
+    </div>
+    <div class="page-actions">
+        {% if user.role == 'administrator' %}
+        <a href="{% url 'notifications:create_notification' %}" class="btn btn-primary">
+            <i class="fas fa-paper-plane"></i> Send Notification
+        </a>
+        {% endif %}
+        {% if unread_count %}
+        <form method="post" action="{% url 'notifications:mark_all_read' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-secondary">
+                <i class="fas fa-check-double"></i> Mark All Read
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-bar">
+    <div class="form-group search-input" style="margin-bottom:0;">
+        <label class="form-label">Filter by Status</label>
+        <select class="form-control" onchange="location.href='?status='+this.value">
+            <option value="">All Notifications</option>
+            {% for val, label in status_choices %}
+            <option value="{{ val }}" {% if current_status == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<!-- Notifications List -->
+<div class="card">
+    {% if notifications %}
+    <div class="notif-list">
+        {% for notif in notifications %}
+        <div class="notif-item {% if notif.status in 'pending sent' %}unread{% endif %}">
+            <!-- icon -->
+            {% with t=notif.template.type|default:"system_alert" %}
+            <div class="notif-icon
+                {% if t == 'appointment_reminder' or t == 'appointment_confirmation' %}icon-teal
+                {% elif t == 'payment_due' %}icon-red
+                {% elif t == 'prescription_ready' %}icon-navy
+                {% elif t == 'test_results' %}icon-blue
+                {% else %}icon-amber{% endif %}">
+                {% if t == 'appointment_reminder' or t == 'appointment_confirmation' %}
+                    <i class="fas fa-calendar-alt"></i>
+                {% elif t == 'payment_due' %}
+                    <i class="fas fa-file-invoice-dollar"></i>
+                {% elif t == 'prescription_ready' %}
+                    <i class="fas fa-pills"></i>
+                {% elif t == 'test_results' %}
+                    <i class="fas fa-flask"></i>
+                {% else %}
+                    <i class="fas fa-bell"></i>
+                {% endif %}
+            </div>
+            {% endwith %}
+            <!-- body -->
+            <div class="notif-body">
+                <div class="notif-title">{{ notif.subject }}</div>
+                <div class="notif-text">{{ notif.message|truncatewords:18 }}</div>
+                <div class="notif-meta">
+                    <span><i class="fas fa-clock" style="margin-right:3px;"></i>{{ notif.created_at|timesince }} ago</span>
+                    <span class="status-badge status-{{ notif.status }}">{{ notif.get_status_display }}</span>
+                    <span>{{ notif.get_delivery_method_display }}</span>
+                </div>
+            </div>
+            <!-- unread dot -->
+            <div class="notif-dot {% if notif.status not in 'pending sent' %}hidden{% endif %}"></div>
+            <!-- actions -->
+            <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
+                <a href="{% url 'notifications:notification_detail' notif.pk %}" class="btn btn-secondary btn-xs">
+                    <i class="fas fa-eye"></i> View
+                </a>
+                <form method="post" action="{% url 'notifications:delete_notification' notif.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-xs" style="width:100%;" onclick="return confirm('Delete this notification?')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if notifications.has_other_pages %}
+    <div class="pagination-wrapper">
+        <div class="pagination">
+            {% if notifications.has_previous %}
+            <a href="?page={{ notifications.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}" class="page-link">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            {% endif %}
+            {% for num in notifications.paginator.page_range %}
+                {% if notifications.number == num %}
+                <span class="page-link active">{{ num }}</span>
+                {% elif num > notifications.number|add:'-3' and num < notifications.number|add:'3' %}
+                <a href="?page={{ num }}{% if current_status %}&status={{ current_status }}{% endif %}" class="page-link">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if notifications.has_next %}
+            <a href="?page={{ notifications.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}" class="page-link">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon"><i class="fas fa-bell-slash"></i></div>
+        <h3>No notifications</h3>
+        <p>{% if current_status %}No {{ current_status }} notifications.{% else %}You have no notifications yet.{% endif %}</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -196,7 +196,7 @@
                 <select name="appointment_id" class="form-control">
                     <option value="">Select appointment...</option>
                     {% for appointment in recent_appointments %}
-                    <option value="{{ appointment.appointment_id }}">
+                    <option value="{{ appointment.id }}">
                         {{ appointment.appointment_date|date:"M d, Y" }} - {{ appointment.appointment_time|time:"H:i" }}
                     </option>
                     {% endfor %}

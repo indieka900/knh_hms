@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Profile — KNH HMS{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="mb-6">
+        <h1 class="text-2xl font-semibold tracking-tight text-navy">My Profile</h1>
+        <p class="text-sm text-slate-500">Update your personal information. Role and email are managed by administrators.</p>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b flex items-center gap-4">
+            <div class="w-16 h-16 rounded-2xl overflow-hidden bg-navy flex items-center justify-center text-white text-2xl font-bold ring-2 ring-white shadow">
+                {% if user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" alt="Profile picture" class="w-full h-full object-cover">
+                {% else %}
+                    {{ user.first_name.0|default:"U" }}{{ user.last_name.0|default:"" }}
+                {% endif %}
+            </div>
+            <div>
+                <div class="font-semibold text-lg">{{ user.get_full_name }}</div>
+                <div class="text-sm text-slate-500">{{ user.email }} · {{ user.role|title }}</div>
+            </div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" class="p-6 space-y-6">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">First Name</label>
+                    {{ form.first_name }}
+                    {% if form.first_name.errors %}
+                        <p class="text-xs text-red-600 mt-1">{{ form.first_name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Last Name</label>
+                    {{ form.last_name }}
+                    {% if form.last_name.errors %}
+                        <p class="text-xs text-red-600 mt-1">{{ form.last_name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Phone Number</label>
+                    {{ form.phone_number }}
+                    {% if form.phone_number.errors %}
+                        <p class="text-xs text-red-600 mt-1">{{ form.phone_number.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Date of Birth</label>
+                    {{ form.date_of_birth }}
+                    {% if form.date_of_birth.errors %}
+                        <p class="text-xs text-red-600 mt-1">{{ form.date_of_birth.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Address</label>
+                {{ form.address }}
+                {% if form.address.errors %}
+                    <p class="text-xs text-red-600 mt-1">{{ form.address.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Profile Picture</label>
+                <div class="flex items-center gap-4">
+                    <div>
+                        {{ form.profile_picture }}
+                    </div>
+                    {% if user.profile_picture %}
+                    <div class="text-xs text-slate-500">
+                        Current: <a href="{{ user.profile_picture.url }}" target="_blank" class="underline">view</a>
+                    </div>
+                    {% endif %}
+                </div>
+                <p class="text-[10px] text-slate-400 mt-1">PNG, JPG up to a few MB recommended. Clear the checkbox to remove.</p>
+                {% if form.profile_picture.errors %}
+                    <p class="text-xs text-red-600 mt-1">{{ form.profile_picture.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div class="pt-2 flex items-center justify-end gap-3 border-t">
+                <a href="{% url 'dashboard:dashboard' %}" class="px-4 py-2 text-sm rounded-xl border hover:bg-slate-50">Cancel</a>
+                <button type="submit" class="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-navy text-white text-sm font-semibold hover:bg-navy-mid shadow-sm transition">
+                    <i class="fas fa-save"></i>
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="mt-4 text-xs text-slate-500 px-1">
+        Need to change your password? Contact an administrator or use the admin interface if you have access.
+    </div>
+</div>
+
+<script>
+    // Simple live avatar preview for the file input
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.querySelector('input[type="file"]');
+        if (!fileInput) return;
+
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                // Find the avatar in the header card above the form
+                const headerAvatar = document.querySelector('.w-16.h-16.rounded-2xl img, .w-16.h-16.rounded-2xl');
+                if (headerAvatar && headerAvatar.tagName === 'IMG') {
+                    headerAvatar.src = ev.target.result;
+                } else if (headerAvatar) {
+                    // replace the initials div with img
+                    const img = document.createElement('img');
+                    img.src = ev.target.result;
+                    img.className = 'w-full h-full object-cover';
+                    headerAvatar.innerHTML = '';
+                    headerAvatar.appendChild(img);
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+</script>
+{% endblock %}

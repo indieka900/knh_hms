@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Send Notification — KNH HMS{% endblock %}
+{% block page_title %}Send Notification{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Send Notification</h1>
+        <p>Compose and send a notification to a system user.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'notifications:notification_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+</div>
+
+<div class="card" style="max-width:680px;">
+    <div class="card-header"><h3>Compose Notification</h3></div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Recipient <span style="color:var(--danger);">*</span></label>
+                <select name="recipient_id" class="form-control" required>
+                    <option value="">— Select user —</option>
+                    {% for u in users %}
+                    <option value="{{ u.pk }}">{{ u.get_full_name }} ({{ u.get_role_display|default:u.role }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Template (optional)</label>
+                <select name="template_id" class="form-control" id="templateSelect">
+                    <option value="">— None —</option>
+                    {% for t in templates %}
+                    <option value="{{ t.pk }}" data-subject="{{ t.subject }}" data-message="{{ t.message_template }}">{{ t.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Subject <span style="color:var(--danger);">*</span></label>
+                <input type="text" name="subject" id="subjectField" class="form-control" required placeholder="Notification subject">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Message <span style="color:var(--danger);">*</span></label>
+                <textarea name="message" id="messageField" class="form-control" rows="6" required placeholder="Write your message here..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Delivery Method</label>
+                <select name="delivery_method" class="form-control">
+                    {% for val, label in delivery_methods %}
+                    <option value="{{ val }}" {% if val == 'in_app' %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-actions">
+                <a href="{% url 'notifications:notification_list' %}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Send Notification
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('templateSelect').addEventListener('change', function() {
+    const opt = this.options[this.selectedIndex];
+    if (opt.value) {
+        document.getElementById('subjectField').value = opt.dataset.subject || '';
+        document.getElementById('messageField').value = opt.dataset.message || '';
+    }
+});
+</script>
+{% endblock %}

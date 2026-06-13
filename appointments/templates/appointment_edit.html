@@ -16,7 +16,7 @@
         userIsPatient: "{{ user_is_patient|yesno:'true,false' }}",
         isEditing: "{{ object|yesno:'true,false' }}",
         appointmentTime: "{{ object.appointment_time|time:'H:i'|default_if_none:'' }}",
-            appointmentId: "{{ object.appointment_id|default_if_none:'' }}",
+            appointmentId: "{{ object.id|default_if_none:'' }}",
                 currentDoctor: {
             id: "{{ current_doctor.doctor_id|default_if_none:'' }}",
                 specialization: "{{ current_doctor.specialization|default_if_none:'' }}",
@@ -70,7 +70,7 @@
         <div class="card-header">
             <h3>
                 <i class="fas fa-{% if object %}edit{% else %}plus{% endif %}"></i>
-                {% if object %}Edit Appointment - {{ object.appointment_id }}
+                {% if object %}Edit Appointment - {{ object.id }}
                 {% else %}
                 Schedule New Appointment
                 {% endif%}
@@ -80,7 +80,7 @@
             <form method="post" id="appointmentForm">
                 {% csrf_token %}
                 {% if object %}
-                <input type="hidden" name="appointment_id" value="{{ object.appointment_id }}">
+                <input type="hidden" name="appointment_id" value="{{ object.id }}">
                 {% endif %}
 
                 <!-- Patient Selection (shown to doctors or when editing) -->

@@ -1,25 +1,90 @@
 <header class="top-nav">
     <div class="nav-left">
-        <button class="menu-toggle" id="menuToggle">
+        <button class="menu-toggle" id="menuToggle" title="Toggle sidebar">
             <i class="fas fa-bars"></i>
         </button>
-        <h1 class="page-title">
-            {% block page_title %}Dashboard{% endblock%}
-        </h1>
+        <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
     </div>
     <div class="nav-right">
-        <div class="user-info">
-            <div class="user-avatar">
-                <span>
-                    {{ user.first_name.0|default:"U" }}
-                    {{user.last_name.0|default:"" }}
-                </span>
+        <!-- Notification Bell -->
+        <a href="{% url 'notifications:notification_list' %}" class="notif-btn" id="notifBtn" title="Notifications">
+            <i class="fas fa-bell"></i>
+            {% if unread_notifications and unread_notifications > 0 %}
+            <span class="notif-badge" id="notifBadge">
+                {% if unread_notifications > 9 %}9+{% else %}{{ unread_notifications }}{% endif %}
+            </span>
+            {% else %}
+            <span class="notif-badge" id="notifBadge" style="display:none;"></span>
+            {% endif %}
+        </a>
 
+        <!-- User Info -->
+        <div class="user-info" onclick="toggleUserMenu()" title="{{ user.email }}">
+            <div class="user-avatar">
+                {% if user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" alt="">
+                {% else %}
+                    {{ user.first_name.0|default:"U" }}{{ user.last_name.0|default:"" }}
+                {% endif %}
             </div>
             <div class="user-details">
                 <h4>{{ user.first_name }} {{ user.last_name }}</h4>
                 <p>{{ user.role|title }}</p>
             </div>
+            <i class="fas fa-chevron-down" style="font-size:0.7rem; color:var(--text-muted); margin-left:4px;"></i>
+        </div>
+
+        <!-- User Dropdown -->
+        <div id="userMenu" style="display:none; position:absolute; top:58px; right:20px; background:var(--surface); border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow-lg); min-width:200px; z-index:200; overflow:hidden;">
+            <div style="padding:14px 16px; border-bottom:1px solid var(--border);">
+                <div style="font-weight:700; font-size:0.9rem; color:var(--text);">{{ user.get_full_name }}</div>
+                <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">{{ user.email }}</div>
+            </div>
+            <a href="{% url 'notifications:notification_list' %}" style="display:flex; align-items:center; gap:10px; padding:12px 16px; color:var(--text); text-decoration:none; font-size:0.875rem; transition:background 0.2s;">
+                <i class="fas fa-bell" style="width:16px; color:var(--text-muted);"></i> Notifications
+                {% if unread_notifications and unread_notifications > 0 %}
+                <span class="status-badge status-pending" style="margin-left:auto; font-size:0.65rem;">{{ unread_notifications }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'accounts:profile' %}" style="display:flex; align-items:center; gap:10px; padding:12px 16px; color:var(--text); text-decoration:none; font-size:0.875rem; transition:background 0.2s;">
+                <i class="fas fa-user" style="width:16px; color:var(--text-muted);"></i> My Profile
+            </a>
+            <a href="{% url 'accounts:logout' %}" style="display:flex; align-items:center; gap:10px; padding:12px 16px; color:var(--danger); text-decoration:none; font-size:0.875rem; border-top:1px solid var(--border); transition:background 0.2s;">
+                <i class="fas fa-sign-out-alt" style="width:16px;"></i> Logout
+            </a>
         </div>
     </div>
 </header>
+
+<script>
+function toggleUserMenu() {
+    var m = document.getElementById('userMenu');
+    m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.user-info') && !e.target.closest('#userMenu')) {
+        var m = document.getElementById('userMenu');
+        if (m) m.style.display = 'none';
+    }
+});
+
+// Poll for unread notification count every 60s
+(function pollNotifications() {
+    setTimeout(function() {
+        fetch("{% url 'notifications:unread_count_api' %}")
+            .then(r => r.json())
+            .then(data => {
+                var badge = document.getElementById('notifBadge');
+                if (!badge) return;
+                var count = data.unread_count || 0;
+                if (count > 0) {
+                    badge.textContent = count > 9 ? '9+' : count;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }).catch(() => {});
+        pollNotifications();
+    }, 60000);
+})();
+</script>

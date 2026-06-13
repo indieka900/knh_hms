@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ notification.subject }} — KNH HMS{% endblock %}
+{% block page_title %}Notification{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Notification Detail</h1>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'notifications:notification_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+        <form method="post" action="{% url 'notifications:delete_notification' notification.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger" onclick="return confirm('Delete this notification?')">
+                <i class="fas fa-trash"></i> Delete
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card" style="max-width:720px;">
+    <div class="card-header">
+        <h3>{{ notification.subject }}</h3>
+        <span class="status-badge status-{{ notification.status }}">{{ notification.get_status_display }}</span>
+    </div>
+    <div class="card-body">
+        <!-- Meta info -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:16px; margin-bottom:24px; padding:16px; background:var(--bg); border-radius:8px; border:1px solid var(--border);">
+            <div>
+                <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; font-weight:700; margin-bottom:4px;">Type</div>
+                <div style="font-weight:600;">{{ notification.template.get_type_display|default:"System Alert" }}</div>
+            </div>
+            <div>
+                <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; font-weight:700; margin-bottom:4px;">Delivery</div>
+                <div style="font-weight:600;">{{ notification.get_delivery_method_display }}</div>
+            </div>
+            <div>
+                <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; font-weight:700; margin-bottom:4px;">Received</div>
+                <div style="font-weight:600;">{{ notification.created_at|date:"N j, Y — H:i" }}</div>
+            </div>
+            {% if notification.read_at %}
+            <div>
+                <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; font-weight:700; margin-bottom:4px;">Read at</div>
+                <div style="font-weight:600;">{{ notification.read_at|date:"N j, Y — H:i" }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Message body -->
+        <div style="font-size:0.95rem; line-height:1.8; color:var(--text); white-space:pre-wrap;">{{ notification.message }}</div>
+    </div>
+</div>
+{% endblock %}

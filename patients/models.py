@@ -1,7 +1,5 @@
 from django.db import models
 from django.conf import settings
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 
 class Patient(models.Model):
     GENDER_CHOICES = [
@@ -21,9 +19,9 @@ class Patient(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
     blood_group = models.CharField(max_length=3, choices=BLOOD_GROUP_CHOICES, blank=True)
-    emergency_contact_name = models.CharField(max_length=100)
-    emergency_contact_phone = models.CharField(max_length=17)
-    emergency_contact_relationship = models.CharField(max_length=50)
+    emergency_contact_name = models.CharField(max_length=100, blank=True)
+    emergency_contact_phone = models.CharField(max_length=17, blank=True)
+    emergency_contact_relationship = models.CharField(max_length=50, blank=True)
     insurance_provider = models.CharField(max_length=100, blank=True)
     insurance_number = models.CharField(max_length=50, blank=True)
     allergies = models.TextField(blank=True)
@@ -44,16 +42,6 @@ class Patient(models.Model):
     def __str__(self):
         return f"{self.patient_id} - {self.user.get_full_name()}"
 
-
-    # Signal to automatically create Patient profile when User is created
-    @receiver(post_save, sender=settings.AUTH_USER_MODEL)
-    def create_patient_profile(sender, instance, created, **kwargs):
-        """Automatically create Patient profile for new users"""
-        if created and instance.role == 'patient':
-            Patient.objects.create(
-                user=instance,
-                patient_id=f"PAT{instance.id:06d}"
-            )
 
 class PatientVitals(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='vitals')

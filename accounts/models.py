@@ -2,8 +2,6 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from accounts.managers import CustomUserManager
 from django.core.validators import RegexValidator
-from appointments.models import Doctor, Patient
-from billing.models import BillingStaff
 
 class User(AbstractUser):
     USER_ROLES = [
@@ -32,6 +30,12 @@ class User(AbstractUser):
     
     def __str__(self):
         return f"{self.get_full_name()} - {self.role}"
+
+    def has_module_permission(self, module):
+        """Check if this user can access a given module (for sidebar + feature gating)."""
+        if getattr(self, 'is_superuser', False) or self.role == 'administrator':
+            return True
+        return RolePermission.objects.filter(role=self.role, module=module, can_view=True).exists()
     
     # def get_role_profile(self):
     #     """Get the role-specific profile based on current role"""
@@ -86,3 +90,50 @@ class User(AbstractUser):
     #         Doctor.objects.create(user=self, **role_specific_data)
     #     elif new_role == 'billing_staff':
     #         BillingStaff.objects.create(user=self, **role_specific_data)
+
+
+# Modules that can be permissioned in the sidebar / system
+MODULE_CHOICES = [
+    ('patients', 'Patients'),
+    ('medical_records', 'Medical Records'),
+    ('appointments', 'Appointments'),
+    ('pharmacy', 'Pharmacy'),
+    ('billing', 'Billing'),
+    ('reports', 'Reports'),
+    ('user_management', 'User Management'),
+    ('system_settings', 'System Settings'),
+]
+
+
+class RolePermission(models.Model):
+    """Stores which modules a given role is allowed to access (view in sidebar + features)."""
+    role = models.CharField(max_length=20, choices=User.USER_ROLES)
+    module = models.CharField(max_length=50, choices=MODULE_CHOICES)
+    can_view = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('role', 'module')
+        verbose_name = 'Role Permission'
+        verbose_name_plural = 'Role Permissions'
+
+    def __str__(self):
+        return f"{self.get_role_display()} → {self.get_module_display()} ({'allowed' if self.can_view else 'denied'})"
+
+    @classmethod
+    def get_default_permissions(cls):
+        """Return sensible defaults for each role."""
+        defaults = {
+            'administrator': [m[0] for m in MODULE_CHOICES],  # all
+            'doctor': ['patients', 'medical_records', 'appointments', 'reports'],
+            'pharmacist': ['pharmacy', 'patients'],
+            'billing_staff': ['billing', 'patients'],
+            'patient': ['appointments'],  # patients have very limited; profile + own history are special cased
+        }
+        return defaults
+
+    @classmethod
+    def ensure_defaults(cls):
+        """Seed default permissions if none exist for a role."""
+        for role, modules in cls.get_default_permissions().items():
+            for mod in modules:
+                cls.objects.get_or_create(role=role, module=mod, defaults={'can_view': True})

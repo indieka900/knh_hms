@@ -8,7 +8,7 @@ SECRET_KEY = 'django-insecure-p!a-wr!9=j5e9yz^!)*f^4mej+$ec8!h)vuf6ssr6(+o(&#-99
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*', 'testserver', 'localhost', '127.0.0.1']  # Dev only; tighten for prod
 
 
 # Application definition
@@ -62,13 +62,15 @@ ROOT_URLCONF = 'knh_hms.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'notifications.context_processors.notifications',
+                'accounts.context_processors.module_permissions',
             ],
         },
     },

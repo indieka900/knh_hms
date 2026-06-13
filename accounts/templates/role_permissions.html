@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Role Permissions — KNH HMS{% endblock %}
+{% block page_title %}Manage Role Permissions{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <div class="mb-6 flex items-start justify-between">
+        <div>
+            <h1 class="text-2xl font-semibold tracking-tight text-navy">Role Permissions</h1>
+            <p class="text-sm text-slate-500">Control which modules each role can see in the sidebar and access in the system.</p>
+        </div>
+        <form method="post" onsubmit="return confirm('Reset all role permissions to defaults?');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="reset_defaults">
+            <button type="submit" class="px-4 py-2 text-sm rounded-xl border border-amber-300 text-amber-700 hover:bg-amber-50">
+                <i class="fas fa-undo mr-1"></i> Reset to Defaults
+            </button>
+        </form>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Role selector + editor -->
+        <div class="lg:col-span-7 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Select Role</label>
+                    <select name="role" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal/60" required onchange="this.form.submit()">
+                        {% for rd in role_data %}
+                        <option value="{{ rd.code }}" {% if rd.code == selected_role %}selected{% endif %}>
+                            {{ rd.label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-xs text-slate-400 mt-1">Changing the role will reload current permissions for that role.</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-3">Allowed Modules</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {% for code, label in modules %}
+                        <label class="flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 rounded-xl cursor-pointer border border-transparent has-[:checked]:border-teal/60 has-[:checked]:bg-teal/5">
+                            <input type="checkbox" name="modules" value="{{ code }}"
+                                   class="accent-teal w-4 h-4"
+                                   {% for rd in role_data %}{% if rd.code == selected_role and code in rd.current_modules %}checked{% endif %}{% endfor %}>
+                            <span class="text-sm font-medium text-slate-700">{{ label }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t flex justify-end">
+                    <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-navy hover:bg-navy-mid text-white text-sm font-semibold rounded-xl shadow-sm transition">
+                        <i class="fas fa-save"></i>
+                        Save Permissions for Role
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Current state overview -->
+        <div class="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+            <h3 class="font-semibold text-navy mb-4">Current Permissions Overview</h3>
+            <div class="space-y-4 text-sm">
+                {% for rd in role_data %}
+                <div>
+                    <div class="font-medium text-slate-700 mb-1">{{ rd.label }}</div>
+                    <div class="flex flex-wrap gap-1">
+                        {% for code, label in modules %}
+                            {% if code in rd.current_modules %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs bg-emerald-100 text-emerald-700">{{ label }}</span>
+                            {% endif %}
+                        {% endfor %}
+                        {% if not rd.current_modules %}
+                            <span class="text-xs text-slate-400">No modules assigned</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <p class="mt-4 text-[11px] text-slate-400">Administrators always see everything. Patients have very limited access by design (profile + personal medical history are special-cased).</p>
+        </div>
+    </div>
+
+    <div class="mt-8 text-xs text-slate-500">
+        Tip: Hiding the menu item in the sidebar does not replace server-side permission checks in views. Add checks in critical views for defense in depth.
+    </div>
+</div>
+{% endblock %}

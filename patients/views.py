@@ -4,6 +4,8 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.db import transaction
+from django.db.models import Q
+from django.core.paginator import Paginator
 from .forms import PatientCreationForm
 from .models import Patient
 
@@ -98,3 +100,35 @@ def patient_search_ajax(request):
     } for patient in patients]
     
     return JsonResponse({'patients': patient_data})
+
+
+@login_required
+def patient_list(request):
+    """List patients - accessible to doctors, administrators, billing staff, nurses if added later."""
+    allowed = ('doctor', 'administrator', 'billing_staff')
+    if request.user.role not in allowed:
+        messages.error(request, "You don't have permission to view the patient list.")
+        return redirect('dashboard:dashboard')
+
+    q = request.GET.get('q', '').strip()
+    patients_qs = Patient.objects.select_related('user').order_by('-created_at')
+
+    if q:
+        patients_qs = patients_qs.filter(
+            Q(user__first_name__icontains=q) |
+            Q(user__last_name__icontains=q) |
+            Q(user__email__icontains=q) |
+            Q(patient_id__icontains=q) |
+            Q(insurance_provider__icontains=q)
+        )
+
+    paginator = Paginator(patients_qs, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'title': 'Patients',
+        'page_obj': page_obj,
+        'q': q,
+    }
+    return render(request, 'patient_list.html', context)

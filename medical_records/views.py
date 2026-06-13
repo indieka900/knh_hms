@@ -110,7 +110,7 @@ def create_medical_record(request, patient_id):
             # Get appointment if provided
             appointment = None
             if appointment_id:
-                appointment = get_object_or_404(Appointment, appointment_id=appointment_id)
+                appointment = get_object_or_404(Appointment, id=appointment_id)
             
             # Create medical record
             record = MedicalRecord.objects.create(
@@ -342,7 +342,7 @@ def edit_medical_record(request, record_id):
     record = get_object_or_404(MedicalRecord, record_id=record_id)
     
     # Check if user has permission to edit (doctor who created it or admin)
-    if request.user.role not in ['admin'] and record.doctor.user != request.user:
+    if request.user.role not in ['administrator'] and record.doctor.user != request.user:
         messages.error(request, 'You do not have permission to edit this record.')
         return redirect('medical_records:medical_record_detail', record_id=record_id)
     
@@ -403,7 +403,7 @@ def edit_prescription(request, prescription_id):
     prescription = get_object_or_404(Prescription, id=prescription_id)
     
     # Check permissions
-    if request.user.role not in ['admin', 'pharmacist'] and prescription.medical_record.doctor.user != request.user:
+    if request.user.role not in ['administrator', 'pharmacist'] and prescription.medical_record.doctor.user != request.user:
         messages.error(request, 'You do not have permission to edit this prescription.')
         return redirect('medical_records:prescription_detail', prescription_id=prescription_id)
     
