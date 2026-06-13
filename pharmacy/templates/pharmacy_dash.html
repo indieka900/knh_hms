@@ -1,427 +1,524 @@
 {% extends "base.html" %}
-
 {% load static %}
 
 {% block title %}Pharmacy Dashboard - KNH HMS{% endblock %}
-
 {% block page_title %}Pharmacy Dashboard{% endblock %}
 
 {% block extrahead %}
 <style>
-    .modal {
-        display: none;
-        /* Hidden by default */
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-    }
+/* ── Gradient modal headers ── */
+.ph-modal-dialog .modal-content { border:none; border-radius:18px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+.ph-hdr         { background:linear-gradient(135deg,#007B83,#4EB1BA)!important; color:#fff!important; border-bottom:none!important; }
+.ph-hdr-success { background:linear-gradient(135deg,#065f46,#10b981)!important; color:#fff!important; border-bottom:none!important; }
+.ph-hdr-warning { background:linear-gradient(135deg,#92400e,#f59e0b)!important; color:#fff!important; border-bottom:none!important; }
+.ph-hdr .btn-close,.ph-hdr-success .btn-close,.ph-hdr-warning .btn-close { filter:invert(1) brightness(2); }
+.ph-footer { background:#f8fafc; border-top:1px solid #e2e8f0; }
 
-    .modal-content {
-        background-color: #fff;
-        margin: 10% auto;
-        padding: 20px;
-        border-radius: 8px;
-        width: 60%;
-    }
+/* ── Form focus ring ── */
+.ph-fc:focus { border-color:#007B83!important; box-shadow:0 0 0 .2rem rgba(0,123,131,.18)!important; }
 
-    .close {
-        float: right;
-        font-size: 1.5rem;
-        cursor: pointer;
-    }
+/* ── Gradient buttons ── */
+.btn-teal   { background:linear-gradient(135deg,#007B83,#4EB1BA); color:#fff!important; border:none; }
+.btn-teal:hover { opacity:.88; }
+.btn-green  { background:linear-gradient(135deg,#065f46,#10b981); color:#fff!important; border:none; }
+.btn-green:hover { opacity:.88; }
+.btn-amber  { background:linear-gradient(135deg,#92400e,#f59e0b); color:#fff!important; border:none; }
+.btn-amber:hover { opacity:.88; }
 
-    .dashboard-header {
-        background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary-dark) 100%);
-        color: var(--white);
-        padding: 2rem;
-        margin-bottom: 2rem;
-        border-radius: 0 0 15px 15px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
+/* ── Nav tab teal active ── */
+.nav-tabs .nav-link { color:#64748b; font-weight:600; }
+.nav-tabs .nav-link.active { color:#007B83!important; border-bottom-color:#007B83!important; }
+.nav-tabs .nav-link:hover:not(.active) { color:#007B83; }
 
-    .dashboard-header h1 {
-        font-size: 2.5rem;
-        margin-bottom: 0.5rem;
-        font-weight: 300;
-    }
+/* ── Prescription card ── */
+.rx-card { border:1px solid #e2e8f0; border-radius:12px; padding:.85rem 1rem; margin-bottom:.6rem; transition:border-color .15s; }
+.rx-card:hover { border-color:#4EB1BA; }
 
-    .dashboard-header p {
-        opacity: 0.9;
-        font-size: 1.1rem;
-    }
+/* ── Detail grid (view modals) ── */
+.d-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:.65rem 1.1rem; }
+.dg-full  { grid-column:1/-1; }
+.dg-sep   { grid-column:1/-1; border:none; border-top:1px solid #f1f5f9; margin:.2rem 0; }
+.dg-lbl   { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:#94a3b8; display:block; margin-bottom:.1rem; }
+.dg-val   { font-size:.92rem; color:#1e293b; font-weight:500; margin:0; }
 
-    .dashboard-stats {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-        padding: 0 2rem;
-    }
+/* ── Toast ── */
+#ph-toasts { position:fixed; top:1rem; right:1rem; z-index:9999; display:flex; flex-direction:column; gap:.4rem; min-width:270px; pointer-events:none; }
+.ph-t { display:flex; align-items:center; gap:.55rem; padding:.7rem 1rem; border-radius:11px; font-size:.86rem; font-weight:600; box-shadow:0 6px 20px rgba(0,0,0,.13); pointer-events:auto; animation:phIn .2s ease; }
+.ph-t-s { background:#f0fdf4; color:#166534; border-left:4px solid #22c55e; }
+.ph-t-d { background:#fef2f2; color:#991b1b; border-left:4px solid #ef4444; }
+.ph-t-i { background:#eff6ff; color:#1e40af; border-left:4px solid #3b82f6; }
+@keyframes phIn { from{opacity:0;transform:translateX(12px)} to{opacity:1;transform:translateX(0)} }
 
-    .main-container {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 2rem;
-        padding: 0 2rem;
-        margin-bottom: 2rem;
-    }
-
-    .section {
-        background: var(--white);
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-    }
-
-    .section h2 {
-        color: var(--primary-dark);
-        margin-bottom: 1rem;
-        font-size: 1.5rem;
-        border-bottom: 2px solid var(--primary-light);
-        padding-bottom: 0.5rem;
-    }
-
-    .nav-tabs {
-        display: flex;
-        margin-bottom: 1.5rem;
-        border-bottom: 2px solid var(--primary-light);
-    }
-
-    .nav-tab {
-        padding: 0.75rem 1.5rem;
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: var(--gray-medium);
-        font-weight: 500;
-        transition: all 0.3s ease;
-        border-bottom: 2px solid transparent;
-    }
-
-    .nav-tab.active {
-        color: #0f3460;
-        border-bottom-color: #0d9488;
-    }
-    .modal {
-        display: none;
-    }
-
-    .tab-content.active {
-        display: block;
-    }
-
-    .btn {
-        padding: 0.75rem 1.5rem;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 1rem;
-        font-weight: 500;
-        transition: all 0.3s ease;
-        text-decoration: none;
-        display: inline-block;
-        text-align: center;
-    }
-
-    .btn-primary {
-        background: var(--primary-dark);
-        color: var(--white);
-    }
-    .modal.show { display: flex; }
-    .modal-content {
-        background: white;
-        width: 95%;
-        max-width: 520px;
-        border-radius: 16px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-        overflow: hidden;
-    }
-    .modal-header { padding: 16px 20px; border-bottom: 1px solid #e2e8f0; font-weight: 700; color: #0f3460; }
-    .modal-body { padding: 20px; }
-    .modal-footer { padding: 14px 20px; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; justify-content: flex-end; }
-    .form-input {
-        width: 100%;
-        padding: 10px 14px;
-        border: 1.5px solid #cbd5e1;
-        border-radius: 10px;
-        font-size: 0.95rem;
-    }
-
-    @media (max-width: 768px) {
-        .main-container {
-            grid-template-columns: 1fr;
-        }
-
-        .dashboard-stats {
-            grid-template-columns: 1fr;
-        }
-
-        .dashboard-header {
-            padding: 1rem;
-        }
-
-        .dashboard-header h1 {
-            font-size: 2rem;
-        }
-    }
+/* ── Table form-label uppercase helper ── */
+.th-label { font-size:.71rem; text-transform:uppercase; letter-spacing:.3px; color:#94a3b8; font-weight:700; }
 </style>
 {% endblock extrahead %}
 
 {% block content %}
-<!-- Modern Tailwind Stats -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-        <div class="flex items-center justify-between">
-            <div>
-                <div class="text-xs uppercase tracking-wider text-slate-500 font-medium">Total Patients</div>
-                <div class="text-3xl font-semibold text-navy mt-1" id="totalPatients">{{total_patients}}</div>
-            </div>
-            <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
-                <i class="fas fa-user-injured text-lg"></i>
-            </div>
+<div id="ph-toasts"></div>
+
+<!-- ── Stat Cards ── -->
+<div class="row g-3 mb-4">
+
+  <div class="col-6 col-lg-3">
+    <div class="card border-0 shadow-sm" style="border-radius:16px">
+      <div class="card-body p-3 d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0"
+             style="width:46px;height:46px;background:#dbeafe;color:#2563eb;font-size:1.15rem">
+          <i class="fas fa-user-injured"></i>
         </div>
+        <div>
+          <div style="font-size:.67rem;text-transform:uppercase;letter-spacing:.45px;font-weight:700;color:#94a3b8">Total Patients</div>
+          <div id="totalPatients" class="fw-bold" style="font-size:1.75rem;line-height:1.1;color:#0f3460">{{ total_patients }}</div>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-        <div class="flex items-center justify-between">
-            <div>
-                <div class="text-xs uppercase tracking-wider text-slate-500 font-medium">Pending Prescriptions</div>
-                <div class="text-3xl font-semibold text-amber-600 mt-1" id="pendingPrescriptions">0</div>
-            </div>
-            <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
-                <i class="fas fa-file-prescription text-lg"></i>
-            </div>
+  <div class="col-6 col-lg-3">
+    <div class="card border-0 shadow-sm" style="border-radius:16px">
+      <div class="card-body p-3 d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0"
+             style="width:46px;height:46px;background:#fef3c7;color:#d97706;font-size:1.15rem">
+          <i class="fas fa-file-prescription"></i>
         </div>
+        <div>
+          <div style="font-size:.67rem;text-transform:uppercase;letter-spacing:.45px;font-weight:700;color:#94a3b8">Pending Rx</div>
+          <div id="pendingPrescriptions" class="fw-bold text-warning" style="font-size:1.75rem;line-height:1.1">0</div>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-        <div class="flex items-center justify-between">
-            <div>
-                <div class="text-xs uppercase tracking-wider text-slate-500 font-medium">Low Stock Items</div>
-                <div class="text-3xl font-semibold text-red-600 mt-1" id="lowStockItems">0</div>
-            </div>
-            <div class="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center">
-                <i class="fas fa-capsules text-lg"></i>
-            </div>
+  <div class="col-6 col-lg-3">
+    <div class="card border-0 shadow-sm" style="border-radius:16px">
+      <div class="card-body p-3 d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0"
+             style="width:46px;height:46px;background:#fee2e2;color:#dc2626;font-size:1.15rem">
+          <i class="fas fa-capsules"></i>
         </div>
+        <div>
+          <div style="font-size:.67rem;text-transform:uppercase;letter-spacing:.45px;font-weight:700;color:#94a3b8">Low Stock</div>
+          <div id="lowStockItems" class="fw-bold text-danger" style="font-size:1.75rem;line-height:1.1">0</div>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-        <div class="flex items-center justify-between">
-            <div>
-                <div class="text-xs uppercase tracking-wider text-slate-500 font-medium">Dispensed Today</div>
-                <div class="text-3xl font-semibold text-emerald-600 mt-1" id="todayDispensed">0</div>
-            </div>
-            <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                <i class="fas fa-check-circle text-lg"></i>
-            </div>
+  <div class="col-6 col-lg-3">
+    <div class="card border-0 shadow-sm" style="border-radius:16px">
+      <div class="card-body p-3 d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0"
+             style="width:46px;height:46px;background:#dcfce7;color:#16a34a;font-size:1.15rem">
+          <i class="fas fa-check-circle"></i>
         </div>
+        <div>
+          <div style="font-size:.67rem;text-transform:uppercase;letter-spacing:.45px;font-weight:700;color:#94a3b8">Dispensed Today</div>
+          <div id="todayDispensed" class="fw-bold text-success" style="font-size:1.75rem;line-height:1.1">0</div>
+        </div>
+      </div>
     </div>
-</div>
+  </div>
 
-<!-- Main Section - Modern Tailwind -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-    <!-- Patient Management -->
-    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
-        <h2 class="text-xl font-semibold text-navy mb-4">Patient Management</h2>
+</div><!-- /row stats -->
 
-        <div class="flex border-b border-slate-200 mb-4">
-            <button class="nav-tab active px-4 py-2 text-sm font-semibold border-b-2 border-teal text-navy" onclick="switchTab('patients', this)">Patients</button>
-            <button class="nav-tab px-4 py-2 text-sm font-semibold text-slate-500 hover:text-navy" onclick="switchTab('prescriptions', this)">Prescriptions</button>
+
+<!-- ── Main Panels ── -->
+<div class="row g-4">
+
+  <!-- Patient Management -->
+  <div class="col-12 col-xl-6">
+    <div class="card border-0 shadow-sm h-100" style="border-radius:18px">
+      <div class="card-body p-4">
+
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h5 class="fw-bold mb-0" style="color:#0f3460">Patient Management</h5>
+          <button class="btn btn-sm btn-teal fw-semibold rounded-3 px-3"
+                  data-bs-toggle="modal" data-bs-target="#patientModal">
+            <i class="fas fa-user-plus me-1"></i> Add Patient
+          </button>
         </div>
 
-        <div id="patients" class="tab-content active">
-            <div class="flex gap-3 mb-3">
-                <input type="text" class="flex-1 px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal/60" id="patientSearch" placeholder="Search patients..." onkeyup="searchPatients()">
-                <button onclick="openModal('patientModal')" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-navy text-white text-sm font-semibold hover:bg-navy-mid transition">
-                    <i class="fas fa-user-plus"></i> Add Patient
-                </button>
-            </div>
-            <button class="btn btn-primary" onclick="openModal('patientModal')">Add New Patient</button>
-            <table class="table" id="patientsTable">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <!-- <th>Phone</th>
-                        <th>Last Visit</th> -->
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="patientsTableBody"></tbody>
-            </table>
-        </div>
-
-        <div id="prescriptions" class="tab-content hidden">
-            <div class="mb-3">
-                <input type="text" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal/60" id="prescriptionSearch" placeholder="Search prescriptions..." onkeyup="searchPrescriptions()">
-            </div>
-            <div id="prescriptionsList" class="space-y-2"></div>
-        </div>
-    </div>
-
-    <!-- Inventory & Dispensing -->
-    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
-        <h2 class="text-xl font-semibold text-navy mb-4">Inventory &amp; Dispensing</h2>
-
-        <div class="flex border-b border-slate-200 mb-4">
-            <button class="nav-tab active px-4 py-2 text-sm font-semibold border-b-2 border-teal text-navy" onclick="switchTab('inventory', this)">Inventory</button>
-            <button class="nav-tab px-4 py-2 text-sm font-semibold text-slate-500 hover:text-navy" onclick="switchTab('dispensing', this)">Dispensing</button>
-        </div>
-
-        <div id="inventory" class="tab-content active">
-            <div class="flex gap-3 mb-3">
-                <button onclick="openModal('medicineModal')" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-navy text-white text-sm font-semibold hover:bg-navy-mid transition">
-                    <i class="fas fa-plus"></i> Add Medicine
-                </button>
-                <input type="text" class="flex-1 px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal/60" id="inventorySearch" placeholder="Search medicines..." onkeyup="searchInventory()">
-            </div>
-
-            <div class="overflow-x-auto border border-slate-200 rounded-xl">
-                <table class="w-full text-sm" id="inventoryTable">
-                    <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
-                        <tr>
-                            <th class="px-4 py-3 text-left">Medicine</th>
-                            <th class="px-4 py-3 text-left">Stock</th>
-                            <th class="px-4 py-3 text-left">Expiry</th>
-                            <th class="px-4 py-3 text-left">Status</th>
-                            <th class="px-4 py-3 text-left">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="inventoryTableBody" class="divide-y"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="dispensing" class="tab-content hidden">
-            <button onclick="openModal('dispensingModal')" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 mb-4 transition">
-                <i class="fas fa-hand-holding-medical"></i> Dispense Medicine
+        <ul class="nav nav-tabs mb-3">
+          <li class="nav-item">
+            <button class="nav-link active" onclick="switchPane('patients','prescriptions',this)">
+              <i class="fas fa-users me-1"></i> Patients
             </button>
-            <div id="dispensingHistory">
-                <div class="text-sm font-medium text-slate-600 mb-2">Recent Dispensing History</div>
-                <div id="dispensingList" class="space-y-2"></div>
-            </div>
-        </div>
-    </div>
-</div>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" onclick="switchPane('prescriptions','patients',this)">
+              <i class="fas fa-file-prescription me-1"></i> Prescriptions
+            </button>
+          </li>
+        </ul>
 
-<!-- Styled Modals (Tailwind + scoped) -->
-<!-- Add / Edit Medicine Modal -->
-<div id="medicineModal" class="modal">
+        <div id="patients">
+          <input id="patientSearch" class="form-control form-control-sm ph-fc mb-3" placeholder="Search patients…" oninput="searchPatients()">
+          <div class="table-responsive">
+            <table class="table table-hover table-sm align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="th-label">ID</th>
+                  <th class="th-label">Name</th>
+                  <th class="th-label d-none d-md-table-cell">Phone</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="patientsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="prescriptions" class="d-none">
+          <input id="prescriptionSearch" class="form-control form-control-sm ph-fc mb-3" placeholder="Search prescriptions…" oninput="searchPrescriptions()">
+          <div id="prescriptionsList"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Inventory & Dispensing -->
+  <div class="col-12 col-xl-6">
+    <div class="card border-0 shadow-sm h-100" style="border-radius:18px">
+      <div class="card-body p-4">
+
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h5 class="fw-bold mb-0" style="color:#0f3460">Inventory &amp; Dispensing</h5>
+          <button class="btn btn-sm btn-teal fw-semibold rounded-3 px-3"
+                  data-bs-toggle="modal" data-bs-target="#medicineModal">
+            <i class="fas fa-plus me-1"></i> Add Medicine
+          </button>
+        </div>
+
+        <ul class="nav nav-tabs mb-3">
+          <li class="nav-item">
+            <button class="nav-link active" onclick="switchPane('inventory','dispensing',this)">
+              <i class="fas fa-boxes me-1"></i> Inventory
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" onclick="switchPane('dispensing','inventory',this)">
+              <i class="fas fa-hand-holding-medical me-1"></i> Dispensing
+            </button>
+          </li>
+        </ul>
+
+        <div id="inventory">
+          <input id="inventorySearch" class="form-control form-control-sm ph-fc mb-3" placeholder="Search medicines…" oninput="searchInventory()">
+          <div class="table-responsive">
+            <table class="table table-hover table-sm align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="th-label">Medicine</th>
+                  <th class="th-label">Stock</th>
+                  <th class="th-label d-none d-md-table-cell">Expiry</th>
+                  <th class="th-label">Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="inventoryTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="dispensing" class="d-none">
+          <div class="mb-3">
+            <button class="btn btn-sm btn-green fw-semibold rounded-3 px-3"
+                    data-bs-toggle="modal" data-bs-target="#dispensingModal">
+              <i class="fas fa-hand-holding-medical me-1"></i> Dispense Medicine
+            </button>
+          </div>
+          <p class="mb-2" style="font-size:.71rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#94a3b8">Recent History</p>
+          <div id="dispensingList"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div><!-- /row panels -->
+
+
+<!-- ═══════════ MODALS ═══════════ -->
+
+<!-- 1. Add Medicine -->
+<div class="modal fade" id="medicineModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable ph-modal-dialog">
     <div class="modal-content">
-        <div class="modal-header flex items-center justify-between">
-            <span>Add Medicine to Inventory</span>
-            <button onclick="closeModal('medicineModal')" class="text-2xl leading-none text-slate-400 hover:text-slate-600">&times;</button>
+      <div class="modal-header ph-hdr">
+        <h5 class="modal-title fw-bold fs-6">
+          <i class="fas fa-pills me-2"></i><span id="medicineModalTitle">Add Medicine to Inventory</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="medicineForm">
+        {% csrf_token %}
+        <div class="modal-body">
+          <input type="hidden" id="editInventoryId">
+          <div class="row g-3">
+            <div class="col-6">
+              <label class="form-label th-label">Medicine Name *</label>
+              <input type="text" name="medicine_name" id="med_name" class="form-control ph-fc" required placeholder="e.g. Amoxicillin">
+            </div>
+            <div class="col-6">
+              <label class="form-label th-label">Generic Name</label>
+              <input type="text" name="generic_name" id="med_generic" class="form-control ph-fc" placeholder="e.g. Amoxicillin trihydrate">
+            </div>
+            <div class="col-12">
+              <label class="form-label th-label">Manufacturer *</label>
+              <input type="text" name="manufacturer" id="med_manufacturer" class="form-control ph-fc" required placeholder="e.g. GlaxoSmithKline">
+            </div>
+            <div class="col-6">
+              <label class="form-label th-label">Batch Number *</label>
+              <input type="text" name="batch_number" id="med_batch" class="form-control ph-fc" required placeholder="BT-2024-001">
+            </div>
+            <div class="col-6">
+              <label class="form-label th-label">Quantity *</label>
+              <input type="number" name="quantity_in_stock" id="med_qty" min="1" class="form-control ph-fc" required placeholder="0">
+            </div>
+            <div class="col-6">
+              <label class="form-label th-label">Unit Price (KSh) *</label>
+              <input type="number" step="0.01" name="unit_price" id="med_price" class="form-control ph-fc" required placeholder="0.00">
+            </div>
+            <div class="col-6">
+              <label class="form-label th-label">Expiry Date *</label>
+              <input type="date" name="expiry_date" id="med_expiry" class="form-control ph-fc" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label th-label">Supplier *</label>
+              <input type="text" name="supplier" id="med_supplier" class="form-control ph-fc" required placeholder="e.g. Medisel Kenya">
+            </div>
+            <div class="col-6">
+              <label class="form-label th-label">Min Stock Level *</label>
+              <input type="number" name="minimum_stock_level" id="med_minstock" value="10" min="1" class="form-control ph-fc" required>
+            </div>
+          </div>
         </div>
-        <form id="medicineForm" class="modal-body space-y-4">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                    <label class="text-xs font-medium text-slate-500">Medicine Name</label>
-                    <input type="text" name="medicine_name" class="form-input" required>
-                </div>
-                <div>
-                    <label class="text-xs font-medium text-slate-500">Generic Name</label>
-                    <input type="text" name="generic_name" class="form-input">
-                </div>
-            </div>
-            <div>
-                <label class="text-xs font-medium text-slate-500">Manufacturer</label>
-                <input type="text" name="manufacturer" class="form-input" required>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="text-xs font-medium text-slate-500">Batch Number</label>
-                    <input type="text" name="batch_number" class="form-input" required>
-                </div>
-                <div>
-                    <label class="text-xs font-medium text-slate-500">Quantity</label>
-                    <input type="number" name="quantity_in_stock" min="1" class="form-input" required>
-                </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="text-xs font-medium text-slate-500">Unit Price</label>
-                    <input type="number" step="0.01" name="unit_price" class="form-input" required>
-                </div>
-                <div>
-                    <label class="text-xs font-medium text-slate-500">Expiry Date</label>
-                    <input type="date" name="expiry_date" class="form-input" required>
-                </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="text-xs font-medium text-slate-500">Supplier</label>
-                    <input type="text" name="supplier" class="form-input" required>
-                </div>
-                <div>
-                    <label class="text-xs font-medium text-slate-500">Min Stock Level</label>
-                    <input type="number" name="minimum_stock_level" value="10" min="1" class="form-input" required>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" onclick="closeModal('medicineModal')" class="px-4 py-2 rounded-xl border text-sm">Cancel</button>
-                <button type="submit" class="px-5 py-2 rounded-xl bg-teal text-white text-sm font-semibold">Add to Inventory</button>
-            </div>
-        </form>
+        <div class="modal-footer ph-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-teal fw-semibold rounded-3">
+            <i class="fas fa-save me-1"></i> <span id="medicineSaveLbl">Add to Inventory</span>
+          </button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
 
-<!-- Dispense Modal -->
-<div id="dispensingModal" class="modal">
+
+<!-- 2. Add Patient -->
+<div class="modal fade" id="patientModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered ph-modal-dialog">
     <div class="modal-content">
-        <div class="modal-header flex items-center justify-between">
-            <span>Dispense Medicine</span>
-            <button onclick="closeModal('dispensingModal')" class="text-2xl leading-none text-slate-400 hover:text-slate-600">&times;</button>
+      <div class="modal-header ph-hdr">
+        <h5 class="modal-title fw-bold fs-6"><i class="fas fa-user-plus me-2"></i> Add New Patient</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="patientForm">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-6">
+              <label class="form-label th-label">First Name *</label>
+              <input type="text" name="first_name" id="pat_first" class="form-control ph-fc" required placeholder="First name">
+            </div>
+            <div class="col-6">
+              <label class="form-label th-label">Last Name *</label>
+              <input type="text" name="last_name" id="pat_last" class="form-control ph-fc" required placeholder="Last name">
+            </div>
+            <div class="col-12">
+              <label class="form-label th-label">Email</label>
+              <input type="email" name="email" id="pat_email" class="form-control ph-fc" placeholder="patient@email.com">
+            </div>
+            <div class="col-6">
+              <label class="form-label th-label">Phone *</label>
+              <input type="tel" name="phone" id="pat_phone" class="form-control ph-fc" required placeholder="+254…">
+            </div>
+            <div class="col-6">
+              <label class="form-label th-label">Date of Birth</label>
+              <input type="date" name="date_of_birth" id="pat_dob" class="form-control ph-fc">
+            </div>
+            <div class="col-12">
+              <label class="form-label th-label">Address</label>
+              <input type="text" name="address" id="pat_address" class="form-control ph-fc" placeholder="Street, city…">
+            </div>
+          </div>
         </div>
-        <form id="dispensingForm" class="modal-body space-y-4">
-            <div>
-                <label class="text-xs font-medium text-slate-500">Prescription ID</label>
-                <input type="text" id="prescriptionId" class="form-input" required>
-            </div>
-            <div>
-                <label class="text-xs font-medium text-slate-500">Select Medicine (from stock)</label>
-                <select id="medicineSelect" class="form-input" required>
-                    <option value="">Select Medicine</option>
-                </select>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="text-xs font-medium text-slate-500">Quantity</label>
-                    <input type="number" id="dispenseQuantity" min="1" class="form-input" required>
-                </div>
-                <div>
-                    <label class="text-xs font-medium text-slate-500">Notes (optional)</label>
-                    <input type="text" id="dispensingNotes" class="form-input">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" onclick="closeModal('dispensingModal')" class="px-4 py-2 rounded-xl border text-sm">Cancel</button>
-                <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold">Dispense</button>
-            </div>
-        </form>
+        <div class="modal-footer ph-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-teal fw-semibold rounded-3">
+            <i class="fas fa-save me-1"></i> Save Patient
+          </button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
 
-<!-- View Details Modal (new, for viewing) -->
-<div id="viewModal" class="modal">
-    <div class="modal-content max-w-lg">
-        <div class="modal-header flex items-center justify-between">
-            <span id="viewModalTitle">Details</span>
-            <button onclick="closeModal('viewModal')" class="text-2xl leading-none text-slate-400 hover:text-slate-600">&times;</button>
+
+<!-- 3. Dispense -->
+<div class="modal fade" id="dispensingModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered ph-modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header ph-hdr-success">
+        <h5 class="modal-title fw-bold fs-6"><i class="fas fa-hand-holding-medical me-2"></i> Dispense Medicine</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="dispensingForm">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label th-label">Prescription ID</label>
+            <input type="text" id="prescriptionId" class="form-control ph-fc" placeholder="e.g. RX-001 (optional)">
+          </div>
+          <div class="mb-3">
+            <label class="form-label th-label">Select Medicine *</label>
+            <select id="medicineSelect" class="form-select ph-fc" required>
+              <option value="">— choose medicine —</option>
+            </select>
+          </div>
+          <div class="row g-3">
+            <div class="col-6">
+              <label class="form-label th-label">Quantity *</label>
+              <input type="number" id="dispenseQuantity" min="1" class="form-control ph-fc" required placeholder="0">
+            </div>
+            <div class="col-6">
+              <label class="form-label th-label">Notes</label>
+              <input type="text" id="dispensingNotes" class="form-control ph-fc" placeholder="Optional">
+            </div>
+          </div>
         </div>
-        <div id="viewModalBody" class="modal-body text-sm leading-relaxed text-slate-700"></div>
-        <div class="modal-footer">
-            <button onclick="closeModal('viewModal')" class="px-4 py-2 rounded-xl border text-sm">Close</button>
+        <div class="modal-footer ph-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-green fw-semibold rounded-3">
+            <i class="fas fa-pills me-1"></i> Dispense
+          </button>
         </div>
+      </form>
     </div>
+  </div>
 </div>
 
-{% block extrajs %}
-<!-- <script src="{% static 'pharmacy/js/script.js' %}"></script> -->
-{% endblock %}
+
+<!-- 4. View Patient -->
+<div class="modal fade" id="viewPatientModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered ph-modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header ph-hdr">
+        <h5 class="modal-title fw-bold fs-6"><i class="fas fa-user me-2"></i> Patient Details</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex align-items-center gap-3 p-3 rounded-3 mb-4" style="background:#f8fafc">
+          <div id="vp_avatar"
+               class="d-flex align-items-center justify-content-center rounded-circle text-white fw-bold flex-shrink-0"
+               style="width:52px;height:52px;font-size:1.2rem;background:linear-gradient(135deg,#007B83,#4EB1BA)">?</div>
+          <div>
+            <p class="fw-bold mb-0 fs-6" style="color:#0f3460" id="vp_name">—</p>
+            <p class="text-muted mb-0 small" id="vp_id">—</p>
+          </div>
+        </div>
+        <div class="d-grid-2">
+          <div><label class="dg-lbl">Phone</label><p class="dg-val" id="vp_phone">—</p></div>
+          <div><label class="dg-lbl">Email</label><p class="dg-val" id="vp_email">—</p></div>
+          <hr class="dg-sep">
+          <div><label class="dg-lbl">Age</label><p class="dg-val" id="vp_age">—</p></div>
+          <div><label class="dg-lbl">Registered</label><p class="dg-val" id="vp_reg">—</p></div>
+          <div class="dg-full"><label class="dg-lbl">Address</label><p class="dg-val" id="vp_address">—</p></div>
+        </div>
+      </div>
+      <div class="modal-footer ph-footer">
+        <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 5. View Inventory Item -->
+<div class="modal fade" id="viewInventoryModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered ph-modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header ph-hdr">
+        <h5 class="modal-title fw-bold fs-6"><i class="fas fa-capsules me-2"></i> Medicine Details</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex align-items-center gap-3 p-3 rounded-3 mb-4" style="background:#f8fafc">
+          <div class="d-flex align-items-center justify-content-center rounded-3 text-white flex-shrink-0"
+               style="width:46px;height:46px;font-size:1.1rem;background:linear-gradient(135deg,#007B83,#4EB1BA)">
+            <i class="fas fa-pills"></i>
+          </div>
+          <div class="flex-grow-1 overflow-hidden">
+            <p class="fw-bold mb-0 fs-6" style="color:#0f3460" id="vi_name">—</p>
+            <p class="text-muted mb-0 small" id="vi_generic">—</p>
+          </div>
+          <span id="vi_badge"></span>
+        </div>
+        <div class="d-grid-2">
+          <div><label class="dg-lbl">Batch Number</label><p class="dg-val" id="vi_batch">—</p></div>
+          <div><label class="dg-lbl">Qty in Stock</label><p class="dg-val" id="vi_qty">—</p></div>
+          <div><label class="dg-lbl">Unit Price</label><p class="dg-val" id="vi_price">—</p></div>
+          <div><label class="dg-lbl">Expiry Date</label><p class="dg-val" id="vi_expiry">—</p></div>
+          <hr class="dg-sep">
+          <div><label class="dg-lbl">Supplier</label><p class="dg-val" id="vi_supplier">—</p></div>
+          <div><label class="dg-lbl">Min Stock</label><p class="dg-val" id="vi_minstock">—</p></div>
+          <div class="dg-full"><label class="dg-lbl">Date Received</label><p class="dg-val" id="vi_received">—</p></div>
+        </div>
+      </div>
+      <div class="modal-footer ph-footer">
+        <button class="btn btn-light" data-bs-dismiss="modal">Close</button>
+        <button class="btn btn-amber fw-semibold rounded-3" id="vi_edit_btn">
+          <i class="fas fa-edit me-1"></i> Edit Stock
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 6. Update Stock -->
+<div class="modal fade" id="editStockModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered ph-modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header ph-hdr-warning">
+        <h5 class="modal-title fw-bold fs-6"><i class="fas fa-edit me-2"></i> Update Stock</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editStockId">
+        <div class="alert alert-warning d-flex align-items-center gap-2 py-2 mb-3" style="font-size:.85rem">
+          <i class="fas fa-info-circle flex-shrink-0"></i>
+          Updating: <strong id="editStockName">—</strong>
+        </div>
+        <div class="row g-3">
+          <div class="col-6">
+            <label class="form-label th-label">New Quantity *</label>
+            <input type="number" id="editStockQty" min="0" class="form-control ph-fc" required placeholder="0">
+          </div>
+          <div class="col-6">
+            <label class="form-label th-label">Unit Price (KSh)</label>
+            <input type="number" step="0.01" id="editStockPrice" class="form-control ph-fc" placeholder="unchanged">
+          </div>
+          <div class="col-6">
+            <label class="form-label th-label">Expiry Date</label>
+            <input type="date" id="editStockExpiry" class="form-control ph-fc">
+          </div>
+          <div class="col-6">
+            <label class="form-label th-label">Batch Number</label>
+            <input type="text" id="editStockBatch" class="form-control ph-fc" placeholder="unchanged">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer ph-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-amber fw-semibold rounded-3" onclick="submitEditStock()">
+          <i class="fas fa-save me-1"></i> Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 {% endblock %}

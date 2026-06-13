@@ -3,12 +3,7 @@
 
 {% block title %}Dashboard — KNH HMS{% endblock %}
 {% block page_title %}
-{% if user.role == 'patient' %}Welcome, {{ user.get_full_name|default:user.email }}
-{% elif user.role == 'doctor' %}Doctor Dashboard
-{% elif user.role == 'pharmacist' %}Pharmacy Dashboard
-{% elif user.role == 'billing_staff' %}Billing Dashboard
-{% elif user.role == 'administrator' %}Administrator Dashboard
-{% else %}Dashboard{% endif %}
+Dashboard — {{ user.get_full_name|default:user.email|title }}
 {% endblock %}
 
 {% block content %}
@@ -21,12 +16,12 @@
         <p>{{ today|date:"l, F j, Y" }} &nbsp;·&nbsp; {{ user.role|title }}</p>
     </div>
     <div class="page-actions">
-        {% if user.role != 'patient' %}
+        {% if user_module_perms.appointments %}
         <a href="{% url 'appointments:appointment_create' %}" class="btn btn-primary">
             <i class="fas fa-calendar-plus"></i> New Appointment
         </a>
         {% endif %}
-        {% if user.role in 'administrator,doctor,billing_staff' %}
+        {% if user_module_perms.patients %}
         <a href="{% url 'patients:create_patient' %}" class="btn btn-success">
             <i class="fas fa-user-plus"></i> Add Patient
         </a>
@@ -34,9 +29,9 @@
     </div>
 </div>
 
-<!-- Statistics Cards -->
+<!-- Statistics Cards (gated by the new permission system where possible) -->
 <div class="row g-4 mb-4">
-    {% if user.role == 'administrator' %}
+    {% if user_module_perms.patients %}
     <div class="col-xl-3 col-md-6">
       <div class="stat-card modern-card" data-aos="fade-up" data-aos-delay="100">
         <div class="stat-card-body">
