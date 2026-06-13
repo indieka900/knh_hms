@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,12 +9,98 @@
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- App CSS -->
-    {% load static %}
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+
+    <!-- Public page styles (used when not authenticated or on marketing pages) -->
+    <style>
+      /* ── Public Header ───────────────────────────── */
+      .public-header {
+        background: linear-gradient(135deg, #2c5aa0 0%, #1e4685 100%);
+        color: white;
+        padding: 1rem 0;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .public-header .navbar-brand {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: white !important;
+      }
+      .public-header .navbar-nav .nav-link {
+        color: white !important;
+        font-weight: 500;
+        margin: 0 0.5rem;
+        transition: all 0.3s ease;
+      }
+      .public-header .navbar-nav .nav-link:hover {
+        color: #3fbbc0 !important;
+        transform: translateY(-2px);
+      }
+      /* ── Hero Section ────────────────────────────── */
+      .hero-section {
+        background: linear-gradient(rgba(44,90,160,0.8), rgba(30,70,133,0.8)),
+          url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><rect fill="%23f0f8ff" width="1200" height="600"/><circle fill="%23e8f4f8" cx="200" cy="150" r="80"/><circle fill="%23d1ecf1" cx="800" cy="300" r="120"/><circle fill="%23b8e6ee" cx="1000" cy="100" r="60"/></svg>');
+        background-size: cover;
+        background-position: center;
+        color: white;
+        padding: 4rem 0;
+        text-align: center;
+      }
+      .hero-section h1 { font-size: 3rem; font-weight: 700; margin-bottom: 1rem; }
+      .hero-section p  { font-size: 1.2rem; margin-bottom: 2rem; opacity: 0.9; }
+      /* ── Medical icon ────────────────────────────── */
+      .medical-icon {
+        width: 60px; height: 60px;
+        background: linear-gradient(135deg, #3fbbc0, #2c5aa0);
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-size: 1.5rem; margin: 0 auto 1rem;
+      }
+      /* ── Public Footer ───────────────────────────── */
+      .footer {
+        background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%);
+        color: white;
+        padding: 4rem 0 2rem;
+        margin-top: 4rem;
+        position: relative;
+        overflow: hidden;
+      }
+      .footer::before {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #2c5aa0, #3fbbc0, #2c5aa0);
+      }
+      .footer h5 { color: #3fbbc0; margin-bottom: 1.5rem; font-weight: 600; position: relative; }
+      .footer h5::after {
+        content: ""; position: absolute; bottom: -8px; left: 0;
+        width: 40px; height: 3px; background: #3fbbc0; border-radius: 2px;
+      }
+      .footer p   { color: #bdc3c7; line-height: 1.8; margin-bottom: 1rem; }
+      .footer a   { color: #bdc3c7; text-decoration: none; transition: all 0.3s ease; display: inline-block; margin-bottom: 0.5rem; }
+      .footer a:hover { color: #3fbbc0; transform: translateX(5px); }
+      .footer ul.list-unstyled li { margin-bottom: 0.5rem; }
+      .footer .fas { color: #3fbbc0; margin-right: 0.5rem; width: 16px; text-align: center; }
+      .footer hr  { border-color: #34495e; margin: 2rem 0; }
+      .footer .copyright { background: rgba(0,0,0,0.2); padding: 1.5rem 0; margin-top: 2rem; border-radius: 10px; }
+      .footer .copyright p { margin: 0; color: #95a5a6; font-size: 0.9rem; }
+      .footer .social-links { margin-top: 1.5rem; }
+      .footer .social-links a {
+        display: inline-block; width: 40px; height: 40px;
+        background: rgba(255,255,255,0.1); border-radius: 50%;
+        text-align: center; line-height: 40px; margin-right: 0.5rem; transition: all 0.3s ease;
+      }
+      .footer .social-links a:hover { background: #3fbbc0; transform: translateY(-3px); color: white; }
+      @media (max-width: 768px) {
+        .hero-section h1 { font-size: 2rem; }
+        .footer { padding: 3rem 0 1.5rem; text-align: center; }
+        .footer h5::after { left: 50%; transform: translateX(-50%); }
+      }
+    </style>
 
     {% block extra_css %}{% endblock %}
 </head>
@@ -63,11 +150,27 @@
 
             <!-- Patients -->
             <li class="nav-section-label">Patients</li>
-            <li><a href="{% url 'patients:create_patient' %}">
-                <i class="fas fa-user-injured"></i> Add Patient
+            {% if user.role in 'doctor,administrator,billing_staff' %}
+            <li><a href="{% url 'patients:patient_list' %}">
+                <i class="fas fa-users"></i> All Patients
             </a></li>
+            {% endif %}
+            {% if user.role in 'doctor,administrator' %}
+            <li><a href="{% url 'patients:create_patient' %}">
+                <i class="fas fa-user-plus"></i> Add Patient
+            </a></li>
+            {% endif %}
 
-            {% if user_module_perms.pharmacy %}
+            {% if user.role == 'patient' %}
+            <li><a href="{% url 'appointments:book_appointment' %}">
+                <i class="fas fa-calendar-plus"></i> Book Appointment
+            </a></li>
+            <li><a href="{% url 'appointments:my_appointments' %}">
+                <i class="fas fa-calendar-check"></i> My Appointments
+            </a></li>
+            {% endif %}
+
+            {% if user_module_perms.pharmacy or user.role == 'pharmacist' %}
             <!-- Pharmacy -->
             <li class="nav-section-label">Pharmacy</li>
             <li><a href="{% url 'pharmacy:pharmacy_dashboard' %}" class="{% if 'pharmacy' in request.resolver_match.namespace %}active{% endif %}">
@@ -75,7 +178,7 @@
             </a></li>
             {% endif %}
 
-            {% if user_module_perms.billing %}
+            {% if user_module_perms.billing or user.role == 'billing_staff' %}
             <!-- Finance -->
             <li class="nav-section-label">Finance</li>
             <li><a href="{% url 'billing:billing_dashboard' %}" class="{% if 'billing' in request.resolver_match.namespace %}active{% endif %}">
@@ -100,6 +203,22 @@
                 <span style="margin-left:auto; background:var(--danger); color:#fff; font-size:0.65rem; padding:1px 6px; border-radius:10px; font-weight:700;">{{ unread_notifications }}</span>
                 {% endif %}
             </a></li>
+
+            {% if user.is_superuser or user.role == 'administrator' %}
+            <li class="nav-section-label">Administration</li>
+            <li><a href="{% url 'dashboard:user_management' %}">
+                <i class="fas fa-users-cog"></i> User Management
+            </a></li>
+            <li><a href="{% url 'dashboard:settings' %}">
+                <i class="fas fa-cog"></i> System Settings
+            </a></li>
+            <li><a href="{% url 'dashboard:system_reports' %}">
+                <i class="fas fa-chart-line"></i> System Reports
+            </a></li>
+            <li><a href="{% url 'dashboard:audit_logs' %}">
+                <i class="fas fa-history"></i> Audit Logs
+            </a></li>
+            {% endif %}
 
         </ul>
     </nav>
@@ -146,7 +265,7 @@
                     <h4>{{ user.first_name }} {{ user.last_name }}</h4>
                     <p>{{ user.role|title }}</p>
                 </div>
-                <i class="fas fa-chevron-down" style="font-size:0.65rem; color:var(--text-muted); margin-left:4px;"></i>
+                <i class="fas fa-chevron-down" style="font-size:0.65rem; color:rgba(255,255,255,0.7); margin-left:4px;"></i>
             </div>
 
             <!-- User Dropdown -->
@@ -156,6 +275,9 @@
                     <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">{{ user.email }}</div>
                     <div style="font-size:0.7rem; color:var(--text-muted); margin-top:2px; text-transform:capitalize;">{{ user.role }}</div>
                 </div>
+                <a href="{% url 'accounts:profile' %}" style="display:flex; align-items:center; gap:10px; padding:11px 16px; color:var(--text); text-decoration:none; font-size:0.875rem;">
+                    <i class="fas fa-user" style="width:16px; color:var(--text-muted);"></i> My Profile
+                </a>
                 <a href="{% url 'notifications:notification_list' %}" style="display:flex; align-items:center; gap:10px; padding:11px 16px; color:var(--text); text-decoration:none; font-size:0.875rem;">
                     <i class="fas fa-bell" style="width:16px; color:var(--text-muted);"></i>
                     Notifications
@@ -190,12 +312,195 @@
 </div><!-- /main-content -->
 
 {% else %}
-<!-- Unauthenticated: plain wrapper -->
-<div>{% block auth_content %}{% endblock %}</div>
+<!-- ── Public / Unauthenticated Layout ─────────── -->
+
+<!-- Public Header -->
+<header class="public-header">
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'dashboard:home' %}">
+                <i class="fas fa-hospital-alt me-2"></i>KNH HMS
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'dashboard:home' %}">
+                            <i class="fas fa-home me-1"></i>Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:login' %}">
+                            <i class="fas fa-sign-in-alt me-1"></i>Login
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'accounts:register' %}">
+                            <i class="fas fa-user-plus me-1"></i>Register
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<!-- Hero Section Block -->
+{% block hero %}{% endblock %}
+
+<!-- Messages -->
+{% if messages %}
+<div class="container mt-3">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Main Content -->
+<main class="container-fluid mt-4">
+    <div class="row">
+        <!-- Optional Sidebar Block -->
+        {% block sidebar %}{% endblock sidebar %}
+
+        <!-- Content Area -->
+        <div class="col-12">
+            <div class="content-area" style="background:white; border-radius:10px; padding:2rem; box-shadow:0 3px 10px rgba(0,0,0,0.1); min-height:500px;">
+                {% block auth_content %}
+                {% block public_content %}
+                <div class="text-center py-5">
+                    <div class="medical-icon">
+                        <i class="fas fa-hospital-alt"></i>
+                    </div>
+                    <h2>Welcome to KNH Hospital Management System</h2>
+                    <p class="lead">Comprehensive healthcare management solution</p>
+                    <a href="{% url 'accounts:login' %}" class="btn btn-primary me-2">
+                        <i class="fas fa-sign-in-alt me-1"></i>Login
+                    </a>
+                    <a href="{% url 'accounts:register' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-user-plus me-1"></i>Register
+                    </a>
+                </div>
+                {% endblock public_content %}
+                {% endblock auth_content %}
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Public Footer -->
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-4 col-md-6 mb-4">
+                <h5><i class="fas fa-hospital-alt me-2"></i>KNH HMS</h5>
+                <p>Providing comprehensive healthcare management solutions for modern hospitals. Our system streamlines patient care, appointment scheduling, and medical record management.</p>
+                <div class="social-links">
+                    <a href="#" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="#" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-6 mb-4">
+                <h5><i class="fas fa-link me-2"></i>Quick Links</h5>
+                <ul class="list-unstyled">
+                    <li><a href="{% url 'dashboard:home' %}"><i class="fas fa-home me-1"></i>Home</a></li>
+                    <li><a href="#"><i class="fas fa-info-circle me-1"></i>About</a></li>
+                    <li><a href="#"><i class="fas fa-cogs me-1"></i>Services</a></li>
+                    <li><a href="#"><i class="fas fa-envelope me-1"></i>Contact</a></li>
+                    <li><a href="#"><i class="fas fa-question-circle me-1"></i>Help</a></li>
+                </ul>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <h5><i class="fas fa-user-md me-2"></i>Services</h5>
+                <ul class="list-unstyled">
+                    <li><a href="#"><i class="fas fa-calendar-check me-1"></i>Appointments</a></li>
+                    <li><a href="#"><i class="fas fa-file-medical me-1"></i>Medical Records</a></li>
+                    <li><a href="#"><i class="fas fa-pills me-1"></i>Pharmacy</a></li>
+                    <li><a href="#"><i class="fas fa-chart-line me-1"></i>Reports</a></li>
+                    <li><a href="#"><i class="fas fa-users me-1"></i>Patient Portal</a></li>
+                </ul>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <h5><i class="fas fa-address-card me-2"></i>Contact Info</h5>
+                <p><i class="fas fa-map-marker-alt me-2"></i><strong>Kenyatta National Hospital</strong><br>P.O. Box 20723 - 00202<br>Nairobi, Kenya</p>
+                <p><i class="fas fa-phone me-2"></i><strong>Phone:</strong> +254 20 2726300</p>
+                <p><i class="fas fa-envelope me-2"></i><strong>Email:</strong> info@knh.or.ke</p>
+                <p><i class="fas fa-clock me-2"></i><strong>Hours:</strong> 24/7 Emergency Care</p>
+            </div>
+        </div>
+        <hr class="my-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="copyright">
+                    <p><i class="fas fa-shield-alt me-2"></i>&copy; {% now "Y" %} KNH Hospital Management System. All rights reserved.</p>
+                </div>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <div class="copyright">
+                    <p><i class="fas fa-heart me-2" style="color:#e74c3c"></i>Built with care for better healthcare</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
 {% endif %}
 
 <!-- Bootstrap 5 JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- DataTables JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+
+<!-- Conditional JavaScript Loading -->
+{% if request.resolver_match.app_name == 'pharmacy' %}
+<script src="{% static 'pharmacy/js/script.js' %}"></script>
+{% endif %}
+{% if request.resolver_match.app_name == 'patients' %}
+<script src="{% static 'patients/js/scripts.js' %}"></script>
+{% endif %}
+{% if request.resolver_match.app_name == 'medical_records' %}
+<script src="{% static 'js/medical_records.js' %}"></script>
+{% endif %}
+{% if request.resolver_match.app_name == 'dashboard' %}
+<script src="{% static 'dashboard/js/scripts.js' %}"></script>
+{% endif %}
+{% if request.resolver_match.app_name == 'appointments' %}
+<script src="{% static 'appointments/js/scripts.js' %}"></script>
+{% endif %}
+{% if request.resolver_match.app_name == 'inventory' %}
+<script src="{% static 'inventory/js/inventory.js' %}"></script>
+{% endif %}
+{% if request.resolver_match.app_name == 'billing' %}
+<script src="{% static 'billing/js/billing.js' %}"></script>
+{% endif %}
+{% if request.resolver_match.app_name == 'reports' %}
+<script src="{% static 'reports/js/reports.js' %}"></script>
+{% endif %}
+{% if request.resolver_match.app_name == 'users' %}
+<script src="{% static 'users/js/users.js' %}"></script>
+{% endif %}
+{% if request.resolver_match.app_name == 'settings' %}
+<script src="{% static 'settings/js/settings.js' %}"></script>
+{% endif %}
 
 <script>
 // ── Sidebar toggle ───────────────────────────────
@@ -225,9 +530,10 @@ if (userChip) {
 }
 
 // ── Notification badge polling ───────────────────
+{% if user.is_authenticated %}
 (function pollNotifications() {
     setTimeout(function() {
-        fetch("{% if user.is_authenticated %}{% url 'notifications:unread_count_api' %}{% else %}/{% endif %}")
+        fetch("{% url 'notifications:unread_count_api' %}")
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 var badge = document.getElementById('notifBadge');
@@ -243,6 +549,7 @@ if (userChip) {
         pollNotifications();
     }, 60000);
 })();
+{% endif %}
 
 // ── Responsive: collapse sidebar on mobile ───────
 if (window.innerWidth <= 1024) {
@@ -252,5 +559,6 @@ if (window.innerWidth <= 1024) {
 </script>
 
 {% block extra_js %}{% endblock %}
+{% block extrajs %}{% endblock %}
 </body>
 </html>

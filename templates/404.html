@@ -1,0 +1,184 @@
+{% extends 'dashboard/templates/base.html' %}
+{% load static %}
+
+{% block title %}Page Not Found - KNH HMS{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-content">
+        <div class="error-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h1 class="error-code">404</h1>
+        <h2 class="error-title">Page Not Found</h2>
+        <p class="error-message">
+            Sorry, the page you are looking for doesn't exist or has been moved.
+        </p>
+        <div class="error-actions">
+            <a href="{% url 'dashboard:dashboard' %}" class="btn btn-primary">
+                <i class="fas fa-home me-2"></i>Go to Dashboard
+            </a>
+            <button onclick="history.back()" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-2"></i>Go Back
+            </button>
+        </div>
+        
+        <!-- Helpful Links -->
+        <div class="helpful-links mt-4">
+            <h5>Quick Links:</h5>
+            <div class="links-grid">
+                {% if user.is_authenticated %}
+                    {% if user.role == 'patient' %}
+                        <a href="{% url 'appointments:appointments' %}" class="quick-link">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>My Appointments</span>
+                        </a>
+                        <a href="#" class="quick-link">
+                            <i class="fas fa-file-medical"></i>
+                            <span>Medical Records</span>
+                        </a>
+                    {% elif user.role == 'doctor' %}
+                        <a href="{% url 'patients:patient_list' %}" class="quick-link">
+                            <i class="fas fa-users"></i>
+                            <span>Patients</span>
+                        </a>
+                        <a href="{% url 'appointments:appointments' %}" class="quick-link">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Appointments</span>
+                        </a>
+                    {% elif user.role == 'pharmacist' %}
+                        <a href="{% url 'pharmacy:pharmacy_dashboard' %}" class="quick-link">
+                            <i class="fas fa-pills"></i>
+                            <span>Pharmacy</span>
+                        </a>
+                    {% elif user.role == 'billing_staff' %}
+                        <a href="{% url 'billing:billing_dashboard' %}" class="quick-link">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                            <span>Billing</span>
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'accounts:login' %}" class="quick-link">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Login</span>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.error-container {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.error-content {
+    text-align: center;
+    max-width: 600px;
+    width: 100%;
+}
+
+.error-icon {
+    font-size: 4rem;
+    color: #f39c12;
+    margin-bottom: 1rem;
+}
+
+.error-code {
+    font-size: 6rem;
+    font-weight: 700;
+    color: #007B83;
+    margin: 0;
+    line-height: 1;
+}
+
+.error-title {
+    font-size: 2rem;
+    color: #2c3e50;
+    margin: 1rem 0;
+    font-weight: 600;
+}
+
+.error-message {
+    font-size: 1.1rem;
+    color: #7f8c8d;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.error-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 3rem;
+}
+
+.helpful-links h5 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+}
+
+.links-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.quick-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    text-decoration: none;
+    color: #007B83;
+    transition: all 0.3s ease;
+}
+
+.quick-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    color: #007B83;
+    text-decoration: none;
+}
+
+.quick-link i {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.quick-link span {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .error-code {
+        font-size: 4rem;
+    }
+    
+    .error-title {
+        font-size: 1.5rem;
+    }
+    
+    .error-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .error-actions .btn {
+        width: 200px;
+    }
+}
+</style>
+{% endblock %}

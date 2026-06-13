@@ -2,9 +2,17 @@
 {% load static %}
 
 {% block title %}Dashboard — KNH HMS{% endblock %}
-{% block page_title %}Dashboard{% endblock %}
+{% block page_title %}
+{% if user.role == 'patient' %}Welcome, {{ user.get_full_name|default:user.email }}
+{% elif user.role == 'doctor' %}Doctor Dashboard
+{% elif user.role == 'pharmacist' %}Pharmacy Dashboard
+{% elif user.role == 'billing_staff' %}Billing Dashboard
+{% elif user.role == 'administrator' %}Administrator Dashboard
+{% else %}Dashboard{% endif %}
+{% endblock %}
 
 {% block content %}
+<div class="dashboard-container">
 
 <!-- Page Header -->
 <div class="page-header">
@@ -14,232 +22,375 @@
     </div>
     <div class="page-actions">
         {% if user.role != 'patient' %}
-        <a href="{% url 'appointments:appointment_create' %}" class="btn btn-teal">
+        <a href="{% url 'appointments:appointment_create' %}" class="btn btn-primary">
             <i class="fas fa-calendar-plus"></i> New Appointment
         </a>
         {% endif %}
         {% if user.role in 'administrator,doctor,billing_staff' %}
-        <a href="{% url 'patients:create_patient' %}" class="btn btn-primary">
+        <a href="{% url 'patients:create_patient' %}" class="btn btn-success">
             <i class="fas fa-user-plus"></i> Add Patient
         </a>
         {% endif %}
     </div>
 </div>
 
-<!-- Stats Grid -->
-<div class="stats-grid">
-    {% if user.role != 'patient' %}
-    <div class="stat-card">
-        <div class="stat-card-header">
-            <h3>Total Patients</h3>
-            <div class="stat-icon icon-navy"><i class="fas fa-user-injured"></i></div>
-        </div>
-        <div class="stat-number">{{ total_patients }}</div>
-        <div class="stat-footer">
-            <span class="stat-label">Registered patients</span>
-        </div>
-    </div>
-    {% endif %}
-
-    <div class="stat-card">
-        <div class="stat-card-header">
-            <h3>Today's Appointments</h3>
-            <div class="stat-icon icon-teal"><i class="fas fa-calendar-check"></i></div>
-        </div>
-        <div class="stat-number">{{ todays_count }}</div>
-        <div class="stat-footer">
-            <span class="stat-label">Scheduled for today</span>
-        </div>
-    </div>
-
-    {% if user.role in 'administrator,pharmacist' %}
-    <div class="stat-card">
-        <div class="stat-card-header">
-            <h3>Low Stock Items</h3>
-            <div class="stat-icon icon-amber"><i class="fas fa-exclamation-triangle"></i></div>
-        </div>
-        <div class="stat-number">{{ low_stock }}</div>
-        <div class="stat-footer">
-            {% if low_stock > 0 %}
-            <span class="stat-change negative"><i class="fas fa-circle-exclamation"></i> Needs restocking</span>
-            {% else %}
-            <span class="stat-change positive"><i class="fas fa-check"></i> Stock levels OK</span>
-            {% endif %}
-        </div>
-    </div>
-    {% endif %}
-
-    {% if user.role in 'administrator,billing_staff' %}
-    <div class="stat-card">
-        <div class="stat-card-header">
-            <h3>Revenue Today</h3>
-            <div class="stat-icon icon-green"><i class="fas fa-coins"></i></div>
-        </div>
-        <div class="stat-number">KSh {{ revenue_today|floatformat:0 }}</div>
-        <div class="stat-footer">
-            <span class="stat-label">Month: KSh {{ revenue_month|floatformat:0 }}</span>
-        </div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-card-header">
-            <h3>Pending Bills</h3>
-            <div class="stat-icon icon-red"><i class="fas fa-file-invoice-dollar"></i></div>
-        </div>
-        <div class="stat-number">KSh {{ pending_bills_amount|floatformat:0 }}</div>
-        <div class="stat-footer">
-            {% if overdue_bills > 0 %}
-            <span class="stat-change negative"><i class="fas fa-clock"></i> {{ overdue_bills }} overdue</span>
-            {% else %}
-            <span class="stat-label">No overdue bills</span>
-            {% endif %}
-        </div>
-    </div>
-    {% endif %}
-
-    {% if user.role in 'administrator,doctor' %}
-    <div class="stat-card">
-        <div class="stat-card-header">
-            <h3>Available Doctors</h3>
-            <div class="stat-icon icon-blue"><i class="fas fa-user-md"></i></div>
-        </div>
-        <div class="stat-number">{{ total_doctors }}</div>
-        <div class="stat-footer">
-            <span class="stat-label">On duty today</span>
-        </div>
-    </div>
-    {% endif %}
-
-    {% if user.role in 'administrator,doctor,pharmacist' %}
-    <div class="stat-card">
-        <div class="stat-card-header">
-            <h3>Pending Prescriptions</h3>
-            <div class="stat-icon icon-teal"><i class="fas fa-pills"></i></div>
-        </div>
-        <div class="stat-number">{{ pending_rx }}</div>
-        <div class="stat-footer">
-            {% if pending_rx > 0 %}
-            <span class="stat-change negative"><i class="fas fa-clock"></i> Awaiting dispensing</span>
-            {% else %}
-            <span class="stat-change positive"><i class="fas fa-check"></i> All dispensed</span>
-            {% endif %}
-        </div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-card-header">
-            <h3>Pending Lab Tests</h3>
-            <div class="stat-icon icon-blue"><i class="fas fa-flask"></i></div>
-        </div>
-        <div class="stat-number">{{ pending_labs }}</div>
-        <div class="stat-footer">
-            <span class="stat-label">Results awaited</span>
-        </div>
-    </div>
-    {% endif %}
-</div>
-
-<!-- Two-column layout: quick actions + today's appointments -->
-<div class="row" style="display:grid; grid-template-columns: 1fr 1.5fr; gap:20px; margin-bottom:28px;">
-
-    <!-- Quick Actions -->
-    <div class="quick-actions" style="margin-bottom:0;">
-        <div class="section-header">
-            <h2 class="section-title">Quick Actions</h2>
-        </div>
-        <div class="actions-grid" style="grid-template-columns: repeat(2, 1fr);">
-            <a href="{% url 'patients:create_patient' %}" class="action-btn">
-                <i class="fas fa-user-plus"></i>
-                <span>Add Patient</span>
-            </a>
-            <a href="{% url 'appointments:appointment_create' %}" class="action-btn">
-                <i class="fas fa-calendar-plus"></i>
-                <span>Schedule</span>
-            </a>
-            <a href="{% url 'appointments:appointments' %}" class="action-btn">
-                <i class="fas fa-calendar-alt"></i>
-                <span>Appointments</span>
-            </a>
-            <a href="{% url 'medical_records:medical_records_dashboard' %}" class="action-btn">
-                <i class="fas fa-file-medical"></i>
-                <span>Records</span>
-            </a>
-            {% if user.role in 'administrator,pharmacist' %}
-            <a href="{% url 'pharmacy:pharmacy_dashboard' %}" class="action-btn">
-                <i class="fas fa-pills"></i>
-                <span>Pharmacy</span>
-            </a>
-            {% endif %}
-            {% if user.role in 'administrator,billing_staff' %}
-            <a href="{% url 'billing:billing_dashboard' %}" class="action-btn">
-                <i class="fas fa-file-invoice"></i>
-                <span>Billing</span>
-            </a>
-            <a href="{% url 'billing:billing_reports' %}" class="action-btn">
-                <i class="fas fa-chart-line"></i>
-                <span>Reports</span>
-            </a>
-            {% endif %}
-            <a href="{% url 'notifications:notification_list' %}" class="action-btn">
-                <i class="fas fa-bell"></i>
-                <span>Notifications{% if unread_notifications %} ({{ unread_notifications }}){% endif %}</span>
-            </a>
-        </div>
-    </div>
-
-    <!-- Today's Appointments -->
-    <div class="table-card" style="margin-bottom:0;">
-        <div class="section-header">
-            <h2 class="section-title">Today's Appointments</h2>
-            <a href="{% url 'appointments:appointments' %}" class="section-link">View all</a>
-        </div>
-        <div class="table-container">
-            {% if recent_appointments %}
-            <table class="activity-table">
-                <thead>
-                    <tr>
-                        <th>Time</th>
-                        <th>Patient</th>
-                        {% if user.role != 'doctor' %}<th>Doctor</th>{% endif %}
-                        <th>Status</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for appt in recent_appointments %}
-                    <tr>
-                        <td>{{ appt.appointment_time|time:"H:i" }}</td>
-                        <td>
-                            <strong>{{ appt.patient.user.get_full_name }}</strong><br>
-                            <small class="text-muted">{{ appt.patient.patient_id }}</small>
-                        </td>
-                        {% if user.role != 'doctor' %}
-                        <td>Dr. {{ appt.doctor.user.last_name }}</td>
-                        {% endif %}
-                        <td>
-                            <span class="status-badge status-{{ appt.status|lower|cut:'_' }}">
-                                {{ appt.get_status_display }}
-                            </span>
-                        </td>
-                        <td>
-                            <a href="{% url 'appointments:detail' appt.id %}" class="btn btn-secondary btn-xs">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <div class="empty-state">
-                <div class="empty-state-icon"><i class="fas fa-calendar-day"></i></div>
-                <h3>No appointments today</h3>
-                <p>There are no appointments scheduled for today.</p>
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    {% if user.role == 'administrator' %}
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card modern-card" data-aos="fade-up" data-aos-delay="100">
+        <div class="stat-card-body">
+          <div class="stat-header">
+            <div class="stat-info">
+              <h6 class="stat-label">Total Patients</h6>
+              <h3 class="stat-number counter" data-target="{{ total_patients|default:0 }}">{{ total_patients|default:0 }}</h3>
+              <div class="stat-trend"><span class="badge bg-success"><i class="fas fa-arrow-up"></i> +12%</span><span class="text-muted small">vs last month</span></div>
             </div>
-            {% endif %}
+            <div class="stat-icon bg-primary"><i class="fas fa-users"></i></div>
+          </div>
+          <div class="progress" style="height: 4px"><div class="progress-bar bg-primary" style="width: 75%"></div></div>
         </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card modern-card" data-aos="fade-up" data-aos-delay="200">
+        <div class="stat-card-body">
+          <div class="stat-header">
+            <div class="stat-info">
+              <h6 class="stat-label">Total Staff</h6>
+              <h3 class="stat-number counter" data-target="{{ total_staff|default:0 }}">{{ total_staff|default:0 }}</h3>
+              <div class="stat-trend"><span class="badge bg-info"><i class="fas fa-arrow-up"></i> +5%</span><span class="text-muted small">new hires</span></div>
+            </div>
+            <div class="stat-icon bg-success"><i class="fas fa-user-md"></i></div>
+          </div>
+          <div class="progress" style="height: 4px"><div class="progress-bar bg-success" style="width: 88%"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card modern-card" data-aos="fade-up" data-aos-delay="300">
+        <div class="stat-card-body">
+          <div class="stat-header">
+            <div class="stat-info">
+              <h6 class="stat-label">Today's Appointments</h6>
+              <h3 class="stat-number counter" data-target="{{ todays_count|default:0 }}">{{ todays_count|default:0 }}</h3>
+            </div>
+            <div class="stat-icon bg-info"><i class="fas fa-calendar-check"></i></div>
+          </div>
+          <div class="progress" style="height: 4px"><div class="progress-bar bg-info" style="width: 92%"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card modern-card" data-aos="fade-up" data-aos-delay="400">
+        <div class="stat-card-body">
+          <div class="stat-header">
+            <div class="stat-info">
+              <h6 class="stat-label">Monthly Revenue</h6>
+              <h3 class="stat-number">KSh {{ monthly_revenue|default:0|floatformat:0 }}</h3>
+            </div>
+            <div class="stat-icon bg-warning"><i class="fas fa-dollar-sign"></i></div>
+          </div>
+          <div class="progress" style="height: 4px"><div class="progress-bar bg-warning" style="width: 85%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    {% elif user.role == 'doctor' %}
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card"><div class="stat-card-header"><h3>My Patients</h3><div class="stat-icon icon-navy"><i class="fas fa-user-injured"></i></div></div><div class="stat-number">{{ my_patients|default:0 }}</div></div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card"><div class="stat-card-header"><h3>Today's Appointments</h3><div class="stat-icon icon-teal"><i class="fas fa-calendar-alt"></i></div></div><div class="stat-number">{{ doctor_appointments|default:0 }}</div></div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card"><div class="stat-card-header"><h3>Pending Consultations</h3><div class="stat-icon icon-blue"><i class="fas fa-stethoscope"></i></div></div><div class="stat-number">{{ pending_consultations|default:0 }}</div></div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card"><div class="stat-card-header"><h3>Prescriptions Today</h3><div class="stat-icon icon-amber"><i class="fas fa-prescription-bottle"></i></div></div><div class="stat-number">{{ prescriptions_today|default:0 }}</div></div>
+    </div>
+
+    {% elif user.role == 'pharmacist' %}
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card"><div class="stat-card-header"><h3>Total Medications</h3><div class="stat-icon icon-navy"><i class="fas fa-pills"></i></div></div><div class="stat-number">{{ total_medications|default:0 }}</div></div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card"><div class="stat-card-header"><h3>Low Stock Items</h3><div class="stat-icon icon-red"><i class="fas fa-exclamation-triangle"></i></div></div><div class="stat-number">{{ low_stock_items|default:0 }}</div></div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card"><div class="stat-card-header"><h3>Dispensed Today</h3><div class="stat-icon icon-teal"><i class="fas fa-hand-holding-medical"></i></div></div><div class="stat-number">{{ dispensed_today|default:0 }}</div></div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card"><div class="stat-card-header"><h3>Expiring Soon</h3><div class="stat-icon icon-amber"><i class="fas fa-clock"></i></div></div><div class="stat-number">{{ expiring_soon|default:0 }}</div></div>
+    </div>
+
+    {% elif user.role == 'billing_staff' %}
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card"><div class="stat-card-header"><h3>Today's Revenue</h3><div class="stat-icon icon-green"><i class="fas fa-dollar-sign"></i></div></div><div class="stat-number">KSh {{ revenue_today|floatformat:0 }}</div></div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card"><div class="stat-card-header"><h3>Pending Bills</h3><div class="stat-icon icon-red"><i class="fas fa-file-invoice-dollar"></i></div></div><div class="stat-number">KSh {{ pending_bills_amount|floatformat:0 }}</div></div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card"><div class="stat-card-header"><h3>Invoices Generated</h3><div class="stat-icon icon-blue"><i class="fas fa-file-invoice"></i></div></div><div class="stat-number">{{ invoices_generated|default:0 }}</div></div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card"><div class="stat-card-header"><h3>Insurance Claims</h3><div class="stat-icon icon-teal"><i class="fas fa-shield-alt"></i></div></div><div class="stat-number">{{ insurance_claims|default:0 }}</div></div>
+    </div>
+
+    {% elif user.role == 'patient' %}
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card"><div class="stat-card-header"><h3>My Appointments</h3><div class="stat-icon icon-teal"><i class="fas fa-calendar-check"></i></div></div><div class="stat-number">{{ patient_appointments|default:0 }}</div></div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card"><div class="stat-card-header"><h3>Next Appointment</h3><div class="stat-icon icon-blue"><i class="fas fa-clock"></i></div></div><div class="stat-number" style="font-size:1.1rem;">{{ next_appointment|default:"None scheduled" }}</div></div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card"><div class="stat-card-header"><h3>Active Prescriptions</h3><div class="stat-icon icon-green"><i class="fas fa-prescription-bottle-alt"></i></div></div><div class="stat-number">{{ active_prescriptions|default:0 }}</div></div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card"><div class="stat-card-header"><h3>Outstanding Balance</h3><div class="stat-icon icon-amber"><i class="fas fa-credit-card"></i></div></div><div class="stat-number">KSh {{ outstanding_balance|default:0|floatformat:0 }}</div></div>
+    </div>
+    {% else %}
+    <!-- Generic stats -->
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card"><div class="stat-card-header"><h3>Total Patients</h3><div class="stat-icon icon-navy"><i class="fas fa-user-injured"></i></div></div><div class="stat-number">{{ total_patients|default:0 }}</div></div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card"><div class="stat-card-header"><h3>Today's Appointments</h3><div class="stat-icon icon-teal"><i class="fas fa-calendar-check"></i></div></div><div class="stat-number">{{ todays_count|default:0 }}</div></div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Quick Actions Section -->
+<div class="row mb-4">
+    <div class="col-12">
+      <div class="modern-card">
+        <div class="card-header"><h5 class="card-title mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h5></div>
+        <div class="card-body">
+          <div class="actions-grid">
+            {% if user.role == 'administrator' %}
+            <a href="{% url 'patients:create_patient' %}" class="btn btn-primary btn-block action-card">
+              <div class="action-icon"><i class="fas fa-user-plus"></i></div><div class="action-text">Add Patient</div>
+            </a>
+            <a href="{% url 'dashboard:user_management' %}" class="btn btn-success btn-block action-card">
+              <div class="action-icon"><i class="fas fa-user-md"></i></div><div class="action-text">Manage Staff</div>
+            </a>
+            <a href="{% url 'billing:billing_reports' %}" class="btn btn-info btn-block action-card">
+              <div class="action-icon"><i class="fas fa-chart-line"></i></div><div class="action-text">View Reports</div>
+            </a>
+            <a href="{% url 'dashboard:settings' %}" class="btn btn-warning btn-block action-card">
+              <div class="action-icon"><i class="fas fa-cog"></i></div><div class="action-text">System Settings</div>
+            </a>
+
+            {% elif user.role == 'doctor' %}
+            <a href="{% url 'patients:create_patient' %}" class="btn btn-primary btn-block action-card">
+              <div class="action-icon"><i class="fas fa-user-plus"></i></div><div class="action-text">Add Patient</div>
+            </a>
+            <a href="{% url 'appointments:appointment_create' %}" class="btn btn-success btn-block action-card">
+              <div class="action-icon"><i class="fas fa-calendar-plus"></i></div><div class="action-text">Schedule Appointment</div>
+            </a>
+            <a href="{% url 'medical_records:medical_records_dashboard' %}" class="btn btn-info btn-block action-card">
+              <div class="action-icon"><i class="fas fa-file-medical"></i></div><div class="action-text">Medical Records</div>
+            </a>
+            <a href="{% url 'appointments:appointments' %}" class="btn btn-warning btn-block action-card">
+              <div class="action-icon"><i class="fas fa-calendar-alt"></i></div><div class="action-text">All Appointments</div>
+            </a>
+
+            {% elif user.role == 'pharmacist' %}
+            <a href="{% url 'pharmacy:pharmacy_dashboard' %}" class="btn btn-primary btn-block action-card">
+              <div class="action-icon"><i class="fas fa-pills"></i></div><div class="action-text">Pharmacy Dashboard</div>
+            </a>
+            <a href="#" class="btn btn-success btn-block action-card">
+              <div class="action-icon"><i class="fas fa-hand-holding-medical"></i></div><div class="action-text">Dispense Medication</div>
+            </a>
+            <a href="#" class="btn btn-danger btn-block action-card">
+              <div class="action-icon"><i class="fas fa-exclamation-triangle"></i></div><div class="action-text">Low Stock Alert</div>
+            </a>
+            <a href="#" class="btn btn-warning btn-block action-card">
+              <div class="action-icon"><i class="fas fa-clock"></i></div><div class="action-text">Expiry Management</div>
+            </a>
+
+            {% elif user.role == 'billing_staff' %}
+            <a href="{% url 'billing:billing_dashboard' %}" class="btn btn-primary btn-block action-card">
+              <div class="action-icon"><i class="fas fa-file-invoice"></i></div><div class="action-text">Billing Dashboard</div>
+            </a>
+            <a href="{% url 'billing:billing_reports' %}" class="btn btn-info btn-block action-card">
+              <div class="action-icon"><i class="fas fa-chart-pie"></i></div><div class="action-text">Financial Reports</div>
+            </a>
+
+            {% elif user.role == 'patient' %}
+            <a href="{% url 'appointments:appointment_create' %}" class="btn btn-primary btn-block action-card">
+              <div class="action-icon"><i class="fas fa-calendar-plus"></i></div><div class="action-text">Book Appointment</div>
+            </a>
+            <a href="{% url 'appointments:my_appointments' %}" class="btn btn-info btn-block action-card">
+              <div class="action-icon"><i class="fas fa-calendar-check"></i></div><div class="action-text">My Appointments</div>
+            </a>
+            <a href="{% url 'medical_records:patient_medical_history' user.patient.patient_id %}" class="btn btn-success btn-block action-card">
+              <div class="action-icon"><i class="fas fa-file-medical-alt"></i></div><div class="action-text">Medical History</div>
+            </a>
+
+            {% else %}
+            <a href="{% url 'patients:create_patient' %}" class="btn btn-primary btn-block action-card">
+              <div class="action-icon"><i class="fas fa-user-plus"></i></div><div class="action-text">Add Patient</div>
+            </a>
+            <a href="{% url 'appointments:appointment_create' %}" class="btn btn-success btn-block action-card">
+              <div class="action-icon"><i class="fas fa-calendar-plus"></i></div><div class="action-text">Schedule</div>
+            </a>
+            <a href="{% url 'appointments:appointments' %}" class="btn btn-info btn-block action-card">
+              <div class="action-icon"><i class="fas fa-calendar-alt"></i></div><div class="action-text">Appointments</div>
+            </a>
+            <a href="{% url 'medical_records:medical_records_dashboard' %}" class="btn btn-warning btn-block action-card">
+              <div class="action-icon"><i class="fas fa-file-medical"></i></div><div class="action-text">Records</div>
+            </a>
+            <a href="{% url 'notifications:notification_list' %}" class="btn btn-secondary btn-block action-card">
+              <div class="action-icon"><i class="fas fa-bell"></i></div>
+              <div class="action-text">Notifications{% if unread_notifications %} ({{ unread_notifications }}){% endif %}</div>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
     </div>
 </div>
+
+<!-- Today's Appointments (for non-patient roles) -->
+{% if user.role != 'patient' and recent_appointments %}
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="modern-card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0"><i class="fas fa-calendar-day me-2"></i>Today's Appointments</h5>
+        <a href="{% url 'appointments:appointments' %}" class="btn btn-sm btn-light">View all</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Patient</th>
+                {% if user.role != 'doctor' %}<th>Doctor</th>{% endif %}
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for appt in recent_appointments %}
+              <tr>
+                <td>{{ appt.appointment_time|time:"H:i" }}</td>
+                <td><strong>{{ appt.patient.user.get_full_name }}</strong><br><small class="text-muted">{{ appt.patient.patient_id }}</small></td>
+                {% if user.role != 'doctor' %}<td>Dr. {{ appt.doctor.user.last_name }}</td>{% endif %}
+                <td><span class="status-badge status-{{ appt.status|lower|cut:'_' }}">{{ appt.get_status_display }}</span></td>
+                <td><a href="{% url 'appointments:detail' appt.id %}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-eye"></i></a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Doctor-specific widgets -->
+{% if user.role == 'doctor' %}
+<div class="row mt-4">
+  <div class="col-lg-6 mb-4">
+    <div class="card shadow">
+      <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Today's Schedule</h6></div>
+      <div class="card-body">
+        <div class="timeline">
+          {% if todays_schedule %}
+          {% for slot in todays_schedule %}
+          <div class="timeline-item">
+            <div class="timeline-time">{{ slot.time }}</div>
+            <div class="timeline-content"><strong>{{ slot.patient_name }}</strong><br><small class="text-muted">{{ slot.type }}</small></div>
+          </div>
+          {% endfor %}
+          {% else %}
+          <div class="timeline-item"><div class="timeline-time">9:00 AM</div><div class="timeline-content"><strong>John Doe</strong><br><small class="text-muted">General Checkup</small></div></div>
+          <div class="timeline-item"><div class="timeline-time">10:30 AM</div><div class="timeline-content"><strong>Mary Smith</strong><br><small class="text-muted">Follow-up Visit</small></div></div>
+          <div class="timeline-item"><div class="timeline-time">2:00 PM</div><div class="timeline-content"><strong>Peter Johnson</strong><br><small class="text-muted">Consultation</small></div></div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6 mb-4">
+    <div class="card shadow">
+      <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Patient Statistics</h6></div>
+      <div class="card-body"><canvas id="patientChart" width="100" height="50"></canvas></div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Pharmacist-specific widgets -->
+{% if user.role == 'pharmacist' %}
+<div class="row mt-4">
+  <div class="col-lg-8 mb-4">
+    <div class="card shadow">
+      <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Critical Stock Alerts</h6></div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead><tr><th>Medication</th><th>Current Stock</th><th>Minimum Required</th><th>Status</th></tr></thead>
+            <tbody>
+              {% if critical_stock_alerts %}{% for item in critical_stock_alerts %}
+              <tr><td>{{ item.medication }}</td><td>{{ item.current_stock }}</td><td>{{ item.minimum_required }}</td><td><span class="badge badge-{{ item.status_class }}">{{ item.status }}</span></td></tr>
+              {% endfor %}{% else %}
+              <tr><td>Paracetamol 500mg</td><td>25</td><td>100</td><td><span class="badge badge-danger">Critical</span></td></tr>
+              <tr><td>Amoxicillin 250mg</td><td>45</td><td>50</td><td><span class="badge badge-warning">Low</span></td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4 mb-4">
+    <div class="card shadow">
+      <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Pending Prescriptions</h6></div>
+      <div class="card-body">
+        {% if pending_prescriptions %}{% for rx in pending_prescriptions %}
+        <div class="small mb-3"><strong>Patient: {{ rx.patient_name }}</strong><br><span class="text-muted">{{ rx.doctor }}</span><br><span class="badge badge-warning">{{ rx.status }}</span></div>
+        {% endfor %}{% else %}
+        <p class="text-muted small">No pending prescriptions.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Administrator-specific widgets -->
+{% if user.role == 'administrator' %}
+<div class="row mt-4">
+  <div class="col-lg-6 mb-4">
+    <div class="card shadow">
+      <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">System Status</h6></div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-6 text-center"><div class="h5 font-weight-bold text-success">{{ system_uptime|default:"99.8%" }}</div><div class="small text-gray-500">System Uptime</div></div>
+          <div class="col-6 text-center"><div class="h5 font-weight-bold text-info">{{ database_size|default:"2.3GB" }}</div><div class="small text-gray-500">Database Size</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6 mb-4">
+    <div class="card shadow">
+      <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Staff Performance</h6></div>
+      <div class="card-body">
+        <div class="small mb-2"><strong>Doctors:</strong> {{ active_doctors|default:15 }} active<div class="progress mt-1"><div class="progress-bar bg-success" style="width: 85%"></div></div></div>
+        <div class="small mb-2"><strong>Nurses:</strong> {{ active_nurses|default:45 }} active<div class="progress mt-1"><div class="progress-bar bg-info" style="width: 92%"></div></div></div>
+        <div class="small"><strong>Support Staff:</strong> {{ active_support_staff|default:25 }} active<div class="progress mt-1"><div class="progress-bar bg-warning" style="width: 78%"></div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
 
 {% if unread_notifications > 0 %}
 <div class="alert alert-info">
@@ -251,4 +402,81 @@
 </div>
 {% endif %}
 
+</div>
+
+{% if user.role == 'doctor' %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const ctx = document.getElementById("patientChart");
+    if (ctx) {
+      new Chart(ctx, {
+        type: "doughnut",
+        data: {
+          labels: ["New Patients", "Follow-ups", "Consultations"],
+          datasets: [{ data: [30, 45, 25], backgroundColor: ["#4e73df", "#1cc88a", "#36b9cc"], borderWidth: 0 }],
+        },
+        options: { maintainAspectRatio: false, plugins: { legend: { display: true, position: "bottom" } } },
+      });
+    }
+  });
+</script>
+{% endif %}
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Animate counters
+    const counters = document.querySelectorAll(".counter");
+    const counterObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const counter = entry.target;
+          const target = parseInt(counter.getAttribute("data-target") || counter.textContent);
+          if (!isNaN(target) && target > 0) {
+            animateCounter(counter, 0, target, 2000);
+          }
+          counterObserver.unobserve(counter);
+        }
+      });
+    }, { threshold: 0.1 });
+    counters.forEach((counter) => { counterObserver.observe(counter); });
+
+    function animateCounter(element, start, end, duration) {
+      const range = end - start;
+      const stepTime = Math.max(duration / Math.abs(range || 1), 1);
+      let current = start;
+      const increment = end > start ? 1 : -1;
+      const timer = setInterval(() => {
+        current += increment;
+        element.textContent = current.toLocaleString();
+        if (current === end) { clearInterval(timer); }
+      }, stepTime);
+    }
+  });
+</script>
+
+<style>
+  .dashboard-container { padding: 1.5rem; min-height: calc(100vh - 64px); }
+  .stat-card { background: white; border-radius: 20px; border: none; box-shadow: 0 8px 32px rgba(0,0,0,0.1); transition: all 0.4s; overflow: hidden; position: relative; margin-bottom: 1rem; }
+  .stat-card:hover { transform: translateY(-5px); box-shadow: 0 16px 48px rgba(0,0,0,0.15); }
+  .stat-card-body { padding: 1.5rem; }
+  .stat-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+  .stat-info { flex: 1; }
+  .stat-label { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #6c757d; margin-bottom: 0.5rem; }
+  .stat-number { font-size: 2.2rem; font-weight: 700; color: #007b83; margin-bottom: 0.5rem; line-height: 1; }
+  .stat-icon { width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; flex-shrink: 0; }
+  .modern-card { background: white; border-radius: 20px; border: none; box-shadow: 0 8px 32px rgba(0,0,0,0.1); transition: all 0.3s; overflow: hidden; margin-bottom: 1.5rem; }
+  .modern-card:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,0.15); }
+  .modern-card .card-header { background: linear-gradient(135deg, #007b83, #4eb1ba); color: white; padding: 1.5rem; border: none; font-weight: 600; }
+  .card-title { font-size: 1.1rem; font-weight: 600; color: white; }
+  .actions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
+  .actions-grid .btn { min-height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; border-radius: 15px; border: none; font-weight: 600; text-decoration: none; transition: all 0.3s ease; }
+  .actions-grid .btn i, .action-icon i { font-size: 1.8rem; }
+  .actions-grid .btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+  .timeline { position: relative; padding-left: 20px; }
+  .timeline-item { position: relative; padding-bottom: 20px; }
+  .timeline-item:before { content: ""; position: absolute; left: -25px; top: 5px; width: 10px; height: 10px; border-radius: 50%; background-color: #007b83; }
+  .timeline-time { font-weight: bold; color: #007b83; font-size: 0.9rem; }
+  .timeline-content { margin-top: 5px; }
+  @media (max-width: 768px) { .dashboard-container { padding: 1rem; } .stat-number { font-size: 1.8rem; } .actions-grid { grid-template-columns: repeat(2, 1fr); } }
+</style>
 {% endblock %}

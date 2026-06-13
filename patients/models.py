@@ -1,5 +1,8 @@
 from django.db import models
 from django.conf import settings
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from datetime import date
 
 class Patient(models.Model):
     GENDER_CHOICES = [
@@ -7,14 +10,14 @@ class Patient(models.Model):
         ('F', 'Female'),
         ('O', 'Other'),
     ]
-    
+
     BLOOD_GROUP_CHOICES = [
         ('A+', 'A+'), ('A-', 'A-'),
         ('B+', 'B+'), ('B-', 'B-'),
         ('AB+', 'AB+'), ('AB-', 'AB-'),
         ('O+', 'O+'), ('O-', 'O-'),
     ]
-    
+
     patient_id = models.CharField(max_length=15, unique=True, primary_key=True)
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
@@ -28,19 +31,37 @@ class Patient(models.Model):
     chronic_conditions = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
-    
+
+
     def save(self, *args, **kwargs):
         if self.user.role != 'patient':
             raise ValueError("User role must be 'patient' to create Patient profile")
-        
+
         if not self.patient_id:
             self.patient_id = f"PAT{self.user.id:06d}"
-        
+
         super().save(*args, **kwargs)
-    
+
     def __str__(self):
         return f"{self.patient_id} - {self.user.get_full_name()}"
+
+    @property
+    def age(self):
+        if self.user.date_of_birth:
+            today = date.today()
+            return today.year - self.user.date_of_birth.year - ((today.month, today.day) < (self.user.date_of_birth.month, self.user.date_of_birth.day))
+        return None
+
+
+# Signal to automatically create Patient profile when User is created
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_patient_profile(sender, instance, created, **kwargs):
+    """Automatically create Patient profile for new users"""
+    if created and instance.role == 'patient':
+        Patient.objects.get_or_create(
+            user=instance,
+            defaults={'patient_id': f"PAT{instance.id:06d}"}
+        )
 
 
 class PatientVitals(models.Model):
@@ -53,6 +74,6 @@ class PatientVitals(models.Model):
     pulse_rate = models.IntegerField(null=True, blank=True)
     temperature = models.FloatField(help_text="Temperature in Celsius", null=True, blank=True)
     recorded_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         ordering = ['-recorded_at']

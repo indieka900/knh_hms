@@ -1,48 +1,87 @@
-# KNH HMS — Modernized Hospital Management System
+# Django Hospital Managegement System 🛍️
 
-Modernized in 2026: clean Tailwind-based design foundation, fixed broken modules, working DB/migrations, consistent roles, etc.
+A fully-featured hospital management system built with Django, designed to streamline hospital operations and enhance patient care.
 
-## Quick Start (Windows / pwsh)
+[![GitHub Stars](https://img.shields.io/github/stars/indieka900/knh_hms?style=social)](https://github.com/indieka900/knh_hms/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/indieka900/knh_hms?style=social)](https://github.com/indieka900/knh_hms/network/members)
+[![GitHub Follow](https://img.shields.io/github/followers/indieka900?style=social)](https://github.com/indieka900)
 
-```powershell
-# from project root
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+## ✨ Features
 
-python manage.py migrate
-python manage.py createsuperuser   # choose administrator role
+### Appointment Management
 
-# Optional: create a few demo accounts (run in shell or use admin)
-python manage.py runserver
+- Book appointments with doctors
+- View upcoming appointments
+- Cancel appointments
+- Receive appointment reminders via email
+- Doctor availability management
+- Patient appointment history
+- Doctor's schedule management
+- Appointment status tracking (confirmed, pending, cancelled)
+
+### Patient Management
+
+- Patient registration
+- Patient profile management
+- Medical history tracking
+- Prescription management
+- Patient appointment history
+- Patient notifications (email/SMS)
+- Patient feedback system
+
+### Billing and Payments
+
+- Generate invoices
+- Payment processing
+- Payment history
+- Payment methods:
+  - Credit/Debit Card
+  - PayPal
+  - M-PESA
+
+## 🚀 Installation
+
+1. Clone the repository
+
+```bash
+git clone https://github.com/indieka900/knh_hms.git/
+cd knh_hms
 ```
 
-Login at http://127.0.0.1:8000/ (default admin user example during dev: admin@knh.test / admin123 if created via script).
+2. Create a virtual environment
 
-## Key Fixes Applied
-- Full migrations + clean schema (no more "no such table").
-- Signals consolidated, cross imports removed, safe profile creation for all roles/registration paths.
-- All role checks normalized to 'administrator' (removed 'admin'/'nurse' ghosts).
-- Appointment model lookups fixed (consistent use of `id` PK).
-- Added full `patients/` list page (searchable, paginated, role-protected).
-- Layout modernized: Tailwind CDN + config (navy/teal preserved), removed jQuery + Bootstrap 4/5 mismatch, killed the broken full-HTML `pop_up.html` include, clean messages toasts.
-- Logout URLs, nav, and basic links repaired.
-- Core flows (dashboard, patient list/create, appts, etc.) now render and navigate without crashes.
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows use: venv\Scripts\activate
+```
 
-## Roles
-patient | doctor | pharmacist | billing_staff | administrator
+3. Install dependencies
 
-## Design Notes
-- Primary layout now loads Tailwind via CDN for modern utility classes + the existing custom CSS for complex components (stats, timelines, print).
-- Example modernized view: `/patients/` (new list) uses Tailwind cards + clean table.
-- Further full sweep of every legacy Bootstrap class in other templates (appts, billing, medical, pharmacy, etc.) can be done incrementally — foundation is ready and new code should use Tailwind.
-- Auth screens (login/register) still use their dedicated CSS but benefit from overall consistency improvements.
+```bash
+pip install -r requirements.txt
+```
 
-## What's Still Legacy / Next
-- Some per-app templates and their inline/JS still contain old `btn-* form-control card row col-` classes (they render via the supplemental CSS).
-- scripts.js has Bootstrap-specific patient search + modals (used in appointments create) — will need vanilla/Tailwind rewrite for full polish.
-- No real email/SMS, advanced RBAC, or production config.
+4. Set up environment variables
 
-See MODERNIZATION_PLAN.md for the full original plan and phases.
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
 
-Built with Django 5.2 + Tailwind. Happy managing!
+5. Run migrations
+
+```bash
+python manage.py migrate
+```
+
+6. Create a superuser
+
+```bash
+python manage.py createsuperuser
+```
+
+7. Run the development server
+
+```bash
+python manage.py runserver
+```

@@ -1,0 +1,300 @@
+{% extends "base.html" %} {% load static %} {% block title %}User Management -
+KNH HMS{% endblock %} {% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-12">
+      <!-- Page Header -->
+      <div class="page-header mb-4">
+        <h2><i class="fas fa-users-cog me-2"></i>User Management</h2>
+        <p class="text-muted">Manage system users, roles, and permissions</p>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <button
+            class="btn btn-primary"
+            data-bs-toggle="modal"
+            data-bs-target="#addUserModal"
+          >
+            <i class="fas fa-user-plus me-2"></i>Add New User
+          </button>
+        </div>
+        <div class="col-md-6 text-end">
+          <span class="badge bg-primary fs-6"
+            >{{ users.count }} Total Users</span
+          >
+        </div>
+      </div>
+
+      <!-- Users Table -->
+      <div class="card">
+        <div class="card-header">
+          <h4><i class="fas fa-list me-2"></i>System Users</h4>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Joined</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for user in users %}
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="user-avatar me-3">
+                        {% if user.profile_picture %}
+                        <img
+                          src="{{ user.profile_picture.url }}"
+                          alt="Profile"
+                          class="rounded-circle"
+                        />
+                        {% else %}
+                        <span class="text-white"
+                          >{{ user.first_name|first }}{{ user.last_name|first
+                          }}</span
+                        >
+                        {% endif %}
+                      </div>
+                      <div>
+                        <h6 class="mb-0">{{ user.get_full_name }}</h6>
+                        <small class="text-muted">ID: {{ user.id }}</small>
+                      </div>
+                    </div>
+                  </td>
+                  <td>{{ user.email }}</td>
+                  <td>
+                    <span class="badge role-{{ user.role }}">
+                      {{ user.get_role_display }}
+                    </span>
+                  </td>
+                  <td>
+                    {% if user.is_active %}
+                    <span class="badge bg-success">Active</span>
+                    {% else %}
+                    <span class="badge bg-danger">Inactive</span>
+                    {% endif %} {% if user.is_superuser %}
+                    <span class="badge bg-warning ms-1">Superuser</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ user.date_joined|date:"M d, Y" }}</td>
+                  <td>
+                    <div class="btn-group" role="group">
+                      <button
+                        class="btn btn-sm btn-outline-primary"
+                        title="Edit User"
+                      >
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button
+                        class="btn btn-sm btn-outline-info"
+                        title="View Details"
+                      >
+                        <i class="fas fa-eye"></i>
+                      </button>
+                      {% if user.is_active %}
+                      <button
+                        class="btn btn-sm btn-outline-warning"
+                        title="Deactivate"
+                      >
+                        <i class="fas fa-user-slash"></i>
+                      </button>
+                      {% else %}
+                      <button
+                        class="btn btn-sm btn-outline-success"
+                        title="Activate"
+                      >
+                        <i class="fas fa-user-check"></i>
+                      </button>
+                      {% endif %}
+                    </div>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="6" class="text-center py-4">
+                    <div class="empty-state">
+                      <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                      <h5 class="text-muted">No Users Found</h5>
+                      <p class="text-muted">
+                        Start by adding your first system user.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Add New User</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div class="text-center py-4">
+          <i class="fas fa-user-plus fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">User Creation Coming Soon</h5>
+          <p class="text-muted">
+            Advanced user management features will be implemented in the next
+            update.
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .page-header {
+    background: linear-gradient(
+      135deg,
+      var(--primary-light),
+      var(--primary-medium)
+    );
+    padding: 2rem;
+    border-radius: 15px;
+    color: var(--primary-dark);
+  }
+
+  .page-header h2 {
+    margin: 0;
+    font-weight: 700;
+  }
+
+  .card {
+    border: none;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    border-radius: 15px;
+  }
+
+  .card-header {
+    background: linear-gradient(
+      135deg,
+      var(--primary-light),
+      rgba(231, 193, 191, 0.3)
+    );
+    border-bottom: none;
+    border-radius: 15px 15px 0 0 !important;
+    padding: 1.5rem;
+  }
+
+  .card-header h4 {
+    margin: 0;
+    color: var(--primary-dark);
+    font-weight: 600;
+  }
+
+  .card-body {
+    padding: 2rem;
+  }
+
+  .user-avatar {
+    width: 40px;
+    height: 40px;
+    background-color: var(--primary-medium);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+
+  .role-administrator {
+    background-color: var(--danger) !important;
+    color: white;
+  }
+
+  .role-doctor {
+    background-color: var(--info) !important;
+    color: white;
+  }
+
+  .role-nurse {
+    background-color: var(--warning) !important;
+    color: var(--primary-dark);
+  }
+
+  .role-patient {
+    background-color: var(--success) !important;
+    color: white;
+  }
+
+  .role-pharmacist {
+    background-color: var(--secondary-dark) !important;
+    color: white;
+  }
+
+  .role-billing_staff {
+    background-color: var(--primary-dark) !important;
+    color: white;
+  }
+
+  .table th {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    border: none;
+  }
+
+  .table td {
+    vertical-align: middle;
+    border-color: var(--primary-light);
+  }
+
+  .table tbody tr:hover {
+    background-color: rgba(253, 232, 227, 0.5);
+  }
+
+  .btn-group .btn {
+    border-radius: 6px;
+    margin: 0 2px;
+  }
+
+  .empty-state {
+    color: var(--gray-medium);
+  }
+
+  .empty-state i {
+    color: var(--primary-light);
+  }
+</style>
+{% endblock %}

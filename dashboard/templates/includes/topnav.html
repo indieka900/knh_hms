@@ -1,13 +1,15 @@
-<header class="top-nav">
-    <div class="nav-left">
-        <button class="menu-toggle" id="menuToggle" title="Toggle sidebar">
+<header class="top-nav d-flex justify-content-between align-items-center px-4 py-2 shadow-sm">
+    <div class="nav-left d-flex align-items-center gap-3">
+        <button class="menu-toggle btn btn-light me-3" id="menuToggle">
             <i class="fas fa-bars"></i>
         </button>
-        <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+        <h1 class="page-title m-0 fs-4">
+            {% block page_title %}Dashboard{% endblock %}
+        </h1>
     </div>
-    <div class="nav-right">
+    <div class="nav-right d-flex align-items-center">
         <!-- Notification Bell -->
-        <a href="{% url 'notifications:notification_list' %}" class="notif-btn" id="notifBtn" title="Notifications">
+        <a href="{% url 'notifications:notification_list' %}" class="notif-btn me-2" id="notifBtn" title="Notifications">
             <i class="fas fa-bell"></i>
             {% if unread_notifications and unread_notifications > 0 %}
             <span class="notif-badge" id="notifBadge">
@@ -18,23 +20,57 @@
             {% endif %}
         </a>
 
-        <!-- User Info -->
-        <div class="user-info" onclick="toggleUserMenu()" title="{{ user.email }}">
-            <div class="user-avatar">
-                {% if user.profile_picture %}
-                    <img src="{{ user.profile_picture.url }}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" alt="">
-                {% else %}
-                    {{ user.first_name.0|default:"U" }}{{ user.last_name.0|default:"" }}
-                {% endif %}
+        <div class="user-info d-flex align-items-center gap-3">
+            <!-- User Profile Dropdown -->
+            <div class="dropdown">
+                <button class="btn btn-light d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center" style="width: 35px; height: 35px; background: linear-gradient(135deg, #007B83, #4EB1BA); color: white;">
+                        {% if user.profile_picture %}
+                            <img src="{{ user.profile_picture.url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="">
+                        {% elif user.first_name %}
+                            {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                        {% else %}
+                            {{ user.email|first|upper }}
+                        {% endif %}
+                    </div>
+                    <div class="user-details d-none d-md-block text-start">
+                        <div class="fw-semibold" style="font-size: 0.9rem; color: white;">
+                            {% if user.first_name and user.last_name %}
+                                {{ user.first_name }} {{ user.last_name }}
+                            {% else %}
+                                {{ user.email }}
+                            {% endif %}
+                        </div>
+                        <small class="text-light opacity-75">{{ user.role|title }}</small>
+                    </div>
+                    <i class="fas fa-chevron-down text-light" style="font-size: 0.8rem;"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><h6 class="dropdown-header">
+                        {% if user.first_name and user.last_name %}
+                            {{ user.first_name }} {{ user.last_name }}
+                        {% else %}
+                            {{ user.email }}
+                        {% endif %}
+                    </h6></li>
+                    <li><a class="dropdown-item" href="{% url 'accounts:profile' %}"><i class="fas fa-user me-2"></i>My Profile</a></li>
+                    <li><a class="dropdown-item" href="{% url 'accounts:settings' %}"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                    <li><a class="dropdown-item" href="{% url 'notifications:notification_list' %}">
+                        <i class="fas fa-bell me-2"></i>Notifications
+                        {% if unread_notifications and unread_notifications > 0 %}
+                        <span class="status-badge status-pending ms-1" style="font-size:0.65rem;">{{ unread_notifications }}</span>
+                        {% endif %}
+                    </a></li>
+                    {% if user.role == 'patient' %}
+                    <li><a class="dropdown-item" href="#"><i class="fas fa-file-medical me-2"></i>My Medical Records</a></li>
+                    {% endif %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                </ul>
             </div>
-            <div class="user-details">
-                <h4>{{ user.first_name }} {{ user.last_name }}</h4>
-                <p>{{ user.role|title }}</p>
-            </div>
-            <i class="fas fa-chevron-down" style="font-size:0.7rem; color:var(--text-muted); margin-left:4px;"></i>
         </div>
 
-        <!-- User Dropdown -->
+        <!-- User Dropdown (custom) -->
         <div id="userMenu" style="display:none; position:absolute; top:58px; right:20px; background:var(--surface); border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow-lg); min-width:200px; z-index:200; overflow:hidden;">
             <div style="padding:14px 16px; border-bottom:1px solid var(--border);">
                 <div style="font-weight:700; font-size:0.9rem; color:var(--text);">{{ user.get_full_name }}</div>
