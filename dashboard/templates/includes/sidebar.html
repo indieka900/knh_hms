@@ -17,7 +17,7 @@
                 </li>
 
                 <!-- Patient Management -->
-                {% if user_module_perms.patients or user.role == 'doctor' or user.role == 'nurse' or user.role == 'administrator' or user.role == 'billing_staff' %}
+                {% if user_module_perms.patients %}
                 <li>
                         <a href="{% url 'patients:patient_list' %}"
                                 class="{% if request.resolver_match.app_name == 'patients' %}active{% endif %}">
@@ -27,7 +27,7 @@
                 {% endif %}
 
                 <!-- Medical Records -->
-                {% if user_module_perms.medical_records or user.role == 'doctor' or user.role == 'nurse' or user.role == 'administrator' %}
+                {% if user_module_perms.medical_records %}
                 <li>
                         <a href="{% url 'medical_records:medical_records_dashboard' %}"
                                 class="{% if request.resolver_match.app_name == 'medical_records' %}active{% endif %}">
@@ -36,21 +36,8 @@
                 </li>
                 {% endif %}
 
-                <!-- Appointments - Different for Patients vs Admin/Staff -->
-                {% if user.role == 'patient' %}
-                <li>
-                      <a href="{% url 'appointments:book_appointment' %}"
-                              class="{% if request.resolver_match.url_name == 'book_appointment' %}active{% endif %}">
-                              <i class="fas fa-calendar-plus"></i> Book Appointment
-                      </a>
-                </li>
-                <li>
-                      <a href="{% url 'appointments:my_appointments' %}"
-                              class="{% if request.resolver_match.url_name == 'my_appointments' %}active{% endif %}">
-                              <i class="fas fa-calendar-check"></i> My Appointments
-                      </a>
-                </li>
-                {% elif user_module_perms.appointments %}
+                <!-- Appointments -->
+                {% if user_module_perms.appointments %}
                 <li>
                         <a href="{% url 'appointments:appointments' %}"
                                 class="{% if request.resolver_match.app_name == 'appointments' %}active{% endif %}">
@@ -60,7 +47,7 @@
                 {% endif %}
 
                 <!-- Pharmacy -->
-                {% if user_module_perms.pharmacy or user.role == 'pharmacist' or user.role == 'administrator' %}
+                {% if user_module_perms.pharmacy %}
                 <li>
                         <a href="{% url 'pharmacy:pharmacy_dashboard' %}"
                                 class="{% if request.resolver_match.app_name == 'pharmacy' %}active{% endif %}">
@@ -70,7 +57,7 @@
                 {% endif %}
 
                 <!-- Billing -->
-                {% if user_module_perms.billing or user.role == 'billing_staff' or user.role == 'administrator' %}
+                {% if user_module_perms.billing %}
                 <li>
                         <a href="{% url 'billing:billing_dashboard' %}"
                                 class="{% if request.resolver_match.app_name == 'billing' %}active{% endif %}">
@@ -80,7 +67,7 @@
                 {% endif %}
 
                 <!-- Reports -->
-                {% if user_module_perms.reports or user.role == 'administrator' or user.role == 'doctor' %}
+                {% if user_module_perms.reports %}
                 <li>
                         <a href="#" class="{% if request.resolver_match.url_name == 'reports' %}active{% endif %}">
                                 <i class="fas fa-chart-bar"></i> Reports
@@ -89,44 +76,24 @@
                 {% endif %}
 
                 <!-- Super Admin Section -->
-                {% if user.is_superuser or user.role == 'administrator' %}
+                {% if user_module_perms.user_management or user_module_perms.system_settings %}
                 <li class="sidebar-section-header">
                   <span class="section-title">System Administration</span>
                 </li>
-                <!-- User Management + Settings -->
                 {% if user_module_perms.user_management %}
-                <li>
-                        <a href="{% url 'dashboard:user_management' %}"
-                                class="{% if request.resolver_match.url_name == 'user_management' %}active{% endif %}">
-                                <i class="fas fa-users-cog"></i> User Management
-                        </a>
-                </li>
-                {% endif %}
-                {% if user_module_perms.system_settings or user.role == 'administrator' %}
                 <li>
                         <a href="{% url 'accounts:role_permissions' %}" class="{% if request.resolver_match.url_name == 'role_permissions' %}active{% endif %}">
                                 <i class="fas fa-shield-alt"></i> Role Permissions
                         </a>
                 </li>
                 {% endif %}
+                {% if user_module_perms.system_settings %}
                 <li>
-                      <a href="{% url 'dashboard:settings' %}"
-                              class="{% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
-                              <i class="fas fa-cog"></i> System Settings
-                      </a>
+                        <a href="#" class="{% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
+                                <i class="fas fa-cog"></i> System Settings
+                        </a>
                 </li>
-                <li>
-                      <a href="{% url 'dashboard:system_reports' %}"
-                              class="{% if request.resolver_match.url_name == 'system_reports' %}active{% endif %}">
-                              <i class="fas fa-chart-line"></i> System Reports
-                      </a>
-                </li>
-                <li>
-                      <a href="{% url 'dashboard:audit_logs' %}"
-                              class="{% if request.resolver_match.url_name == 'audit_logs' %}active{% endif %}">
-                              <i class="fas fa-clipboard-list"></i> Audit Logs
-                      </a>
-                </li>
+                {% endif %}
                 {% endif %}
 
                 <!-- Profile (available to all logged-in users) -->
